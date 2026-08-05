@@ -42,18 +42,12 @@ import AddonChannels from '../addons/channels';
 import {loadServiceWorker} from './load-service-worker';
 import runAddons from '../addons/entry';
 import InvalidEmbed from '../components/tw-invalid-embed/invalid-embed.jsx';
+import AddonSettingsModal from '../components/tw-addon-settings-modal/addon-settings-modal.jsx';
 import {APP_NAME} from '../lib/brand.js';
 
 import styles from './interface.css';
 
 const isInvalidEmbed = window.parent !== window;
-
-const handleClickAddonSettings = addonId => {
-    // addonId might be a string of the addon to focus on, undefined, or an event (treat like undefined)
-    const path = process.env.ROUTING_STYLE === 'wildcard' ? 'addons' : 'addons.html';
-    const url = `${process.env.ROOT}${path}${typeof addonId === 'string' ? `#${addonId}` : ''}`;
-    window.open(url);
-};
 
 const messages = defineMessages({
     defaultTitle: {
@@ -189,7 +183,10 @@ const Footer = () => (
 class Interface extends React.Component {
     constructor (props) {
         super(props);
+        this.state = {addonSettingsOpen: false, selectedAddonId: undefined};
         this.handleUpdateProjectTitle = this.handleUpdateProjectTitle.bind(this);
+        this.handleClickAddonSettings = this.handleClickAddonSettings.bind(this);
+        this.closeAddonSettings = this.closeAddonSettings.bind(this);
     }
     componentDidUpdate (prevProps) {
         if (prevProps.isLoading && !this.props.isLoading) {
@@ -202,6 +199,15 @@ class Interface extends React.Component {
         } else {
             document.title = `${title} - ${APP_NAME}`;
         }
+    }
+    handleClickAddonSettings (addonId) {
+        this.setState({
+            addonSettingsOpen: true,
+            selectedAddonId: typeof addonId === 'string' ? addonId : undefined
+        });
+    }
+    closeAddonSettings () {
+        this.setState({addonSettingsOpen: false});
     }
     render () {
         if (isInvalidEmbed) {
@@ -239,7 +245,7 @@ class Interface extends React.Component {
                             canManageFiles
                             canChangeTheme
                             enableSeeInside
-                            onClickAddonSettings={handleClickAddonSettings}
+                            onClickAddonSettings={this.handleClickAddonSettings}
                         />
                     </div>
                 ) : null}
@@ -251,12 +257,16 @@ class Interface extends React.Component {
                     }) : null}
                 >
                     <GUI
-                        onClickAddonSettings={handleClickAddonSettings}
+                        onClickAddonSettings={this.handleClickAddonSettings}
                         onUpdateProjectTitle={this.handleUpdateProjectTitle}
                         backpackVisible
                         backpackHost="_local_"
                         {...props}
                     />
+                    {this.state.addonSettingsOpen && <AddonSettingsModal
+                        addonId={this.state.selectedAddonId}
+                        onClose={this.closeAddonSettings}
+                    />}
                     {isHomepage ? (
                         <React.Fragment>
                             {isBrowserSupported() ? null : (

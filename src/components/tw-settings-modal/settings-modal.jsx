@@ -435,6 +435,8 @@ Header.propTypes = {
 const SettingsModalComponent = props => (
     <Modal
         className={styles.modalContent}
+        headerClassName={styles.modalHeader}
+        overlayClassName={styles.modalOverlay}
         onRequestClose={props.onClose}
         contentLabel={props.intl.formatMessage(messages.title)}
         id="settingsModal"

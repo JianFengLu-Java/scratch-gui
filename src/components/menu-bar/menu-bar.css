@@ -42,6 +42,39 @@
     flex-grow: 1;
     gap: 0.5rem;
 }
+.planet-brand {
+    display: flex;
+    align-items: center;
+    gap: .38rem;
+    padding: 0 .25rem 0 .6rem;
+    color: #fff;
+    font-size: .87rem;
+    font-weight: 800;
+    letter-spacing: .02em;
+    white-space: nowrap;
+}
+.planet-brand img {
+    width: 1.55rem;
+    height: 1.55rem;
+}
+.upload-work-button {
+    gap: .35rem;
+    margin-right: .5rem;
+    border: 1px solid rgba(255, 255, 255, .55);
+    border-radius: 2rem;
+    padding: .42rem .8rem;
+    background: rgba(255, 255, 255, .16);
+    color: $menu-bar-foreground;
+    font-size: .75rem;
+    font-weight: 700;
+}
+.upload-work-button:hover {
+    background: rgba(255, 255, 255, .26);
+}
+.upload-work-button span {
+    font-size: 1rem;
+    line-height: .75;
+}
 .inactive {
     opacity: 0;
 }

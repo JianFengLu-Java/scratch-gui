@@ -256,10 +256,12 @@ class LibraryComponent extends React.Component {
         const filteredData = this.state.canDisplay && this.props.data && this.getFilteredData();
         return (
             <Modal
-                fullScreen
+                className={styles.modalContent}
                 contentLabel={this.props.title}
+                headerClassName={styles.modalHeader}
                 id={this.props.id}
                 onRequestClose={this.handleClose}
+                overlayClassName={styles.modalOverlay}
             >
                 {(this.props.filterable || this.props.tags) && (
                     <div className={styles.filterBar}>

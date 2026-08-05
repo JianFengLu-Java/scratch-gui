@@ -3,14 +3,32 @@
 @import "../../css/default-colors.css";
 
 .modal-content {
-    max-width: 750px;
+    width: min(1120px, 96vw);
+    max-width: none;
+    margin: 5vh auto;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.38);
+}
+
+.modal-overlay {
+    background: rgba(15, 23, 42, 0.52);
+    backdrop-filter: blur(6px);
+}
+
+.modal-header {
+    min-height: 68px;
+    height: 68px;
+    color: #111827;
+    border-bottom: 1px solid #e5e7eb;
+    background: #ffffff;
 }
 
 .body {
-    background: $ui-modal-background;
+    background: #ffffff;
     padding: 1.5rem 2.25rem;
     min-height: 150px;
-    max-height: calc(100vh - 250px);
+    max-height: calc(90vh - 68px);
     overflow-y: auto;
 }
 

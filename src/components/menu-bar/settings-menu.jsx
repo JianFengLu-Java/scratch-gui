@@ -1,6 +1,5 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import {FormattedMessage} from 'react-intl';
 
 import LanguageMenu from './language-menu.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
@@ -38,13 +37,7 @@ const SettingsMenu = ({
             width={20}
             height={20}
         />
-        <span className={styles.dropdownLabel}>
-            <FormattedMessage
-                defaultMessage="Settings"
-                description="Settings menu"
-                id="gui.menuBar.settings"
-            />
-        </span>
+        <span className={styles.dropdownLabel}>设置</span>
         <img
             src={dropdownCaret}
             draggable={false}

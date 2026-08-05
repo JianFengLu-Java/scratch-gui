@@ -1,6 +1,33 @@
 @import "../../css/units.css";
 @import "../../css/colors.css";
 
+.modal-content {
+    width: min(1120px, 96vw);
+    height: 90vh;
+    margin: 5vh auto;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.38);
+}
+
+.modal-content > div {
+    height: 100%;
+    min-height: 0;
+}
+
+.modal-overlay {
+    background: rgba(15, 23, 42, 0.52);
+    backdrop-filter: blur(6px);
+}
+
+.modal-header {
+    min-height: 68px;
+    height: 68px;
+    color: #111827;
+    border-bottom: 1px solid #e5e7eb;
+    background: #ffffff;
+}
+
 .library-scroll-grid {
     display: flex;
     justify-content: flex-start;
@@ -10,13 +37,13 @@
     flex-grow: 1;
     flex-wrap: wrap;
     overflow-y: auto;
-    height: auto;
+    min-height: 0;
     padding: 0.5rem;
-    height: calc(100% - $library-header-height);
+    height: calc(90vh - 68px);
 }
 
 .library-scroll-grid.withFilterBar {
-    height: calc(100% - $library-header-height - $library-filter-bar-height - 2rem);
+    height: calc(90vh - 68px - $library-filter-bar-height - 2rem);
 }
 
 .filter-bar {
