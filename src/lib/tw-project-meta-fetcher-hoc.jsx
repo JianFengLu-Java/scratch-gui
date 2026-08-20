@@ -5,6 +5,7 @@ import log from './log';
 
 import {setProjectTitle} from '../reducers/project-title';
 import {setAuthor, setDescription} from '../reducers/tw';
+import {isPlanetProjectRoute} from './planet-project-loader';
 
 export const fetchProjectMeta = async projectId => {
     // When people reopen tabs, sometimes the browser is *very* aggressive about caching even when the
@@ -59,7 +60,7 @@ const TWProjectMetaFetcherHOC = function (WrappedComponent) {
                 this.props.onSetDescription('', '');
                 const projectId = this.props.reduxProjectId;
 
-                if (projectId === '0') {
+                if (projectId === '0' || isPlanetProjectRoute()) {
                     // don't try to get metadata
                 } else {
                     fetchProjectMeta(projectId).then(data => {

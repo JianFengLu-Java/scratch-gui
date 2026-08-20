@@ -238,6 +238,7 @@ class LibraryItemComponent extends React.PureComponent {
                 <span className={styles.libraryItemName}>{this.props.name}</span>
                 {this.props.showPlayButton ? (
                     <PlayButton
+                        isLoading={this.props.isLoading}
                         isPlaying={this.props.isPlaying}
                         onPlay={this.props.onPlay}
                         onStop={this.props.onStop}
@@ -267,6 +268,7 @@ LibraryItemComponent.propTypes = {
     iconURL: PropTypes.string,
     insetIconURL: PropTypes.string,
     internetConnectionRequired: PropTypes.bool,
+    isLoading: PropTypes.bool,
     isPlaying: PropTypes.bool,
     name: PropTypes.oneOfType([
         PropTypes.string,

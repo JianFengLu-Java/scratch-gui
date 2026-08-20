@@ -13,6 +13,12 @@ import soundIconRtl from '../components/library-item/lib-icon--sound-rtl.svg';
 
 import {getSoundLibrary} from '../lib/libraries/tw-async-libraries';
 import soundTags from '../lib/libraries/sound-tags';
+import log from '../lib/log';
+import {
+    finishAssetLoad,
+    startAssetLoad,
+    updateAssetLoad
+} from '../lib/asset-load-feedback';
 
 import {connect} from 'react-redux';
 
@@ -58,7 +64,8 @@ class SoundLibrary extends React.PureComponent {
          * decodes.
          * @type {Promise<SoundPlayer>}
          */
-        this.playingSoundPromise = null;
+        this.playingSoundRequest = null;
+        this.decodedSoundPlayers = new Map();
 
         /**
          * function to call when the sound ends
@@ -76,21 +83,28 @@ class SoundLibrary extends React.PureComponent {
                 data: getSoundLibraryThumbnailData(data, this.props.isRtl)
             }));
         } else {
+            // eslint-disable-next-line react/no-did-mount-set-state
             this.setState({
                 data: getSoundLibraryThumbnailData(soundLibrary, this.props.isRtl)
             });
         }
 
         this.audioEngine = new AudioEngine(new SharedAudioContext());
-        this.playingSoundPromise = null;
+        this.playingSoundRequest = null;
     }
     componentWillUnmount () {
         this.stopPlayingSound();
+        this.decodedSoundPlayers.forEach(playerPromise => {
+            playerPromise.then(soundPlayer => soundPlayer.dispose()).catch(() => {});
+        });
+        this.decodedSoundPlayers.clear();
     }
     onStop () {
-        if (this.playingSoundPromise !== null) {
-            this.playingSoundPromise.then(soundPlayer =>
-                soundPlayer && soundPlayer.removeListener('stop', this.onStop));
+        if (this.playingSoundRequest !== null) {
+            const request = this.playingSoundRequest;
+            request.promise.then(soundPlayer =>
+                soundPlayer && soundPlayer.removeListener('stop', this.onStop)).catch(() => {});
+            this.playingSoundRequest = null;
             if (this.handleStop) this.handleStop();
         }
 
@@ -101,82 +115,108 @@ class SoundLibrary extends React.PureComponent {
     stopPlayingSound () {
         // Playback is queued, playing, or has played recently and finished
         // normally.
-        if (this.playingSoundPromise !== null) {
-            // Forcing sound to stop, so stop listening for sound ending:
-            this.playingSoundPromise.then(soundPlayer =>
-                soundPlayer && soundPlayer.removeListener('stop', this.onStop));
-            // Queued playback began playing before this method.
-            if (this.playingSoundPromise.isPlaying) {
-                // Fetch the player from the promise and stop playback soon.
-                this.playingSoundPromise.then(soundPlayer => {
-                    soundPlayer.stop();
-                });
-            } else {
-                // Fetch the player from the promise and stop immediately. Since
-                // the sound is not playing yet, this callback will be called
-                // immediately after the sound starts playback. Stopping it
-                // immediately will have the effect of no sound being played.
-                this.playingSoundPromise.then(soundPlayer => {
-                    if (soundPlayer) soundPlayer.stopImmediately();
-                });
-            }
-            // No further work should be performed on this promise and its
-            // soundPlayer.
-            this.playingSoundPromise = null;
+        if (this.playingSoundRequest !== null) {
+            const request = this.playingSoundRequest;
+            request.cancelled = true;
+            this.playingSoundRequest = null;
+            request.promise.then(soundPlayer => {
+                if (!soundPlayer) return;
+                soundPlayer.removeListener('stop', this.onStop);
+                if (request.isPlaying) soundPlayer.stop();
+            }).catch(() => {});
         }
     }
     handleItemMouseEnter (soundItem) {
         const md5ext = soundItem._md5;
         const idParts = md5ext.split('.');
         const md5 = idParts[0];
+        const extension = idParts[1];
         const vm = this.props.vm;
 
         // In case enter is called twice without a corresponding leave
         // inbetween, stop the last playback before queueing a new sound.
         this.stopPlayingSound();
 
-        // Save the promise so code to stop the sound may queue the stop
-        // instruction after the play instruction.
-        this.playingSoundPromise = vm.runtime.storage.load(vm.runtime.storage.AssetType.Sound, md5)
-            .then(soundAsset => {
-                if (soundAsset) {
-                    const sound = {
+        const request = {
+            cancelled: false,
+            isPlaying: false,
+            promise: null
+        };
+        let soundPlayerPromise = this.decodedSoundPlayers.get(md5ext);
+        if (!soundPlayerPromise) {
+            soundPlayerPromise = vm.runtime.storage.load(vm.runtime.storage.AssetType.Sound, md5, extension)
+                .then(soundAsset => {
+                    if (!soundAsset) throw new Error(`Sound preview asset not found: ${md5ext}`);
+                    return this.audioEngine.decodeSoundPlayer({
                         md5: md5ext,
                         name: soundItem.name,
                         format: soundItem.format,
                         data: soundAsset.data
-                    };
-                    return this.audioEngine.decodeSoundPlayer(sound)
-                        .then(soundPlayer => {
-                            soundPlayer.connect(this.audioEngine);
-                            // Play the sound. Playing the sound will always come before a
-                            // paired stop if the sound must stop early.
-                            soundPlayer.play();
-                            soundPlayer.addListener('stop', this.onStop);
-                            // Set that the sound is playing. This affects the type of stop
-                            // instruction given if the sound must stop early.
-                            if (this.playingSoundPromise !== null) {
-                                this.playingSoundPromise.isPlaying = true;
-                            }
-                            return soundPlayer;
-                        });
+                    });
+                })
+                .then(soundPlayer => {
+                    soundPlayer.connect(this.audioEngine);
+                    return soundPlayer;
+                })
+                .catch(error => {
+                    this.decodedSoundPlayers.delete(md5ext);
+                    throw error;
+                });
+            this.decodedSoundPlayers.set(md5ext, soundPlayerPromise);
+        }
+        request.promise = soundPlayerPromise
+            .then(soundPlayer => {
+                if (request.cancelled) return null;
+                soundPlayer.play();
+                soundPlayer.addListener('stop', this.onStop);
+                request.isPlaying = true;
+                return soundPlayer;
+            })
+            .catch(error => {
+                if (!request.cancelled) {
+                    log.error(error);
+                    if (this.playingSoundRequest === request) {
+                        this.playingSoundRequest = null;
+                        if (this.handleStop) this.handleStop();
+                    }
                 }
+                throw error;
             });
+        this.playingSoundRequest = request;
+        return request.promise;
     }
     handleItemMouseLeave () {
         this.stopPlayingSound();
     }
     handleItemSelected (soundItem) {
+        const vm = this.props.vm;
+        const md5ext = soundItem._md5;
+        const idParts = md5ext.split('.');
+        const loadId = startAssetLoad('sound', soundItem.name);
+        updateAssetLoad(loadId, 0, 2);
         const vmSound = {
             format: soundItem.format,
-            md5: soundItem._md5,
+            md5: md5ext,
             rate: soundItem.rate,
             sampleCount: soundItem.sampleCount,
             name: soundItem.name
         };
-        this.props.vm.addSound(vmSound).then(() => {
-            this.props.onNewSound();
-        });
+        vm.runtime.storage.load(vm.runtime.storage.AssetType.Sound, idParts[0], idParts[1])
+            .then(soundAsset => {
+                if (!soundAsset) throw new Error(`Sound asset not found: ${md5ext}`);
+                vmSound.asset = soundAsset;
+                updateAssetLoad(loadId, 1, 2);
+                return vm.addSound(vmSound);
+            })
+            .then(() => {
+                updateAssetLoad(loadId, 2, 2);
+                this.props.onNewSound();
+                finishAssetLoad(loadId, soundItem.name, 'success');
+            })
+            .catch(error => {
+                log.error(error);
+                finishAssetLoad(loadId, soundItem.name, 'error');
+            });
     }
     render () {
         return (

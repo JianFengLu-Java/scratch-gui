@@ -42,6 +42,7 @@ class LibraryComponent extends React.Component {
             'handleMouseEnter',
             'handleMouseLeave',
             'handlePlayingEnd',
+            'handlePreviewLoaded',
             'handleSelect',
             'handleFavorite',
             'handleTagClick',
@@ -50,6 +51,7 @@ class LibraryComponent extends React.Component {
         const favorites = this.readFavoritesFromStorage();
         this.state = {
             playingItem: null,
+            previewLoadingItem: null,
             filterQuery: '',
             selectedTag: ALL_TAG.tag,
             canDisplay: false,
@@ -125,6 +127,7 @@ class LibraryComponent extends React.Component {
             this.setState({
                 filterQuery: '',
                 playingItem: null,
+                previewLoadingItem: null,
                 selectedTag: tag.toLowerCase()
             });
         }
@@ -132,24 +135,38 @@ class LibraryComponent extends React.Component {
     handleMouseEnter (id) {
         // don't restart if mouse over already playing item
         if (this.props.onItemMouseEnter && this.state.playingItem !== id) {
-            this.props.onItemMouseEnter(this.getFilteredData()[id]);
+            const previewPromise = this.props.onItemMouseEnter(this.getFilteredData()[id]);
             this.setState({
-                playingItem: id
+                playingItem: id,
+                previewLoadingItem: previewPromise && typeof previewPromise.then === 'function' ? id : null
             });
+            if (previewPromise && typeof previewPromise.then === 'function') {
+                previewPromise.then(
+                    () => this.handlePreviewLoaded(id),
+                    () => this.handlePreviewLoaded(id)
+                );
+            }
         }
+    }
+    handlePreviewLoaded (id) {
+        this.setState(state => (state.previewLoadingItem === id ? {
+            previewLoadingItem: null
+        } : null));
     }
     handleMouseLeave (id) {
         if (this.props.onItemMouseLeave) {
             this.props.onItemMouseLeave(this.getFilteredData()[id]);
             this.setState({
-                playingItem: null
+                playingItem: null,
+                previewLoadingItem: null
             });
         }
     }
     handlePlayingEnd () {
         if (this.state.playingItem !== null) {
             this.setState({
-                playingItem: null
+                playingItem: null,
+                previewLoadingItem: null
             });
         }
     }
@@ -164,6 +181,7 @@ class LibraryComponent extends React.Component {
             this.setState({
                 filterQuery: event.target.value,
                 playingItem: null,
+                previewLoadingItem: null,
                 selectedTag: ALL_TAG.tag
             });
         }
@@ -329,6 +347,7 @@ class LibraryComponent extends React.Component {
                                 insetIconURL={dataItem.insetIconURL}
                                 internetConnectionRequired={dataItem.internetConnectionRequired}
                                 isPlaying={this.state.playingItem === index}
+                                isPreviewLoading={this.state.previewLoadingItem === index}
                                 key={dataItem.key || (
                                     typeof dataItem.name === 'string' ?
                                         dataItem.name :

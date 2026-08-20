@@ -25,8 +25,9 @@ import storage from './storage';
 import {ProjectUnsharedError, ProjectFetchError} from './tw-load-project-error';
 
 import VM from 'scratch-vm';
-import assetHost from './asset-host';
+import mirrorAssetHost from './asset-host';
 import {fetchProjectMeta} from './tw-project-meta-fetcher-hoc.jsx';
+import {isPlanetProjectRoute, loadPlanetProject} from './planet-project-loader';
 
 // TW: Temporary hack for project tokens
 const fetchProjectToken = async projectId => {
@@ -128,6 +129,10 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                         return r.arrayBuffer();
                     })
                     .then(buffer => ({data: buffer}));
+            } else if (isPlanetProjectRoute()) {
+                assetPromise = loadPlanetProject(projectId)
+                    .then(projectAsset => projectAsset ||
+                        storage.load(storage.AssetType.Project, '0', storage.DataFormat.JSON));
             } else {
                 // TW: Temporary hack for project tokens
                 assetPromise = fetchProjectToken(projectId)
@@ -208,7 +213,7 @@ const ProjectFetcherHOC = function (WrappedComponent) {
         vm: PropTypes.instanceOf(VM)
     };
     ProjectFetcherComponent.defaultProps = {
-        assetHost,
+        assetHost: mirrorAssetHost,
         projectHost: 'https://projects.scratch.mit.edu'
     };
 

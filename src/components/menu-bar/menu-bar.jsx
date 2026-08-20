@@ -11,6 +11,9 @@ import PropTypes from "prop-types";
 import bindAll from "lodash.bindall";
 import bowser from "bowser";
 import React from "react";
+import Modal from "@douyinfe/semi-ui/lib/es/modal";
+
+import "@douyinfe/semi-ui/lib/es/_base/base.css";
 
 import VM from "scratch-vm";
 
@@ -37,6 +40,10 @@ import ChangeUsername from "../../containers/tw-change-username.jsx";
 import CloudVariablesToggler from "../../containers/tw-cloud-toggler.jsx";
 import TWSaveStatus from "./tw-save-status.jsx";
 import TWNews from "./tw-news.jsx";
+import PlanetUserMenu from "./planet-user-menu.jsx";
+import PlanetAutosaveStatus from "./planet-autosave-status.jsx";
+import PlanetAutosaveManager from "../../containers/planet-autosave-manager.jsx";
+import { capturePlanetStageCover } from "../../lib/planet-stage-cover";
 
 import {
     openTipsLibrary,
@@ -220,7 +227,10 @@ class MenuBar extends React.Component {
         this.state = {
             workPublishOpen: false,
         };
+        this.returnHomeConfirmation = null;
         bindAll(this, [
+            "handleClickBrand",
+            "handleGenerateWorkCover",
             "handleClickNew",
             "handleClickNewWindow",
             "handleClickRemix",
@@ -246,6 +256,33 @@ class MenuBar extends React.Component {
     }
     componentWillUnmount() {
         document.removeEventListener("keydown", this.handleKeyPress);
+        if (this.returnHomeConfirmation) {
+            this.returnHomeConfirmation.destroy();
+            this.returnHomeConfirmation = null;
+        }
+    }
+    handleClickBrand() {
+        if (this.returnHomeConfirmation) return;
+
+        this.returnHomeConfirmation = Modal.confirm({
+            title: "返回首页？",
+            content: "确定要离开编辑器并返回编程宇宙首页吗？未保存的修改可能会丢失。",
+            centered: true,
+            okText: "确定返回",
+            cancelText: "继续创作",
+            maskClosable: false,
+            closeOnEsc: true,
+            zIndex: 10050,
+            onOk: () => {
+                window.location.assign("/");
+            },
+            afterClose: () => {
+                this.returnHomeConfirmation = null;
+            },
+        });
+    }
+    handleGenerateWorkCover(title) {
+        return capturePlanetStageCover(this.props.vm, title);
     }
     handleClickNew() {
         // if the project is dirty, and user owns the project, we will autosave.
@@ -517,10 +554,16 @@ class MenuBar extends React.Component {
         const menuBar = (
             <Box className={classNames(this.props.className, styles.menuBar)}>
                 <div className={styles.mainMenu}>
-                    <div className={styles.planetBrand} aria-label={APP_NAME}>
+                    <button
+                        aria-label={`${APP_NAME}，返回首页`}
+                        className={styles.planetBrand}
+                        title="返回编程宇宙首页"
+                        type="button"
+                        onClick={this.handleClickBrand}
+                    >
                         <img src={planetLogo} draggable={false} alt="" />
                         <span>{APP_NAME}</span>
-                    </div>
+                    </button>
                     <div className={styles.fileGroup}>
                         {this.props.errors.length > 0 && (
                             <div>
@@ -1156,6 +1199,12 @@ class MenuBar extends React.Component {
 
                 <div className={styles.accountInfoGroup}>
                     {!this.props.isPlayerOnly && (
+                        <PlanetAutosaveManager
+                            projectId={this.props.projectId}
+                            vm={this.props.vm}
+                        />
+                    )}
+                    {!this.props.isPlayerOnly && (
                         <Button
                             className={styles.uploadWorkButton}
                             onClick={this.handleOpenWorkPublish}
@@ -1164,9 +1213,9 @@ class MenuBar extends React.Component {
                             上传作品
                         </Button>
                     )}
-                    <TWSaveStatus
-                        showSaveFilePicker={this.props.showSaveFilePicker}
-                    />
+                    <PlanetAutosaveStatus />
+                    <TWSaveStatus showSaveFilePicker={this.props.showSaveFilePicker} />
+                    {!this.props.isPlayerOnly && <PlanetUserMenu />}
                 </div>
 
                 {aboutButton}
@@ -1183,7 +1232,9 @@ class MenuBar extends React.Component {
                             <WorkPublishModal
                                 onCancel={this.handleCloseWorkPublish}
                                 onExport={downloadProject}
+                                onGenerateCover={this.handleGenerateWorkCover}
                                 onSaveProjectTitle={this.handleSaveWorkProjectTitle}
+                                onSerializeProject={() => this.props.vm.saveProjectSb3()}
                                 projectId={this.props.projectId}
                                 projectTitle={this.props.projectTitle}
                             />

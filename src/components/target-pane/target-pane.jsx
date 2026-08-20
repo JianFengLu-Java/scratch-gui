@@ -6,6 +6,7 @@ import VM from 'scratch-vm';
 import SpriteLibrary from '../../containers/sprite-library.jsx';
 import SpriteSelectorComponent from '../sprite-selector/sprite-selector.jsx';
 import StageSelector from '../../containers/stage-selector.jsx';
+import AssetLoadingToast from './asset-loading-toast.jsx';
 import {STAGE_DISPLAY_SIZES} from '../../lib/layout-constants';
 
 import styles from './target-pane.css';
@@ -21,6 +22,7 @@ const TargetPane = ({
     fileInputRef,
     hoveredTarget,
     spriteLibraryVisible,
+    assetLoadNotice,
     onActivateBlocksTab,
     onChangeSpriteDirection,
     onChangeSpriteName,
@@ -51,6 +53,7 @@ const TargetPane = ({
         className={styles.targetPane}
         {...componentProps}
     >
+        <AssetLoadingToast notice={assetLoadNotice} />
 
         <SpriteSelectorComponent
             editingTarget={editingTarget}
@@ -126,6 +129,13 @@ const spriteShape = PropTypes.shape({
 });
 
 TargetPane.propTypes = {
+    assetLoadNotice: PropTypes.shape({
+        assetType: PropTypes.oneOf(['backdrop', 'sprite']).isRequired,
+        finished: PropTypes.number.isRequired,
+        name: PropTypes.string.isRequired,
+        status: PropTypes.oneOf(['loading', 'success', 'error']).isRequired,
+        total: PropTypes.number.isRequired
+    }),
     editingTarget: PropTypes.string,
     extensionLibraryVisible: PropTypes.bool,
     fileInputRef: PropTypes.func,

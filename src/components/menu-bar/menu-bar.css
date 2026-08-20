@@ -46,12 +46,24 @@
     display: flex;
     align-items: center;
     gap: .38rem;
+    height: 100%;
+    border: 0;
     padding: 0 .25rem 0 .6rem;
+    background: transparent;
     color: #fff;
+    cursor: pointer;
     font-size: .87rem;
     font-weight: 800;
+    font-family: inherit;
     letter-spacing: .02em;
     white-space: nowrap;
+}
+.planet-brand:hover {
+    background: $ui-black-transparent;
+}
+.planet-brand:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: -3px;
 }
 .planet-brand img {
     width: 1.55rem;

@@ -4,70 +4,138 @@ import React from 'react';
 
 import Box from '../box/box.jsx';
 import Modal from '../../containers/modal.jsx';
+import {
+    loadWorkPublishOptions,
+    publishCurrentProject,
+    saveCurrentProjectDraft
+} from '../../lib/planet-work-publisher.js';
 
 import styles from './work-publish-modal.css';
 
-const MOCK_STORAGE_KEY = 'pp:mock-work-submissions';
-const POPULAR_CATEGORIES = ['游戏', '动画', '互动故事', '艺术', '音乐', '工具', '教程'];
-const MAX_COVER_SIZE = 5 * 1024 * 1024;
+const MAX_COVER_SIZE = 10 * 1024 * 1024;
+const DRAFT_FIELDS = [
+    'name',
+    'categoryId',
+    'tagIds',
+    'summary',
+    'instructions',
+    'visibility',
+    'remixPermission',
+    'versionType',
+    'notifyFollowers',
+    'copyrightAccepted'
+];
 
-const readUser = () => {
-    try {
-        return JSON.parse(localStorage.getItem('pp-user')) || null;
-    } catch (e) {
-        return null;
-    }
-};
+const draftKey = projectId => `pp:work-publish-draft:${projectId || 'local-project'}`;
 
 const readDraft = projectId => {
     try {
-        const items = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY)) || [];
-        return items.find(item => item.projectId === projectId) || null;
-    } catch (e) {
+        return JSON.parse(localStorage.getItem(draftKey(projectId))) || null;
+    } catch (error) {
         return null;
     }
 };
 
-const storeDraft = draft => {
-    const stored = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY)) || [];
-    const next = stored.filter(item => item.projectId !== draft.projectId);
-    next.unshift(draft);
-    localStorage.setItem(MOCK_STORAGE_KEY, JSON.stringify(next.slice(0, 20)));
+const writeDraft = (projectId, state) => {
+    const draft = {
+        name: state.name,
+        categoryId: state.categoryId,
+        tagIds: state.tagIds,
+        summary: state.summary,
+        instructions: state.instructions,
+        visibility: state.visibility,
+        remixPermission: state.remixPermission,
+        versionType: state.versionType,
+        notifyFollowers: state.notifyFollowers,
+        copyrightAccepted: state.copyrightAccepted
+    };
+    localStorage.setItem(draftKey(projectId), JSON.stringify(draft));
 };
 
 class WorkPublishModal extends React.Component {
     constructor (props) {
         super(props);
         const draft = readDraft(props.projectId);
-        const currentUser = readUser();
         this.state = {
-            name: draft ? draft.name : props.projectTitle,
+            name: draft && draft.name ? draft.name : props.projectTitle,
             cover: null,
             coverPreview: '',
-            coverName: draft && draft.cover ? draft.cover.name : '',
-            categories: draft ? draft.categories : [],
-            keywords: draft ? draft.keywords : [],
-            keywordInput: '',
+            coverSource: '',
+            categoryId: draft ? draft.categoryId : '',
+            tagIds: draft && Array.isArray(draft.tagIds) ? draft.tagIds : [],
             summary: draft ? draft.summary : '',
             instructions: draft ? draft.instructions : '',
-            includeSelf: draft ? draft.includeSelf : true,
-            friendAccounts: draft ? draft.friendAccounts : [],
-            friendInput: '',
-            workshop: draft ? draft.workshop : '',
+            visibility: draft && draft.visibility ? draft.visibility : 'PUBLIC',
+            remixPermission: draft && draft.remixPermission ? draft.remixPermission : 'DOWNLOAD_AND_REMIX',
+            versionType: draft && draft.versionType ? draft.versionType : 'RELEASE',
+            notifyFollowers: draft ? draft.notifyFollowers !== false : true,
+            copyrightAccepted: draft ? draft.copyrightAccepted === true : false,
+            categories: [],
+            tags: [],
+            profile: null,
+            session: null,
+            loadingOptions: true,
             error: '',
             notice: '',
+            progress: 0,
+            progressLabel: '',
+            publishing: false,
+            savingDraft: false,
+            generatingCover: false,
             exporting: false,
-            currentUser
+            submitted: false
         };
+        this.mounted = false;
         this.coverInput = React.createRef();
         this.handleCoverChange = this.handleCoverChange.bind(this);
-        this.handleSave = this.handleSave.bind(this);
         this.handleExport = this.handleExport.bind(this);
-        this.handleKeywordKeyDown = this.handleKeywordKeyDown.bind(this);
-        this.handleFriendKeyDown = this.handleFriendKeyDown.bind(this);
+        this.handleSaveDraft = this.handleSaveDraft.bind(this);
+        this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleUseStage = this.handleUseStage.bind(this);
+        this.loadOptions = this.loadOptions.bind(this);
+    }
+    componentDidMount () {
+        this.mounted = true;
+        this.loadOptions();
+        this.handleUseStage(true);
+    }
+    componentDidUpdate (previousProps, previousState) {
+        if (this.state.submitted) return;
+        const changed = DRAFT_FIELDS.some(key => this.state[key] !== previousState[key]);
+        if (changed) {
+            try {
+                writeDraft(this.props.projectId, this.state);
+            } catch (error) {
+                // A local draft is a convenience only; publishing remains available.
+            }
+        }
     }
     componentWillUnmount () {
+        this.mounted = false;
         if (this.state.coverPreview) URL.revokeObjectURL(this.state.coverPreview);
+    }
+    async loadOptions () {
+        try {
+            const context = await loadWorkPublishOptions();
+            if (!this.mounted) return;
+            this.setState(state => ({
+                categories: context.categories || [],
+                tags: context.tags || [],
+                categoryId: state.categoryId || (context.categories[0] && context.categories[0].id) || '',
+                profile: context.profile,
+                session: context.session,
+                loadingOptions: false,
+                error: ''
+            }));
+        } catch (error) {
+            if (!this.mounted) return;
+            this.setState({
+                loadingOptions: false,
+                error: error.status === 401 ?
+                    '登录状态已失效，请返回首页重新登录后再发布。' :
+                    `发布配置加载失败：${error.message}`
+            });
+        }
     }
     handleCoverChange (event) {
         const file = event.target.files && event.target.files[0];
@@ -77,174 +145,180 @@ class WorkPublishModal extends React.Component {
             return;
         }
         if (file.size > MAX_COVER_SIZE) {
-            this.setState({error: '封面不能超过 5 MB。', notice: ''});
+            this.setState({error: '封面不能超过 10 MB。', notice: ''});
             return;
         }
         if (this.state.coverPreview) URL.revokeObjectURL(this.state.coverPreview);
         this.setState({
             cover: file,
             coverPreview: URL.createObjectURL(file),
-            coverName: file.name,
+            coverSource: 'upload',
             error: '',
-            notice: ''
+            notice: '已使用上传图片作为作品封面。'
+        });
+        event.target.value = '';
+    }
+    handleUseStage (automatic = false) {
+        if (this.state.generatingCover) return;
+        this.setState({
+            generatingCover: true,
+            error: '',
+            notice: automatic ? '正在从当前舞台生成封面…' : '正在重新截取当前舞台…'
+        });
+        Promise.resolve(this.props.onGenerateCover(this.state.name.trim() || this.props.projectTitle))
+            .then(file => {
+                if (!this.mounted) return;
+                if (this.state.coverPreview) URL.revokeObjectURL(this.state.coverPreview);
+                this.setState({
+                    cover: file,
+                    coverPreview: URL.createObjectURL(file),
+                    coverSource: 'stage',
+                    generatingCover: false,
+                    error: '',
+                    notice: '已使用当前舞台生成作品封面。'
+                });
+            })
+            .catch(error => {
+                if (!this.mounted) return;
+                this.setState({
+                    generatingCover: false,
+                    error: error.message || '生成舞台封面失败，请重试或上传图片。',
+                    notice: ''
+                });
+            });
+    }
+    toggleTag (tagId) {
+        this.setState(state => {
+            if (state.tagIds.includes(tagId)) {
+                return {tagIds: state.tagIds.filter(id => id !== tagId), error: '', notice: ''};
+            }
+            if (state.tagIds.length >= 5) {
+                return {error: '最多选择 5 个标签。', notice: ''};
+            }
+            return {tagIds: state.tagIds.concat(tagId), error: '', notice: ''};
         });
     }
-    toggleCategory (category) {
-        this.setState(state => ({
-            categories: state.categories.includes(category) ?
-                state.categories.filter(item => item !== category) :
-                state.categories.concat(category),
-            notice: ''
-        }));
-    }
-    addKeyword () {
-        const keyword = this.state.keywordInput.trim().replace(/^#/, '');
-        if (!keyword) return;
-        if (keyword.length > 20) {
-            this.setState({error: '单个关键词不能超过 20 个字符。'});
-            return;
-        }
-        if (this.state.keywords.includes(keyword)) {
-            this.setState({keywordInput: ''});
-            return;
-        }
-        if (this.state.keywords.length >= 8) {
-            this.setState({error: '最多添加 8 个自定义关键词。'});
-            return;
-        }
-        this.setState(state => ({
-            keywords: state.keywords.concat(keyword),
-            keywordInput: '',
-            error: '',
-            notice: ''
-        }));
-    }
-    handleKeywordKeyDown (event) {
-        if (event.key === 'Enter' || event.key === ',') {
-            event.preventDefault();
-            this.addKeyword();
-        }
-    }
-    addFriend () {
-        const account = this.state.friendInput.trim();
-        if (!/^\d{5,18}$/.test(account)) {
-            this.setState({error: '好友账号须为 5–18 位数字 UID。'});
-            return;
-        }
-        if (this.state.friendAccounts.includes(account)) {
-            this.setState({friendInput: ''});
-            return;
-        }
-        this.setState(state => ({
-            friendAccounts: state.friendAccounts.concat(account),
-            friendInput: '',
-            error: '',
-            notice: ''
-        }));
-    }
-    handleFriendKeyDown (event) {
-        if (event.key === 'Enter' || event.key === ',') {
-            event.preventDefault();
-            this.addFriend();
-        }
-    }
-    validate (complete) {
+    validate (forSubmission) {
         const name = this.state.name.trim();
         if (name.length < 2 || name.length > 40) return '作品名称需为 2–40 个字符。';
-        if (!complete) return '';
-        if (!this.state.cover && !this.state.coverName) return '请添加作品封面。';
-        if (this.state.categories.length === 0) return '请至少选择一个热门分类。';
+        if (!this.state.cover) return '请选择一张作品封面。';
+        if (!this.state.categoryId) return '请选择作品分类。';
         if (this.state.summary.trim().length < 10 || this.state.summary.trim().length > 500) {
             return '作品介绍需为 10–500 个字符。';
         }
         if (this.state.instructions.length > 1000) return '操作说明不能超过 1000 个字符。';
-        if (!this.state.includeSelf && this.state.friendAccounts.length === 0) return '请至少添加一位作者。';
+        if (forSubmission && !this.state.copyrightAccepted) return '请确认版权承诺后再提交审核。';
+        if (!this.state.session) return '发布会话尚未就绪，请稍后重试。';
         return '';
     }
-    buildDraft (status) {
-        const user = this.state.currentUser;
+    formValue () {
         return {
-            mock: true,
-            schemaVersion: 1,
-            projectId: this.props.projectId || 'local-project',
-            name: this.state.name.trim(),
-            cover: this.state.cover ? {
-                name: this.state.cover.name,
-                type: this.state.cover.type,
-                size: this.state.cover.size
-            } : (this.state.coverName ? {name: this.state.coverName} : null),
-            categories: this.state.categories,
-            keywords: this.state.keywords,
-            summary: this.state.summary.trim(),
-            instructions: this.state.instructions.trim(),
-            includeSelf: this.state.includeSelf,
-            friendAccounts: this.state.friendAccounts,
-            authors: [
-                ...(this.state.includeSelf ? [{
-                    type: 'SELF',
-                    id: user && user.id,
-                    account: user && user.uid,
-                    nickname: user && user.nickname
-                }] : []),
-                ...this.state.friendAccounts.map(account => ({type: 'FRIEND', account}))
-            ],
-            workshop: this.state.workshop.trim(),
-            status,
-            updatedAt: new Date().toISOString()
+            name: this.state.name,
+            categoryId: this.state.categoryId,
+            tagIds: this.state.tagIds,
+            summary: this.state.summary,
+            instructions: this.state.instructions,
+            visibility: this.state.visibility,
+            remixPermission: this.state.remixPermission,
+            versionType: this.state.versionType,
+            notifyFollowers: this.state.notifyFollowers,
+            copyrightAccepted: this.state.copyrightAccepted
         };
     }
-    persist (status, complete) {
-        const error = this.validate(complete);
+    async handleSubmit () {
+        const error = this.validate(true);
         if (error) {
             this.setState({error, notice: ''});
-            return null;
+            return;
         }
-        const draft = this.buildDraft(status);
+        this.props.onSaveProjectTitle(this.state.name.trim());
+        this.setState({publishing: true, error: '', notice: '', progress: 2, progressLabel: '准备发布'});
         try {
-            storeDraft(draft);
-            this.props.onSaveProjectTitle(draft.name);
-            return draft;
-        } catch (e) {
-            this.setState({error: '浏览器空间不足，暂时无法保存 mock 项目。', notice: ''});
-            return null;
+            const result = await publishCurrentProject({
+                coverFile: this.state.cover,
+                form: this.formValue(),
+                projectId: this.props.projectId,
+                projectTitle: this.props.projectTitle,
+                serializeProject: this.props.onSerializeProject,
+                session: this.state.session,
+                onProgress: (progressLabel, progress) => this.setState({progressLabel, progress})
+            });
+            localStorage.removeItem(draftKey(this.props.projectId));
+            this.setState({
+                publishing: false,
+                submitted: true,
+                notice: `作品已提交审核（作品编号 ${result.submission.id}）。`,
+                progress: 100,
+                progressLabel: '已进入审核队列'
+            });
+        } catch (publishError) {
+            this.setState({
+                publishing: false,
+                error: `${publishError.message} 请修正后重试，已完成的上传不会影响当前编辑内容。`,
+                notice: ''
+            });
         }
     }
-    handleSave () {
-        if (!this.persist('DRAFT', false)) return;
-        this.setState({error: '', notice: '项目资料已保存到本机（Mock）。'});
+    async handleSaveDraft () {
+        const error = this.validate(false);
+        if (error) {
+            this.setState({error, notice: ''});
+            return;
+        }
+        this.props.onSaveProjectTitle(this.state.name.trim());
+        this.setState({savingDraft: true, error: '', notice: '', progress: 2, progressLabel: '准备保存草稿'});
+        try {
+            const result = await saveCurrentProjectDraft({
+                coverFile: this.state.cover,
+                form: this.formValue(),
+                projectId: this.props.projectId,
+                projectTitle: this.props.projectTitle,
+                serializeProject: this.props.onSerializeProject,
+                session: this.state.session,
+                onProgress: (progressLabel, progress) => this.setState({progressLabel, progress})
+            });
+            writeDraft(result.projectId, this.state);
+            this.setState({
+                savingDraft: false,
+                notice: `云端草稿已保存（作品编号 ${result.work.id}），尚未提交审核。`,
+                progress: 100,
+                progressLabel: '云端草稿已保存'
+            });
+        } catch (saveError) {
+            this.setState({
+                savingDraft: false,
+                error: `${saveError.message} 请修正后重试，当前编辑内容不会丢失。`,
+                notice: ''
+            });
+        }
     }
     handleExport () {
-        if (!this.persist('EXPORTED', true)) return;
-        this.setState({exporting: true, error: '', notice: '正在导出 .sb3 作品文件…'});
+        this.setState({exporting: true, error: '', notice: '正在导出本地备份…'});
         Promise.resolve(this.props.onExport())
-            .then(() => {
-                this.setState({exporting: false, notice: '作品已导出，Mock 资料也已保存。'});
-            })
-            .catch(() => {
-                this.setState({exporting: false, error: '作品导出失败，请稍后再试。', notice: ''});
-            });
+            .then(() => this.setState({exporting: false, notice: '本地 .sb3 备份已导出。'}))
+            .catch(() => this.setState({exporting: false, error: '作品导出失败，请稍后再试。', notice: ''}));
     }
     render () {
-        const selfLabel = this.state.currentUser ?
-            `${this.state.currentUser.nickname}（${this.state.currentUser.uid}）` :
-            '当前登录账号';
+        const busy = this.state.publishing || this.state.savingDraft || this.state.exporting;
+        const profileLabel = this.state.profile ?
+            `${this.state.profile.nickname} · UID ${this.state.profile.uid}` : '正在确认登录账号';
         return (
             <Modal
                 className={styles.modalContent}
-                contentLabel="上传作品"
+                contentLabel="上传并提交作品"
                 headerClassName={styles.modalHeader}
                 id="workPublishModal"
                 overlayClassName={styles.modalOverlay}
-                onRequestClose={this.props.onCancel}
+                onRequestClose={busy ? () => {} : this.props.onCancel}
             >
                 <Box className={styles.body}>
                     <section className={styles.introRow}>
-                        <div className={styles.introIcon} aria-hidden="true">↗</div>
+                        <div className={styles.introIcon} aria-hidden="true">↑</div>
                         <div className={styles.introCopy}>
-                            <strong>分享你的创作</strong>
-                            <p>补充作品信息，保存项目或导出可以分享的 .sb3 文件。</p>
+                            <strong>上传当前项目并提交审核</strong>
+                            <p>可先保存云端草稿；准备完成后再提交审核，审核通过才会出现在社区。</p>
                         </div>
-                        <span className={styles.mockBadge}><i />本机草稿</span>
+                        <span className={styles.mockBadge}><i />发布服务</span>
                     </section>
                     <form className={styles.form} onSubmit={event => event.preventDefault()}>
                         <section className={`${styles.surfaceCard} ${styles.coverColumn}`}>
@@ -253,104 +327,121 @@ class WorkPublishModal extends React.Component {
                                 <small>必填</small>
                             </div>
                             <button
+                                aria-label={this.state.coverPreview ? '预览作品封面' : '选择作品封面'}
                                 className={styles.coverPicker}
+                                disabled={busy || this.state.generatingCover}
                                 type="button"
-                                onClick={() => this.coverInput.current.click()}
+                                onClick={() => !this.state.coverPreview && this.coverInput.current.click()}
                             >
                                 {this.state.coverPreview ? (
-                                    <img src={this.state.coverPreview} alt="作品封面预览" />
+                                    <img src={this.state.coverPreview} alt="待发布作品封面预览" />
                                 ) : (
                                     <span>
-                                        <b>＋</b>
-                                        <em>{this.state.coverName || '添加舞台封面'}</em>
-                                        <small>JPG / PNG / WebP · 最大 5 MB</small>
+                                        <b aria-hidden="true">{this.state.generatingCover ? '…' : '＋'}</b>
+                                        <em>{this.state.generatingCover ? '正在生成舞台封面' : '添加作品封面'}</em>
+                                        <small>使用当前舞台，或上传一张图片</small>
                                     </span>
                                 )}
                             </button>
+                            <div className={styles.coverActions}>
+                                <button
+                                    type="button"
+                                    className={styles.stageCoverButton}
+                                    disabled={busy || this.state.generatingCover}
+                                    onClick={() => this.handleUseStage(false)}
+                                >
+                                    <span aria-hidden="true">▣</span>
+                                    {this.state.coverSource === 'stage' ? '重新截取当前舞台' : '使用当前舞台'}
+                                </button>
+                                <button
+                                    type="button"
+                                    className={styles.uploadCoverButton}
+                                    disabled={busy || this.state.generatingCover}
+                                    onClick={() => this.coverInput.current.click()}
+                                >
+                                    上传图片
+                                </button>
+                            </div>
                             <input
                                 ref={this.coverInput}
                                 className={styles.hiddenInput}
                                 type="file"
                                 accept="image/jpeg,image/png,image/webp"
+                                disabled={busy}
                                 onChange={this.handleCoverChange}
                             />
-                            <label className={styles.field}>
-                                <span>圈子 / 工作室 <small>选填</small></span>
-                                <input
-                                    value={this.state.workshop}
-                                    maxLength={80}
-                                    placeholder="输入圈子或工作室名称"
-                                    onChange={event => this.setState({workshop: event.target.value, notice: ''})}
-                                />
-                            </label>
+                            <div className={styles.accountSummary}>
+                                <span>发布账号</span>
+                                <strong>{profileLabel}</strong>
+                            </div>
                         </section>
                         <section className={styles.fieldsColumn}>
                             <div className={styles.surfaceCard}>
                                 <div className={styles.sectionHeading}>
                                     <span>基本信息</span>
-                                    <small>名称与分类</small>
+                                    <small>名称、分类与标签</small>
                                 </div>
-                                <label className={styles.field}>
-                                    <span>作品名称</span>
-                                    <input
-                                        autoFocus
-                                        value={this.state.name}
-                                        maxLength={40}
-                                        placeholder="给作品起一个名字"
-                                        onChange={event => this.setState({name: event.target.value, notice: ''})}
-                                    />
-                                </label>
+                                <div className={styles.twoColumnGrid}>
+                                    <label className={styles.field}>
+                                        <span>作品名称</span>
+                                        <input
+                                            autoFocus
+                                            disabled={busy}
+                                            value={this.state.name}
+                                            maxLength={40}
+                                            placeholder="给作品起一个名字"
+                                            onChange={event => this.setState({name: event.target.value, notice: ''})}
+                                        />
+                                    </label>
+                                    <label className={styles.field}>
+                                        <span>作品分类</span>
+                                        <select
+                                            disabled={busy || this.state.loadingOptions}
+                                            value={this.state.categoryId}
+                                            onChange={event => this.setState({categoryId: event.target.value, notice: ''})}
+                                        >
+                                            <option value="">请选择分类</option>
+                                            {this.state.categories.map(category => (
+                                                <option key={category.id} value={category.id}>{category.name}</option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                </div>
                                 <fieldset className={styles.fieldset}>
-                                    <legend>热门分类 <small>可多选</small></legend>
-                                    <div className={styles.choiceList}>
-                                        {POPULAR_CATEGORIES.map(category => {
-                                            const active = this.state.categories.includes(category);
+                                    <legend>作品标签 <small>最多选择 5 个</small></legend>
+                                    <div className={styles.choiceList} aria-busy={this.state.loadingOptions}>
+                                        {this.state.tags.map(tag => {
+                                            const active = this.state.tagIds.includes(tag.id);
                                             return (
                                                 <button
-                                                    key={category}
+                                                    key={tag.id}
                                                     type="button"
+                                                    disabled={busy}
                                                     aria-pressed={active}
                                                     className={active ? styles.choiceActive : styles.choice}
-                                                    onClick={() => this.toggleCategory(category)}
+                                                    onClick={() => this.toggleTag(tag.id)}
                                                 >
                                                     {active && <span aria-hidden="true">✓</span>}
-                                                    {category}
+                                                    {tag.name}
                                                 </button>
                                             );
                                         })}
+                                        {!this.state.loadingOptions && this.state.tags.length === 0 && (
+                                            <span className={styles.emptyOptions}>暂时没有可用标签</span>
+                                        )}
                                     </div>
                                 </fieldset>
-                                <label className={styles.field}>
-                                    <span>自定义关键词 <small>按回车添加</small></span>
-                                    <div className={styles.tokenInput}>
-                                        {this.state.keywords.map(keyword => (
-                                            <button
-                                                key={keyword}
-                                                type="button"
-                                                title="移除关键词"
-                                                onClick={() => this.setState(state => ({keywords: state.keywords.filter(item => item !== keyword)}))}
-                                            >#{keyword} <span aria-hidden="true">×</span></button>
-                                        ))}
-                                        <input
-                                            value={this.state.keywordInput}
-                                            maxLength={20}
-                                            placeholder={this.state.keywords.length ? '继续添加关键词' : '例如：双人、像素风'}
-                                            onBlur={() => this.addKeyword()}
-                                            onChange={event => this.setState({keywordInput: event.target.value})}
-                                            onKeyDown={this.handleKeywordKeyDown}
-                                        />
-                                    </div>
-                                </label>
                             </div>
                             <div className={styles.surfaceCard}>
                                 <div className={styles.sectionHeading}>
                                     <span>作品说明</span>
-                                    <small>让大家快速了解玩法</small>
+                                    <small>让审核人员和学习者快速了解玩法</small>
                                 </div>
                                 <div className={styles.textareaGrid}>
                                     <label className={styles.field}>
                                         <span>作品介绍</span>
                                         <textarea
+                                            disabled={busy}
                                             value={this.state.summary}
                                             maxLength={500}
                                             placeholder="介绍玩法、故事或创作灵感（10–500 字）"
@@ -361,6 +452,7 @@ class WorkPublishModal extends React.Component {
                                     <label className={styles.field}>
                                         <span>操作说明 <small>选填</small></span>
                                         <textarea
+                                            disabled={busy}
                                             value={this.state.instructions}
                                             maxLength={1000}
                                             placeholder="例如：方向键移动，空格键跳跃"
@@ -370,56 +462,78 @@ class WorkPublishModal extends React.Component {
                                     </label>
                                 </div>
                             </div>
-                            <section className={`${styles.surfaceCard} ${styles.fieldset}`}>
+                            <div className={styles.surfaceCard}>
                                 <div className={styles.sectionHeading}>
-                                    <span>创作者</span>
-                                    <small>自己或好友账号</small>
+                                    <span>发布设置</span>
+                                    <small>可见范围、版本与源码权限</small>
                                 </div>
-                                <label className={styles.selfAuthor}>
-                                    <input
-                                        type="checkbox"
-                                        checked={this.state.includeSelf}
-                                        onChange={event => this.setState({includeSelf: event.target.checked, notice: ''})}
-                                    />
-                                    <span><b>添加自己</b><small>{selfLabel}</small></span>
-                                </label>
-                                <div className={styles.authorInput}>
-                                    {this.state.friendAccounts.map(account => (
-                                        <button
-                                            key={account}
-                                            type="button"
-                                            title="移除作者"
-                                            onClick={() => this.setState(state => ({friendAccounts: state.friendAccounts.filter(item => item !== account)}))}
-                                        >好友 {account} <span aria-hidden="true">×</span></button>
-                                    ))}
-                                    <input
-                                        value={this.state.friendInput}
-                                        inputMode="numeric"
-                                        maxLength={18}
-                                        placeholder="输入好友 UID，按回车添加"
-                                        onChange={event => this.setState({friendInput: event.target.value})}
-                                        onKeyDown={this.handleFriendKeyDown}
-                                    />
+                                <div className={styles.threeColumnGrid}>
+                                    <label className={styles.field}>
+                                        <span>可见范围</span>
+                                        <select disabled={busy} value={this.state.visibility} onChange={event => this.setState({visibility: event.target.value})}>
+                                            <option value="PUBLIC">公开</option>
+                                            <option value="PRIVATE">私密</option>
+                                        </select>
+                                    </label>
+                                    <label className={styles.field}>
+                                        <span>版本类型</span>
+                                        <select disabled={busy} value={this.state.versionType} onChange={event => this.setState({versionType: event.target.value})}>
+                                            <option value="RELEASE">正式版</option>
+                                            <option value="IMPROVED">改进版</option>
+                                            <option value="BETA">测试版</option>
+                                        </select>
+                                    </label>
+                                    <label className={styles.field}>
+                                        <span>源码权限</span>
+                                        <select disabled={busy} value={this.state.remixPermission} onChange={event => this.setState({remixPermission: event.target.value})}>
+                                            <option value="DOWNLOAD_AND_REMIX">允许下载与改编</option>
+                                            <option value="VIEW_SOURCE">仅查看源码</option>
+                                            <option value="NO_REMIX">不开放源码</option>
+                                        </select>
+                                    </label>
                                 </div>
-                            </section>
+                                <div className={styles.confirmations}>
+                                    <label>
+                                        <input type="checkbox" disabled={busy} checked={this.state.notifyFollowers} onChange={event => this.setState({notifyFollowers: event.target.checked})} />
+                                        <span><b>审核通过后通知关注者</b><small>仅公开作品会发送站内通知</small></span>
+                                    </label>
+                                    <label>
+                                        <input type="checkbox" disabled={busy} checked={this.state.copyrightAccepted} onChange={event => this.setState({copyrightAccepted: event.target.checked})} />
+                                        <span><b>我确认拥有发布与授权该作品的权利</b><small>提交后将进入人工审核，版权承诺会随版本留存</small></span>
+                                    </label>
+                                </div>
+                            </div>
                         </section>
                     </form>
-                    {(this.state.error || this.state.notice) && (
-                        <p className={this.state.error ? styles.error : styles.notice} role="status">
-                            {this.state.error || this.state.notice}
-                        </p>
+                    {(this.state.publishing || this.state.progress > 0) && (
+                        <section className={styles.progressPanel} aria-live="polite" aria-label="作品上传进度">
+                            <div><strong>{this.state.progressLabel}</strong><span>{this.state.progress}%</span></div>
+                            <progress max="100" value={this.state.progress}>{this.state.progress}%</progress>
+                        </section>
                     )}
+                    {this.state.error && <p className={styles.error} role="alert">{this.state.error}</p>}
+                    {this.state.notice && <p className={styles.notice} aria-live="polite">{this.state.notice}</p>}
                     <footer className={styles.footer}>
-                        <span><b>Mock 模式</b> · 项目信息仅保存在当前浏览器</span>
+                        <span>{busy ? '正在处理，请保持当前页面打开' : '保存草稿不会进入审核，也不会公开作品'}</span>
                         <div className={styles.footerActions}>
-                            <button type="button" className={styles.saveButton} onClick={this.handleSave}>保存项目</button>
+                            <button type="button" className={styles.saveButton} disabled={busy} onClick={this.handleExport}>
+                                {this.state.exporting ? '正在导出…' : '导出本地备份'}
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.draftButton}
+                                disabled={busy || this.state.loadingOptions || this.state.submitted || this.state.generatingCover}
+                                onClick={this.handleSaveDraft}
+                            >
+                                {this.state.savingDraft ? '正在保存草稿…' : '保存云端草稿'}
+                            </button>
                             <button
                                 type="button"
                                 className={styles.exportButton}
-                                disabled={this.state.exporting}
-                                onClick={this.handleExport}
+                                disabled={busy || this.state.loadingOptions || this.state.submitted || this.state.generatingCover}
+                                onClick={this.handleSubmit}
                             >
-                                {this.state.exporting ? '正在导出…' : '导出作品'}
+                                {this.state.publishing ? '正在上传并提交…' : this.state.submitted ? '已提交审核' : '上传并提交审核'}
                             </button>
                         </div>
                     </footer>
@@ -432,7 +546,9 @@ class WorkPublishModal extends React.Component {
 WorkPublishModal.propTypes = {
     onCancel: PropTypes.func.isRequired,
     onExport: PropTypes.func.isRequired,
+    onGenerateCover: PropTypes.func.isRequired,
     onSaveProjectTitle: PropTypes.func.isRequired,
+    onSerializeProject: PropTypes.func.isRequired,
     projectId: PropTypes.string,
     projectTitle: PropTypes.string
 };

@@ -1,0 +1,47 @@
+.status {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: 0.35rem;
+    color: rgba(255, 255, 255, 0.92);
+    display: inline-flex;
+    font-size: 0.75rem;
+    gap: 0.35rem;
+    min-height: 2rem;
+    padding: 0 0.5rem;
+    white-space: nowrap;
+}
+
+.status:disabled {
+    cursor: default;
+    opacity: 1;
+}
+
+.status:not(:disabled) {
+    cursor: pointer;
+}
+
+.status:not(:disabled):hover {
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.dot {
+    background: #9ca3af;
+    border-radius: 50%;
+    height: 0.45rem;
+    width: 0.45rem;
+}
+
+.saved .dot {
+    background: #6ee7b7;
+}
+
+.saving .dot,
+.pending .dot {
+    background: #fde68a;
+}
+
+.error .dot,
+.conflict .dot {
+    background: #fca5a5;
+}

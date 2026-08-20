@@ -17,6 +17,7 @@ $z-index-alerts: 490;
 $z-index-menu-bar: 491; /* menu-bar should go over monitors, alerts and tutorials */
 $z-index-loader: 490; /* behind menu-bar */
 $z-index-modal: 510;
+$z-index-toast: 520;
 
 $z-index-drag-layer: 1000;
 /* Block drag z-index: 1000; default 50 is overriden in blocks.css */

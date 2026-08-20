@@ -33,6 +33,32 @@
   width: 50%;
 }
 
+.loading-icon {
+    display: block;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: .1875rem solid $ui-white-transparent;
+    border-top-color: $ui-white;
+    border-radius: 50%;
+    box-sizing: border-box;
+    animation: sound-preview-spin .8s linear infinite;
+}
+
+@keyframes sound-preview-spin {
+    to {transform: rotate(360deg);}
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .loading-icon {
+        animation: sound-preview-pulse 1.2s ease-in-out infinite alternate;
+    }
+}
+
+@keyframes sound-preview-pulse {
+    from {opacity: .45;}
+    to {opacity: 1;}
+}
+
 [dir="ltr"] .play-button {
     right: .5rem;
 }

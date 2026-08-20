@@ -87,7 +87,21 @@ const base = {
             }
         },
         {
+            // Semi ships global class names (for example `.semi-modal`). Keep those classes global;
+            // the editor's default CSS rule below intentionally treats its own styles as modules.
+            test: /node_modules[\\/]@douyinfe[\\/].*\.css$/,
+            use: [{
+                loader: 'style-loader'
+            }, {
+                loader: 'css-loader',
+                options: {
+                    modules: false
+                }
+            }]
+        },
+        {
             test: /\.css$/,
+            exclude: /node_modules[\\/]@douyinfe[\\/]/,
             use: [{
                 loader: 'style-loader'
             }, {
