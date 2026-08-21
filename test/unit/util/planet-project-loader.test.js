@@ -17,7 +17,7 @@ describe('planet project loader', () => {
         global.location = originalLocation;
     });
 
-    test('recognizes LET Coding Univers editor routes', () => {
+    test('recognizes LET Coding Universe editor routes', () => {
         global.location = {pathname: '/create/81996335531687936/editor'};
         expect(isPlanetProjectRoute()).toBe(true);
         global.location = {pathname: '/create/editor'};
