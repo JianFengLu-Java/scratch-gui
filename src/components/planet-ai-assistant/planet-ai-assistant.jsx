@@ -207,6 +207,7 @@ class PlanetAiAssistant extends React.Component {
         } catch (error) {
             result = {status: 'FAILED', error: error.message};
         }
+        this.setToolState(toolCall.id, result.status.toLowerCase());
         try {
             const turn = await submitAssistantToolResults(
                 this.state.conversationId,
@@ -220,10 +221,8 @@ class PlanetAiAssistant extends React.Component {
                 }],
                 buildAssistantEditorContext(this.props.vm)
             );
-            this.setToolState(toolCall.id, result.status.toLowerCase());
             this.setState(previous => ({messages: [...previous.messages, turn.message]}));
         } catch (error) {
-            this.setToolState(toolCall.id, 'failed');
             this.setState({error: error.message});
         }
     }
