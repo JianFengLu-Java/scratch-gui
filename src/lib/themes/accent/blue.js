@@ -1,5 +1,5 @@
 const guiColors = {
-    // 编程星球：以深靛蓝作为统一的工作台主色，亮黄绿只用于品牌图标的高光。
+    // 编程宇宙：以深靛蓝作为统一的工作台主色，亮黄绿只用于品牌图标的高光。
     'motion-primary': '#4a61ff',
     'motion-primary-transparent': '#4a61ffe6',
     'motion-tertiary': '#3548d5',
