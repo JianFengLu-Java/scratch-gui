@@ -16,6 +16,7 @@ export const PLANET_COLLABORATION_CURSOR_EVENT = 'planet-collaboration-cursor';
 export const PLANET_COLLABORATION_INVITATION_EVENT = 'planet-collaboration-invitation';
 export const PLANET_COLLABORATION_CHAT_EVENT = 'planet-collaboration-chat';
 export const PLANET_COLLABORATION_CHAT_SEND_EVENT = 'planet-collaboration-chat-send';
+export const PLANET_COLLABORATION_PERMISSION_EVENT = 'planet-collaboration-permission';
 export const PLANET_ROLE_LOCK_STATUS_EVENT = 'planet-role-lock-status';
 
 export const collaborationEnabled = () => {
@@ -100,7 +101,7 @@ export class PlanetYjsCollaboration {
             if (this.replaced || event.code === SESSION_REPLACED_CLOSE_CODE) {
                 this.replaced = true;
                 this.status({status: 'replaced', message: '该账号已在另一个编辑器窗口接管协作会话'});
-                this.clearTransientUi();
+                this.clearTransientUi('session-replaced');
                 return;
             }
             this.status({status: 'disconnected', participantCount: 1});
@@ -140,13 +141,16 @@ export class PlanetYjsCollaboration {
                     userId: message.userId
                 }
             }));
+            window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_PERMISSION_EVENT, {
+                detail: message
+            }));
         } else if (message.type === 'session-replaced') {
             this.replaced = true;
             this.status({
                 status: 'replaced',
                 message: message.message || '该账号已在另一个编辑器窗口接管协作会话'
             });
-            this.clearTransientUi();
+            this.clearTransientUi('session-replaced');
         } else if (message.type === 'sync-request') {
             this.socket.send(Y.encodeStateAsUpdate(this.doc));
             this.socket.send(JSON.stringify({
@@ -173,6 +177,9 @@ export class PlanetYjsCollaboration {
             } else if (message.type === 'role-lock-denied' && message.lock && this.activeRole &&
                 message.lock.targetId === this.activeRole.targetId) {
                 this.roleLockGranted = false;
+            } else if (message.type === 'role-lock-denied' && this.activeRole &&
+                message.targetId === this.activeRole.targetId) {
+                this.roleLockGranted = false;
             }
             window.dispatchEvent(new CustomEvent(PLANET_ROLE_LOCK_STATUS_EVENT, {
                 detail: {...message, sessionId: this.sessionId}
@@ -181,6 +188,12 @@ export class PlanetYjsCollaboration {
                 !message.locks.some(lock => lock.targetId === this.activeRole.targetId)) {
                 this.flushRoleLock();
             }
+        } else if (message.type === 'collaboration-permissions-updated') {
+            this.roleLockGranted = false;
+            window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_PERMISSION_EVENT, {
+                detail: message
+            }));
+            this.flushRoleLock();
         } else if (message.type === 'cursor') {
             window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_CURSOR_EVENT, {
                 detail: message
@@ -258,9 +271,9 @@ export class PlanetYjsCollaboration {
         this.destroy();
     }
 
-    clearTransientUi () {
+    clearTransientUi (reason = 'closed') {
         window.dispatchEvent(new CustomEvent(PLANET_ROLE_LOCK_STATUS_EVENT, {
-            detail: {type: 'collaboration-destroyed'}
+            detail: {type: 'collaboration-destroyed', reason}
         }));
         window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_CHAT_EVENT, {
             detail: {type: 'collaboration-destroyed'}
@@ -311,6 +324,6 @@ export class PlanetYjsCollaboration {
         this.sendJson({type: 'leave'});
         if (this.socket) this.socket.close(1000, 'editor-closed');
         this.doc.destroy();
-        this.clearTransientUi();
+        this.clearTransientUi('closed');
     }
 }

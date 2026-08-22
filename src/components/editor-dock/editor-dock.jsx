@@ -11,6 +11,7 @@ import {
     PaintbrushIcon,
     PuzzleIcon,
     SearchIcon,
+    ShieldCheckIcon,
     SparklesIcon,
     UploadIcon
 } from 'lucide-react';
@@ -21,6 +22,8 @@ import {
     PLANET_AI_ASSISTANT_STATE_EVENT,
     PLANET_BACKPACK_STATE_EVENT,
     PLANET_BACKPACK_TOGGLE_EVENT,
+    PLANET_COLLABORATION_PERMISSIONS_READY_EVENT,
+    PLANET_COLLABORATION_PERMISSIONS_STATE_EVENT,
     PLANET_PROJECT_CHAT_READY_EVENT,
     PLANET_PROJECT_CHAT_STATE_EVENT,
     dispatchEditorResourceCommand
@@ -58,6 +61,7 @@ const EditorDock = ({
     const [chatState, setChatState] = React.useState({connected: false, open: false, unread: 0});
     const [aiOpen, setAiOpen] = React.useState(false);
     const [backpackOpen, setBackpackOpen] = React.useState(false);
+    const [permissionsOpen, setPermissionsOpen] = React.useState(false);
     const chatAvailable = isPlanetProjectRoute() && collaborationEnabled();
     const reducedMotion = typeof window !== 'undefined' &&
         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -89,6 +93,7 @@ const EditorDock = ({
         }));
         const handleAiState = event => setAiOpen(Boolean(event.detail && event.detail.open));
         const handleBackpackState = event => setBackpackOpen(Boolean(event.detail && event.detail.open));
+        const handlePermissionsState = event => setPermissionsOpen(Boolean(event.detail && event.detail.open));
         const handleOutsidePointer = event => {
             if (openMenu && dockRef.current && !dockRef.current.contains(event.target)) setOpenMenu(null);
         };
@@ -98,12 +103,14 @@ const EditorDock = ({
         window.addEventListener(PLANET_PROJECT_CHAT_STATE_EVENT, handleChatState);
         window.addEventListener(PLANET_AI_ASSISTANT_STATE_EVENT, handleAiState);
         window.addEventListener(PLANET_BACKPACK_STATE_EVENT, handleBackpackState);
+        window.addEventListener(PLANET_COLLABORATION_PERMISSIONS_STATE_EVENT, handlePermissionsState);
         document.addEventListener('pointerdown', handleOutsidePointer);
         document.addEventListener('keydown', handleEscape);
         return () => {
             window.removeEventListener(PLANET_PROJECT_CHAT_STATE_EVENT, handleChatState);
             window.removeEventListener(PLANET_AI_ASSISTANT_STATE_EVENT, handleAiState);
             window.removeEventListener(PLANET_BACKPACK_STATE_EVENT, handleBackpackState);
+            window.removeEventListener(PLANET_COLLABORATION_PERMISSIONS_STATE_EVENT, handlePermissionsState);
             document.removeEventListener('pointerdown', handleOutsidePointer);
             document.removeEventListener('keydown', handleEscape);
         };
@@ -161,6 +168,16 @@ const EditorDock = ({
     const toggleBackpack = () => {
         if (!hasBackpack) return;
         window.dispatchEvent(new CustomEvent(PLANET_BACKPACK_TOGGLE_EVENT));
+    };
+    const togglePermissions = () => {
+        if (!chatAvailable) return;
+        if (window.PlanetCollaborationPermissions) {
+            window.PlanetCollaborationPermissions.toggle();
+            return;
+        }
+        window.addEventListener(PLANET_COLLABORATION_PERMISSIONS_READY_EVENT, event => {
+            if (event.detail) event.detail.toggle();
+        }, {once: true});
     };
     const runResourceCommand = command => {
         setOpenMenu(null);
@@ -248,6 +265,14 @@ const EditorDock = ({
                     icon: MessageCircleIcon,
                     label: chatAvailable ? '项目聊天' : '项目聊天（需协作模式）',
                     onClick: toggleChat
+                })}
+                {renderDockButton({
+                    active: permissionsOpen,
+                    disabled: !chatAvailable,
+                    expanded: permissionsOpen,
+                    icon: ShieldCheckIcon,
+                    label: chatAvailable ? '角色权限' : '角色权限（需协作模式）',
+                    onClick: togglePermissions
                 })}
                 {renderDockButton({
                     icon: PuzzleIcon,
