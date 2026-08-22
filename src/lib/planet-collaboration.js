@@ -7,6 +7,8 @@ const API_CONTEXT_PATH = '/api/v1';
 const LOCAL_ORIGIN = 'planet-local-project';
 const REMOTE_ORIGIN = 'planet-remote-project';
 const MAX_UPDATE_BYTES = 8 * 1024 * 1024;
+const HEARTBEAT_INTERVAL_MS = 25000;
+const SESSION_REPLACED_CLOSE_CODE = 4001;
 
 export const PLANET_COLLABORATION_STATUS_EVENT = 'planet-collaboration-status';
 export const PLANET_COLLABORATION_REMOTE_APPLIED_EVENT = 'planet-collaboration-remote-applied';
@@ -54,6 +56,8 @@ export class PlanetYjsCollaboration {
         this.onStatus = onStatus;
         this.projectId = String(projectId);
         this.serializeProject = serializeProject;
+        this.handlePageHide = this.handlePageHide.bind(this);
+        window.addEventListener('pagehide', this.handlePageHide);
         this.localRevision = 0;
         this.doc = new Y.Doc();
         this.project = this.doc.getMap('project');
@@ -88,9 +92,17 @@ export class PlanetYjsCollaboration {
         const socket = new WebSocket(resolveWebSocketUrl(this.projectId, editorSession.sessionToken));
         this.socket = socket;
         socket.binaryType = 'arraybuffer';
+        socket.addEventListener('open', () => this.startHeartbeat(socket));
         socket.addEventListener('message', event => this.handleMessage(event));
-        socket.addEventListener('close', () => {
+        socket.addEventListener('close', event => {
+            this.stopHeartbeat();
             if (this.destroyed || this.socket !== socket) return;
+            if (this.replaced || event.code === SESSION_REPLACED_CLOSE_CODE) {
+                this.replaced = true;
+                this.status({status: 'replaced', message: '该账号已在另一个编辑器窗口接管协作会话'});
+                this.clearTransientUi();
+                return;
+            }
             this.status({status: 'disconnected', participantCount: 1});
         });
         socket.addEventListener('error', () => {
@@ -128,6 +140,13 @@ export class PlanetYjsCollaboration {
                     userId: message.userId
                 }
             }));
+        } else if (message.type === 'session-replaced') {
+            this.replaced = true;
+            this.status({
+                status: 'replaced',
+                message: message.message || '该账号已在另一个编辑器窗口接管协作会话'
+            });
+            this.clearTransientUi();
         } else if (message.type === 'sync-request') {
             this.socket.send(Y.encodeStateAsUpdate(this.doc));
             this.socket.send(JSON.stringify({
@@ -221,6 +240,33 @@ export class PlanetYjsCollaboration {
         this.socket.send(JSON.stringify(message));
     }
 
+    startHeartbeat (socket) {
+        this.stopHeartbeat();
+        this.heartbeatTimer = setInterval(() => {
+            if (!this.destroyed && this.socket === socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({type: 'ping'}));
+            }
+        }, HEARTBEAT_INTERVAL_MS);
+    }
+
+    stopHeartbeat () {
+        clearInterval(this.heartbeatTimer);
+        this.heartbeatTimer = null;
+    }
+
+    handlePageHide () {
+        this.destroy();
+    }
+
+    clearTransientUi () {
+        window.dispatchEvent(new CustomEvent(PLANET_ROLE_LOCK_STATUS_EVENT, {
+            detail: {type: 'collaboration-destroyed'}
+        }));
+        window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_CHAT_EVENT, {
+            detail: {type: 'collaboration-destroyed'}
+        }));
+    }
+
     async publishCurrentProject () {
         if (this.publishing || this.destroyed) {
             this.publishQueued = true;
@@ -254,17 +300,17 @@ export class PlanetYjsCollaboration {
     }
 
     destroy () {
+        if (this.destroyed) return;
+        window.removeEventListener('pagehide', this.handlePageHide);
+        this.stopHeartbeat();
         this.destroyed = true;
         if (this.activeRole) {
+            this.publishCursor(0, 0, false);
             this.sendJson({type: 'role-unlock', targetId: this.activeRole.targetId});
         }
-        if (this.socket) this.socket.close();
+        this.sendJson({type: 'leave'});
+        if (this.socket) this.socket.close(1000, 'editor-closed');
         this.doc.destroy();
-        window.dispatchEvent(new CustomEvent(PLANET_ROLE_LOCK_STATUS_EVENT, {
-            detail: {type: 'collaboration-destroyed'}
-        }));
-        window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_CHAT_EVENT, {
-            detail: {type: 'collaboration-destroyed'}
-        }));
+        this.clearTransientUi();
     }
 }

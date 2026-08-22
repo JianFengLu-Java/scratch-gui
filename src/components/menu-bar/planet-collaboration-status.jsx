@@ -43,13 +43,14 @@ class PlanetCollaborationStatus extends React.Component {
     label () {
         if (this.state.invitation) return '收到协作邀请';
         if (this.state.status === 'connected' && this.state.participantCount > 1) {
-            return `${this.state.participantCount} 个窗口在线`;
+            return `${this.state.participantCount} 人在线`;
         }
         return {
             applying: '正在同步协作',
             connected: '协作已连接',
             connecting: '正在连接协作',
             disconnected: '协作已断开',
+            replaced: '协作已在其他窗口接管',
             error: '协作不可用'
         }[this.state.status] || '协作不可用';
     }

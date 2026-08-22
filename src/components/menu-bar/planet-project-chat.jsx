@@ -168,7 +168,8 @@ class PlanetProjectChat extends React.Component {
     handleStatus (event) {
         const status = event.detail && event.detail.status;
         if (status === 'connected') this.setState({connected: true});
-        if (status === 'connecting' || status === 'disconnected' || status === 'error') {
+        if (status === 'connecting' || status === 'disconnected' || status === 'replaced' ||
+            status === 'error') {
             this.setState({connected: false});
         }
     }

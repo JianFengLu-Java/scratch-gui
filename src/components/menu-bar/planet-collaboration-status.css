@@ -42,6 +42,7 @@
 }
 
 .disconnected .dot,
+.replaced .dot,
 .error .dot {
     background: var(--tw-status-danger, #dc2626);
 }
