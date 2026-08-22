@@ -95,6 +95,9 @@
 }
 
 .publish-work-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     gap: .3rem;
     height: 1.9rem;
     border: 1px solid var(--tw-topbar-border);
@@ -104,7 +107,17 @@
     color: var(--tw-topbar-foreground);
     font-size: .7rem;
     font-weight: 550;
+    line-height: 1;
     box-shadow: none;
+}
+
+.publish-work-button > div {
+    display: inline-flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: .3rem;
+    line-height: 1;
 }
 
 .publish-work-button:hover {
@@ -118,8 +131,10 @@
 }
 
 .publish-work-button svg {
+    display: block;
     width: .9rem;
     height: .9rem;
+    flex: 0 0 auto;
     stroke-width: 1.75;
 }
 .inactive {
