@@ -3,9 +3,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {FormattedMessage, defineMessages} from 'react-intl';
 import {connect} from 'react-redux';
+import {CheckIcon, ChevronRightIcon, ExternalLinkIcon} from 'lucide-react';
 
-import check from './check.svg';
-import dropdownCaret from './dropdown-caret.svg';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {BLOCKS_CUSTOM, BLOCKS_DARK, BLOCKS_HIGH_CONTRAST, BLOCKS_THREE, Theme} from '../../lib/themes/index.js';
 import {openBlocksThemeMenu, blocksThemeMenuOpen, closeSettingsMenu} from '../../reducers/menus.js';
@@ -16,7 +15,6 @@ import threeIcon from './tw-blocks-three.svg';
 import highContrastIcon from './tw-blocks-high-contrast.svg';
 import darkIcon from './tw-blocks-dark.svg';
 import customIcon from './tw-blocks-custom.svg';
-import openLinkIcon from './tw-open-link.svg';
 
 const options = defineMessages({
     [BLOCKS_THREE]: {
@@ -63,22 +61,16 @@ ThemeIcon.propTypes = {
 const ThemeMenuItem = ({id, disabled, isSelected, onClick}) => (
     <MenuItem onClick={disabled ? null : onClick}>
         <div className={classNames(styles.option, {[styles.disabled]: disabled})}>
-            <img
-                width={15}
-                height={12}
+            <CheckIcon
                 className={classNames(styles.check, {[styles.selected]: isSelected})}
-                src={check}
-                draggable={false}
+                data-icon="inline-start"
             />
             <ThemeIcon id={id} />
             <FormattedMessage {...options[id]} />
             {id === BLOCKS_CUSTOM && (
-                <img
-                    width={20}
-                    height={20}
+                <ExternalLinkIcon
                     className={styles.openLink}
-                    src={openLinkIcon}
-                    draggable={false}
+                    data-icon="inline-end"
                 />
             )}
         </div>
@@ -113,10 +105,9 @@ const BlocksThemeMenu = ({
                     id="tw.menuBar.blockColors"
                 />
             </span>
-            <img
+            <ChevronRightIcon
                 className={styles.expandCaret}
-                src={dropdownCaret}
-                draggable={false}
+                data-icon="inline-end"
             />
         </div>
         <Submenu place={isRtl ? 'left' : 'right'}>

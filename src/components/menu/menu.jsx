@@ -4,6 +4,32 @@ import React from 'react';
 
 import styles from './menu.css';
 
+const getDirectMenuItems = menu => Array.from(menu.querySelectorAll('[role="menuitem"]'))
+    .filter(item => item.closest('[role="menu"]') === menu);
+
+const handleMenuKeyDown = event => {
+    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+    const items = getDirectMenuItems(event.currentTarget);
+    if (!items.length) return;
+    event.preventDefault();
+    const currentIndex = items.indexOf(document.activeElement);
+    let nextIndex;
+    if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = items.length - 1;
+    else if (event.key === 'ArrowDown') nextIndex = currentIndex < 0 ? 0 : (currentIndex + 1) % items.length;
+    else nextIndex = currentIndex < 0 ? items.length - 1 : (currentIndex - 1 + items.length) % items.length;
+    items[nextIndex].focus();
+};
+
+const handleMenuItemKeyDown = event => {
+    if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        const link = event.currentTarget.querySelector('a');
+        if (link) link.click();
+        else event.currentTarget.click();
+    }
+};
+
 const MenuComponent = ({
     className = '',
     children,
@@ -19,7 +45,9 @@ const MenuComponent = ({
                 [styles.right]: place === 'right'
             }
         )}
+        onKeyDown={handleMenuKeyDown}
         ref={componentRef}
+        role="menu"
     >
         {children}
     </ul>
@@ -48,7 +76,7 @@ const Submenu = ({children, className, place, ...props}) => (
             place={place}
             {...props}
         >
-            {children}
+            <MenuSection>{children}</MenuSection>
         </MenuComponent>
     </div>
 );
@@ -63,6 +91,7 @@ const MenuItem = ({
     children,
     className,
     expanded = false,
+    icon: Icon,
     onClick
 }) => (
     <li
@@ -73,7 +102,11 @@ const MenuItem = ({
             {[styles.expanded]: expanded}
         )}
         onClick={onClick}
+        onKeyDown={handleMenuItemKeyDown}
+        role="menuitem"
+        tabIndex="-1"
     >
+        {Icon ? <Icon data-icon="inline-start" /> : null}
         {children}
     </li>
 );
@@ -82,24 +115,22 @@ MenuItem.propTypes = {
     children: PropTypes.node,
     className: PropTypes.string,
     expanded: PropTypes.bool,
+    icon: PropTypes.oneOfType([PropTypes.func, PropTypes.object]),
     onClick: PropTypes.func
 };
 
-
-const addDividerClassToFirstChild = (child, id) => (
-    child && React.cloneElement(child, {
-        className: classNames(
-            child.className,
-            {[styles.menuSection]: id === 0}
-        ),
-        key: id
-    })
-);
-
 const MenuSection = ({children}) => (
-    <React.Fragment>{
-        React.Children.map(children, addDividerClassToFirstChild)
-    }</React.Fragment>
+    <li
+        className={styles.menuSection}
+        role="presentation"
+    >
+        <ul
+            className={styles.menuGroup}
+            role="group"
+        >
+            {children}
+        </ul>
+    </li>
 );
 
 MenuSection.propTypes = {

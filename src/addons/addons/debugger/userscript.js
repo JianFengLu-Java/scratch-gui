@@ -72,12 +72,17 @@ export default async function ({ addon, console, msg }) {
 
   const debuggerButtonOuter = document.createElement("div");
   debuggerButtonOuter.className = "sa-debugger-container";
-  const debuggerButton = document.createElement("div");
-  debuggerButton.className = addon.tab.scratchClass("button_outlined-button", "stage-header_stage-button");
+  const debuggerButton = Object.assign(document.createElement("button"), {
+    className: addon.tab.scratchClass("button_outlined-button", "stage-header_stage-button"),
+    type: "button",
+    title: msg("debug"),
+  });
+  debuggerButton.setAttribute("aria-label", msg("debug"));
   const debuggerButtonContent = document.createElement("div");
   debuggerButtonContent.className = addon.tab.scratchClass("button_content");
   const debuggerButtonImage = document.createElement("img");
   debuggerButtonImage.className = addon.tab.scratchClass("stage-header_stage-button-icon");
+  debuggerButtonImage.alt = "";
   debuggerButtonImage.draggable = false;
   debuggerButtonImage.src = addon.self.getResource("/icons/debug.svg") /* rewritten by pull.js */;
   debuggerButtonContent.appendChild(debuggerButtonImage);
@@ -92,18 +97,26 @@ export default async function ({ addon, console, msg }) {
   const interfaceContainer = Object.assign(document.createElement("div"), {
     className: addon.tab.scratchClass("card_card", { others: "sa-debugger-interface" }),
   });
+  interfaceContainer.setAttribute("role", "dialog");
+  interfaceContainer.setAttribute("aria-label", msg("debug"));
   const interfaceHeader = Object.assign(document.createElement("div"), {
     className: addon.tab.scratchClass("card_header-buttons"),
   });
-  const tabListElement = Object.assign(document.createElement("ul"), {
+  const tabListElement = Object.assign(document.createElement("div"), {
     className: "sa-debugger-tabs",
   });
+  tabListElement.setAttribute("role", "tablist");
+  tabListElement.setAttribute("aria-label", msg("debug"));
   const buttonContainerElement = Object.assign(document.createElement("div"), {
     className: addon.tab.scratchClass("card_header-buttons-right", { others: "sa-debugger-header-buttons" }),
   });
+  buttonContainerElement.setAttribute("role", "toolbar");
+  buttonContainerElement.setAttribute("aria-label", msg("debug"));
   const tabContentContainer = Object.assign(document.createElement("div"), {
     className: "sa-debugger-tab-content",
+    id: "sa-debugger-tab-panel",
   });
+  tabContentContainer.setAttribute("role", "tabpanel");
 
   const compilerWarning = document.createElement("a");
   compilerWarning.addEventListener("click", () => {
@@ -136,6 +149,7 @@ export default async function ({ addon, console, msg }) {
   let lastX = 0;
   let lastY = 0;
   const handleStartDrag = (e) => {
+    if (e.target.closest("button")) return;
     e.preventDefault();
     mouseOffsetX = e.clientX - interfaceContainer.offsetLeft;
     mouseOffsetY = e.clientY - interfaceContainer.offsetTop;
@@ -172,18 +186,19 @@ export default async function ({ addon, console, msg }) {
   document.body.append(interfaceContainer);
 
   const createHeaderButton = ({ text, icon, description }) => {
-    const button = Object.assign(document.createElement("div"), {
-      className: addon.tab.scratchClass("card_shrink-expand-button"),
-      draggable: false,
+    const button = Object.assign(document.createElement("button"), {
+      className: "sa-debugger-header-button",
+      type: "button",
+      title: description || text,
     });
-    if (description) {
-      button.title = description;
-    }
-    const imageElement = Object.assign(document.createElement("img"), {
-      src: icon,
-      draggable: false,
+    button.setAttribute("aria-label", text);
+    const imageElement = Object.assign(document.createElement("span"), {
+      className: "sa-debugger-icon",
     });
+    imageElement.setAttribute("aria-hidden", "true");
+    imageElement.style.setProperty("--sa-debugger-icon", `url("${icon}")`);
     const textElement = Object.assign(document.createElement("span"), {
+      className: "sa-debugger-sr-only",
       textContent: text,
     });
     button.appendChild(imageElement);
@@ -195,12 +210,22 @@ export default async function ({ addon, console, msg }) {
     };
   };
 
+  let nextTabId = 0;
   const createHeaderTab = ({ text, icon }) => {
-    const tab = document.createElement("li");
-    const imageElement = Object.assign(addon.tab.recolorable(), {
-      src: icon,
-      draggable: false,
+    const tab = Object.assign(document.createElement("button"), {
+      className: "sa-debugger-tab",
+      id: `sa-debugger-tab-${nextTabId++}`,
+      tabIndex: -1,
+      type: "button",
     });
+    tab.setAttribute("role", "tab");
+    tab.setAttribute("aria-controls", tabContentContainer.id);
+    tab.setAttribute("aria-selected", "false");
+    const imageElement = Object.assign(document.createElement("span"), {
+      className: "sa-debugger-icon",
+    });
+    imageElement.setAttribute("aria-hidden", "true");
+    imageElement.style.setProperty("--sa-debugger-icon", `url("${icon}")`);
     const textElement = Object.assign(document.createElement("span"), {
       textContent: text,
     });
@@ -229,6 +254,7 @@ export default async function ({ addon, console, msg }) {
     text: msg("close"),
     icon: addon.self.getResource("/icons/close.svg") /* rewritten by pull.js */,
   });
+  closeButton.element.classList.add("sa-debugger-close");
   closeButton.element.addEventListener("click", () => setInterfaceVisible(false));
 
   const originalStep = vm.runtime._step;
@@ -534,9 +560,14 @@ export default async function ({ addon, console, msg }) {
     if (activeTab) {
       activeTab.hide();
       activeTab.tab.element.classList.remove(selectedClass);
+      activeTab.tab.element.setAttribute("aria-selected", "false");
+      activeTab.tab.element.tabIndex = -1;
     }
     tab.tab.element.classList.add(selectedClass);
+    tab.tab.element.setAttribute("aria-selected", "true");
+    tab.tab.element.tabIndex = 0;
     activeTab = tab;
+    tabContentContainer.setAttribute("aria-labelledby", tab.tab.element.id);
 
     removeAllChildren(tabContentContainer);
     tabContentContainer.appendChild(tab.content);
@@ -558,6 +589,26 @@ export default async function ({ addon, console, msg }) {
     });
     tabListElement.appendChild(tab.tab.element);
   }
+  tabListElement.addEventListener("keydown", (event) => {
+    const currentIndex = allTabs.indexOf(activeTab);
+    const isRtl = addon.tab.direction === "rtl";
+    let nextIndex = currentIndex;
+    if (event.key === "ArrowRight") {
+      nextIndex += isRtl ? -1 : 1;
+    } else if (event.key === "ArrowLeft") {
+      nextIndex += isRtl ? 1 : -1;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = allTabs.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    nextIndex = (nextIndex + allTabs.length) % allTabs.length;
+    setActiveTab(allTabs[nextIndex]);
+    allTabs[nextIndex].tab.element.focus();
+  });
   setActiveTab(allTabs[0]);
 
   addSmallStageClass();

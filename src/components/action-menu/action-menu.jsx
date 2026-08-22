@@ -102,6 +102,7 @@ class ActionMenu extends React.Component {
     render () {
         const {
             className,
+            icon: MainIcon,
             img: mainImg,
             title: mainTitle,
             moreButtons,
@@ -125,13 +126,21 @@ class ActionMenu extends React.Component {
                     data-for={this.mainTooltipId}
                     data-tip={mainTitle}
                     ref={this.setButtonRef}
+                    type="button"
                     onClick={this.clickDelayer(onClick)}
                 >
-                    <img
-                        className={styles.mainIcon}
-                        draggable={false}
-                        src={mainImg}
-                    />
+                    {MainIcon ? (
+                        <MainIcon
+                            aria-hidden="true"
+                            data-icon="inline-start"
+                        />
+                    ) : (
+                        <img
+                            className={styles.mainIcon}
+                            draggable={false}
+                            src={mainImg}
+                        />
+                    )}
                 </button>
                 <ReactTooltip
                     className={styles.tooltip}
@@ -141,7 +150,7 @@ class ActionMenu extends React.Component {
                 />
                 <div className={styles.moreButtonsOuter}>
                     <div className={styles.moreButtons}>
-                        {(moreButtons || []).map(({img, title, onClick: handleClick,
+                        {(moreButtons || []).map(({icon: MoreIcon, img, title, onClick: handleClick,
                             fileAccept, fileChange, fileInput, fileMultiple}, keyId) => {
                             const isComingSoon = !handleClick;
                             const hasFileInput = fileInput;
@@ -155,13 +164,21 @@ class ActionMenu extends React.Component {
                                         })}
                                         data-for={tooltipId}
                                         data-tip={title}
+                                        type="button"
                                         onClick={hasFileInput ? handleClick : this.clickDelayer(handleClick)}
                                     >
-                                        <img
-                                            className={styles.moreIcon}
-                                            draggable={false}
-                                            src={img}
-                                        />
+                                        {MoreIcon ? (
+                                            <MoreIcon
+                                                aria-hidden="true"
+                                                data-icon="inline-start"
+                                            />
+                                        ) : (
+                                            <img
+                                                className={styles.moreIcon}
+                                                draggable={false}
+                                                src={img}
+                                            />
+                                        )}
                                         {hasFileInput ? (
                                             <input
                                                 accept={fileAccept}
@@ -192,8 +209,10 @@ class ActionMenu extends React.Component {
 
 ActionMenu.propTypes = {
     className: PropTypes.string,
+    icon: PropTypes.elementType,
     img: PropTypes.string,
     moreButtons: PropTypes.arrayOf(PropTypes.shape({
+        icon: PropTypes.elementType,
         img: PropTypes.string,
         title: PropTypes.node.isRequired,
         onClick: PropTypes.func, // Optional, "coming soon" if no callback provided

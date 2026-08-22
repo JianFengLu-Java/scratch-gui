@@ -9,41 +9,43 @@ can set a width for example or what it should do in a flex box (eg. grow).
 */
 
 .title-field {
-    border: 1px dashed $ui-black-transparent;
-    border-radius: $form-radius;
-    -webkit-border-radius: $form-radius;
-    -moz-border-radius: $form-radius;
-    background-color: $project-title-inactive;
+    border: 1px solid var(--tw-topbar-border, $ui-black-transparent);
+    border-radius: .45rem;
+    -webkit-border-radius: .45rem;
+    -moz-border-radius: .45rem;
+    background-color: var(--tw-topbar-input, var(--tw-topbar-background, $menu-bar-background));
     background-clip: padding-box;
     -webkit-background-clip: padding-box;
-    height: auto;
-    padding: .5rem;
+    height: 2rem;
+    padding: .4rem .625rem;
+    box-sizing: border-box;
+    box-shadow: 0 1px 2px var(--tw-topbar-shadow, transparent);
 }
 
 .title-field {
-    color: $menu-bar-foreground;
-    font-weight: bold;
-    font-size: .8rem;
+    color: var(--tw-topbar-foreground, $menu-bar-foreground);
+    font-weight: 500;
+    font-size: .75rem;
 }
 
 .title-field::placeholder {
-    color: $menu-bar-foreground;
-    opacity: 0.8;
+    color: var(--tw-topbar-muted-foreground, $menu-bar-foreground);
+    opacity: 1;
     font-weight: normal;
-    font-size: .8rem;
-    font-style: italic;
+    font-size: .75rem;
+    font-style: normal;
 }
 
 .title-field:hover {
-    background-color: $project-title-hover;
-    border-color: $ui-black-transparent; /* dont use hover border from custom input */
+    background-color: var(--tw-topbar-background, $project-title-hover);
+    border-color: var(--tw-topbar-ring, $ui-black-transparent);
 }
 
 .title-field:focus {
     outline:none;
-    border: 1px solid $ui-transparent;
-    -webkit-box-shadow: 0 0 0 calc($space * .5) $ui-white-transparent-default;
-    box-shadow: 0 0 0 calc($space * .5) $ui-white-transparent-default;
-    background-color: $ui-white;
-    color: $text-primary;
+    border: 1px solid var(--tw-topbar-ring, $ui-black-transparent);
+    -webkit-box-shadow: 0 0 0 2px var(--tw-topbar-background, $ui-white), 0 0 0 4px var(--tw-topbar-ring, $ui-black-transparent);
+    box-shadow: 0 0 0 2px var(--tw-topbar-background, $ui-white), 0 0 0 4px var(--tw-topbar-ring, $ui-black-transparent);
+    background-color: var(--tw-topbar-background, $ui-white);
+    color: var(--tw-topbar-foreground, $text-primary);
 }

@@ -10,6 +10,7 @@ class MenuLabel extends React.Component {
         super(props);
         bindAll(this, [
             'handleClick',
+            'handleKeyDown',
             'handleMouseUp',
             'menuRef'
         ]);
@@ -18,7 +19,14 @@ class MenuLabel extends React.Component {
         if (this.props.open) this.addListeners();
     }
     componentDidUpdate (prevProps) {
-        if (this.props.open && !prevProps.open) this.addListeners();
+        if (this.props.open && !prevProps.open) {
+            this.addListeners();
+            if (this.openedFromKeyboard) {
+                this.openedFromKeyboard = false;
+                const firstItem = this.menuEl.querySelector('[role="menuitem"]');
+                if (firstItem) firstItem.focus();
+            }
+        }
         if (!this.props.open && prevProps.open) this.removeListeners();
     }
     componentWillUnmount () {
@@ -47,17 +55,41 @@ class MenuLabel extends React.Component {
             this.props.onClose();
         }
     }
+    handleKeyDown (e) {
+        if (e.key === 'Escape' && this.props.open) {
+            e.preventDefault();
+            this.props.onClose();
+            this.menuEl.focus();
+            return;
+        }
+        if (e.target !== this.menuEl) return;
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+            this.openedFromKeyboard = true;
+            e.preventDefault();
+            if (this.props.open) {
+                const firstItem = this.menuEl.querySelector('[role="menuitem"]');
+                if (firstItem) firstItem.focus();
+            } else {
+                this.props.onOpen();
+            }
+        }
+    }
     menuRef (c) {
         this.menuEl = c;
     }
     render () {
         return (
             <div
+                aria-expanded={this.props.open}
+                aria-haspopup="menu"
                 className={classNames(styles.menuBarItem, styles.hoverable, {
                     [styles.active]: this.props.open
                 })}
                 onClick={this.handleClick}
+                onKeyDown={this.handleKeyDown}
                 ref={this.menuRef}
+                role="button"
+                tabIndex="0"
             >
                 {this.props.children}
             </div>

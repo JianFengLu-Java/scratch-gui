@@ -1,45 +1,27 @@
 @import "../../css/z-index.css";
 
 .root {
-    --ai-surface: var(--ui-modal-background, #fff);
-    --ai-surface-muted: var(--ui-secondary, #f5f5f5);
-    --ai-surface-hover: var(--ui-tertiary, #ececec);
-    --ai-foreground: var(--text-primary, #18181b);
-    --ai-muted: var(--ui-modal-foreground, #71717a);
-    --ai-border: var(--ui-tertiary, #e4e4e7);
-    --ai-accent: var(--looks-secondary, #855cd6);
-    --ai-accent-foreground: var(--ui-white, #fff);
+    --ai-surface: var(--tw-dialog-background);
+    --ai-surface-muted: var(--tw-dialog-muted);
+    --ai-surface-hover: var(--tw-dialog-accent);
+    --ai-foreground: var(--tw-dialog-foreground);
+    --ai-muted: var(--tw-dialog-muted-foreground);
+    --ai-border: var(--tw-dialog-border);
+    --ai-accent: var(--tw-dialog-foreground);
+    --ai-accent-foreground: var(--tw-dialog-background);
     position: fixed;
-    right: 18px;
-    bottom: 18px;
+    right: 1rem;
+    bottom: 4.8rem;
     z-index: $z-index-modal;
     color: var(--ai-foreground);
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.launcher {
-    display: inline-flex;
-    align-items: center;
-    min-height: 42px;
-    padding: 0 16px;
-    gap: 8px;
-    border: 1px solid color-mix(in srgb, var(--ai-accent) 75%, transparent);
-    border-radius: 13px;
-    background: var(--ai-accent);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    color: var(--ai-accent-foreground);
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.launcher:hover {
-    filter: brightness(1.06);
-}
-
-.launcher:focus-visible,
 .panel button:focus-visible,
-.panel textarea:focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--ai-accent) 35%, transparent);
+.panel textarea:focus-visible,
+.panel-with-history button:focus-visible,
+.panel-with-history textarea:focus-visible {
+    outline: 2px solid var(--tw-dialog-ring);
     outline-offset: 2px;
 }
 
@@ -47,17 +29,18 @@
 .panel-with-history {
     position: relative;
     display: flex;
-    width: min(480px, calc(100vw - 36px));
-    height: min(620px, calc(100vh - 88px));
+    width: min(28rem, calc(100vw - 2rem));
+    height: min(36rem, calc(100vh - 6.5rem));
     overflow: hidden;
     border: 1px solid var(--ai-border);
-    border-radius: 16px;
+    border-radius: .75rem;
     background: var(--ai-surface);
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.26), 0 2px 8px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 1.5rem 4rem -1.25rem var(--tw-dialog-shadow),
+        0 .25rem .75rem var(--tw-dialog-shadow);
 }
 
 .panel-with-history {
-    width: min(720px, calc(100vw - 36px));
+    width: min(42rem, calc(100vw - 2rem));
 }
 
 .chat-column {
@@ -71,9 +54,16 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    padding: 16px 18px 13px;
+    padding: .875rem 1rem .75rem;
     gap: 16px;
     border-bottom: 1px solid var(--ai-border);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+
+.dragging .header {
+    cursor: grabbing;
 }
 
 .header h2,
@@ -102,7 +92,9 @@
 
 .spark {
     color: var(--ai-accent);
-    font-size: 18px;
+    width: 1rem;
+    height: 1rem;
+    stroke-width: 1.75;
 }
 
 .icon-button,
@@ -114,9 +106,14 @@
     border-radius: 9px;
     background: transparent;
     color: var(--ai-muted);
-    font-size: 20px;
-    line-height: 1;
     cursor: pointer;
+}
+
+.icon-button svg,
+.icon-button-active svg {
+    width: 1rem;
+    height: 1rem;
+    stroke-width: 1.75;
 }
 
 .icon-button:hover,
@@ -141,8 +138,8 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #22c55e;
-    box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 18%, transparent);
+    background: var(--tw-status-success);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tw-status-success) 18%, transparent);
 }
 
 .messages {
@@ -186,7 +183,7 @@
 .message-body {
     padding: 10px 12px;
     border: 1px solid var(--ai-border);
-    border-radius: 12px;
+    border-radius: .5rem;
     background: var(--ai-surface-muted);
     color: var(--ai-foreground);
     font-size: 13px;
@@ -207,9 +204,9 @@
     padding: 12px;
     gap: 7px;
     border: 1px solid var(--ai-border);
-    border-radius: 13px;
+    border-radius: .625rem;
     background: var(--ai-surface);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+    box-shadow: 0 1px 2px var(--tw-dialog-shadow);
 }
 
 .tool-card strong {
@@ -239,7 +236,7 @@
 .secondary-button {
     min-height: 32px;
     padding: 0 12px;
-    border-radius: 9px;
+    border-radius: .375rem;
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
@@ -275,13 +272,13 @@
     padding: 7px 7px 7px 12px;
     gap: 8px;
     border: 1px solid var(--ai-border);
-    border-radius: 13px;
+    border-radius: .5rem;
     background: var(--ai-surface-muted);
 }
 
 .composer:focus-within {
-    border-color: var(--ai-accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--ai-accent) 16%, transparent);
+    border-color: var(--tw-dialog-ring);
+    box-shadow: 0 0 0 3px var(--tw-dialog-accent);
 }
 
 .composer textarea {
@@ -303,12 +300,16 @@
     height: 32px;
     padding: 0;
     border: 1px solid var(--ai-accent);
-    border-radius: 9px;
+    border-radius: .375rem;
     background: var(--ai-accent);
     color: var(--ai-accent-foreground);
-    font-size: 18px;
-    font-weight: 700;
     cursor: pointer;
+}
+
+.send-button svg {
+    width: .875rem;
+    height: .875rem;
+    stroke-width: 2;
 }
 
 .disclaimer {
@@ -321,10 +322,10 @@
 .error {
     margin: 0 14px 9px;
     padding: 8px 10px;
-    border: 1px solid color-mix(in srgb, #ef4444 35%, transparent);
+    border: 1px solid color-mix(in srgb, var(--tw-status-danger) 35%, transparent);
     border-radius: 9px;
-    background: color-mix(in srgb, #ef4444 9%, var(--ai-surface));
-    color: #dc2626;
+    background: color-mix(in srgb, var(--tw-status-danger) 9%, var(--ai-surface));
+    color: var(--tw-status-danger);
     font-size: 11px;
 }
 
@@ -345,9 +346,11 @@
     text-align: center;
 }
 
-.empty-state > span {
+.empty-state > svg {
     color: var(--ai-accent);
-    font-size: 28px;
+    width: 1.5rem;
+    height: 1.5rem;
+    stroke-width: 1.5;
 }
 
 .empty-state strong {
@@ -380,6 +383,9 @@
 }
 
 .history-header button {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
     padding: 5px 7px;
     border: 1px solid var(--ai-border);
     border-radius: 8px;
@@ -387,6 +393,12 @@
     color: var(--ai-foreground);
     font-size: 10px;
     cursor: pointer;
+}
+
+.history-header button svg {
+    width: .75rem;
+    height: .75rem;
+    stroke-width: 2;
 }
 
 .history-list {
@@ -442,13 +454,13 @@
 @media (max-width: 760px) {
     .root {
         right: 8px;
-        bottom: 8px;
+        bottom: 4.1rem;
     }
 
     .panel,
     .panel-with-history {
         width: calc(100vw - 16px);
-        height: calc(100vh - 64px);
+        height: calc(100vh - 5rem);
     }
 
     .history {
@@ -464,7 +476,7 @@
 
 @media (prefers-reduced-motion: reduce) {
     .panel,
-    .launcher {
+    .panel-with-history {
         transition: none;
     }
 }

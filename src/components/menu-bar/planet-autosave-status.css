@@ -1,12 +1,15 @@
 .status {
     align-items: center;
     background: transparent;
-    border: 0;
-    border-radius: 0.35rem;
-    color: rgba(255, 255, 255, 0.92);
+    border: 1px solid transparent;
+    border-radius: .4rem;
+    color: var(--tw-topbar-muted-foreground, #737373);
     display: inline-flex;
     font-size: 0.75rem;
+    font-weight: 500;
     gap: 0.35rem;
+    height: 2rem;
+    line-height: 1;
     min-height: 2rem;
     padding: 0 0.5rem;
     white-space: nowrap;
@@ -22,26 +25,33 @@
 }
 
 .status:not(:disabled):hover {
-    background: rgba(0, 0, 0, 0.12);
+    background: var(--tw-topbar-accent, #f5f5f5);
+    border-color: var(--tw-topbar-border, #e5e5e5);
+    color: var(--tw-topbar-foreground, #171717);
+}
+
+.status:not(:disabled):focus-visible {
+    border-color: var(--tw-topbar-ring, #a3a3a3);
+    outline: none;
 }
 
 .dot {
-    background: #9ca3af;
+    background: var(--tw-status-neutral, #a3a3a3);
     border-radius: 50%;
     height: 0.45rem;
     width: 0.45rem;
 }
 
 .saved .dot {
-    background: #6ee7b7;
+    background: var(--tw-status-success, #16a34a);
 }
 
 .saving .dot,
 .pending .dot {
-    background: #fde68a;
+    background: var(--tw-status-warning, #d97706);
 }
 
 .error .dot,
 .conflict .dot {
-    background: #fca5a5;
+    background: var(--tw-status-danger, #dc2626);
 }

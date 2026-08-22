@@ -3,9 +3,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {FormattedMessage, defineMessages} from 'react-intl';
 import {connect} from 'react-redux';
+import {CheckIcon, ChevronRightIcon} from 'lucide-react';
 
-import check from './check.svg';
-import dropdownCaret from './dropdown-caret.svg';
 import {MenuItem, Submenu} from '../menu/menu.jsx';
 import {ACCENT_BLUE, ACCENT_MAP, ACCENT_PURPLE, ACCENT_RED, ACCENT_RAINBOW, Theme} from '../../lib/themes/index.js';
 import {openAccentMenu, accentMenuOpen, closeSettingsMenu} from '../../reducers/menus.js';
@@ -69,12 +68,9 @@ ColorIcon.propTypes = {
 const AccentMenuItem = props => (
     <MenuItem onClick={props.onClick}>
         <div className={styles.option}>
-            <img
+            <CheckIcon
                 className={classNames(styles.check, {[styles.selected]: props.isSelected})}
-                width={15}
-                height={12}
-                src={check}
-                draggable={false}
+                data-icon="inline-start"
             />
             <ColorIcon id={props.id} />
             <FormattedMessage {...options[props.id]} />
@@ -108,10 +104,9 @@ const AccentThemeMenu = ({
                     id="tw.menuBar.accent"
                 />
             </span>
-            <img
+            <ChevronRightIcon
                 className={styles.expandCaret}
-                src={dropdownCaret}
-                draggable={false}
+                data-icon="inline-end"
             />
         </div>
         <Submenu place={isRtl ? 'left' : 'right'}>

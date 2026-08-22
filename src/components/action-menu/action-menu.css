@@ -2,27 +2,27 @@
 @import "../../css/units.css";
 @import "../../css/z-index.css";
 
-$main-button-size: 2.75rem;
+$main-button-size: 2.5rem;
 $more-button-size: 2.25rem;
 
 .menu-container {
     display: flex;
     flex-direction: column-reverse;
-    transition: 0.2s;
     position: relative;
 }
 
 .button {
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    background: $looks-secondary;
+    color: var(--tw-dialog-background);
+    background: var(--tw-dialog-foreground);
     outline: none;
-    border: none;
-    transition: background-color 0.2s;
+    border: 1px solid var(--tw-dialog-foreground);
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease,
+        opacity 120ms ease, transform 120ms ease;
 }
 
 button::-moz-focus-inner {
@@ -30,34 +30,32 @@ button::-moz-focus-inner {
 }
 
 .button:hover {
-    background: $extensions-primary;
+    opacity: .88;
 }
 
 .button:active {
     padding: inherit;
 }
 
-.button.coming-soon:hover {
-    background: $data-primary;
-}
-
 .main-button {
-    border-radius: 100%;
+    border-radius: .5rem;
     width: $main-button-size;
     height: $main-button-size;
-    box-shadow: 0 0 0 4px $looks-transparent;
+    box-shadow: 0 1px 2px var(--tw-dialog-shadow);
     z-index: $z-index-add-button;
-    transition: transform, box-shadow 0.5s;
 }
 
-.main-button:hover {
-  transform: scale(1.1);
-  box-shadow: 0 0 0 6px $looks-transparent;
+.main-button:focus-visible,
+.more-button:focus-visible {
+    box-shadow: 0 0 0 2px var(--tw-dialog-background), 0 0 0 4px var(--tw-dialog-ring);
+    outline: none;
 }
 
-.main-icon {
-    width: calc($main-button-size - 1rem);
-    height: calc($main-button-size - 1rem);
+.main-icon,
+.main-button svg {
+    width: 1.125rem;
+    height: 1.125rem;
+    stroke-width: 1.75;
 }
 
 [dir="rtl"] .main-icon {
@@ -65,62 +63,64 @@ button::-moz-focus-inner {
 }
 
 .more-buttons-outer {
-    /*
-        Need to use two divs to set different overflow x/y
-        which is needed to get animation to look right while
-        allowing the tooltips to be visible.
-    */
-    overflow-y: hidden;
-
-    background: $looks-secondary-dark;
-    border-top-left-radius: $more-button-size;
-    border-top-right-radius: $more-button-size;
-    width: $more-button-size;
-    margin-left: calc(($main-button-size - $more-button-size) / 2);
-    margin-right: calc(($main-button-size - $more-button-size) / 2);
-
+    overflow: hidden;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    width: calc($more-button-size + .5rem);
+    margin-inline: -.125rem;
+    padding: .25rem;
+    border: 1px solid var(--tw-dialog-border);
+    border-radius: .5rem;
+    background: var(--tw-dialog-foreground);
+    box-shadow: 0 .75rem 1.75rem -.75rem var(--tw-dialog-shadow);
     position: absolute;
-    bottom: calc($main-button-size);
-
-    margin-bottom: calc($main-button-size / -2);
-    padding-bottom: calc($main-button-size / 2);
+    bottom: calc(100% + .375rem);
+    transform: translateY(.25rem);
+    transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
 }
 
 .more-buttons {
-    max-height: 0;
-    transition: max-height 1s;
-    overflow-x: visible;
     display: flex;
     flex-direction: column;
-    z-index: 10; /* @todo justify */
+    gap: .125rem;
 }
 
 .file-input {
     display: none;
 }
 
-.expanded .more-buttons {
-    max-height: 1000px; /* Arbitrary, needs to be a value in order for animation to run */
+.expanded .more-buttons-outer {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
 }
 
-.force-hidden .more-buttons {
-    display: none; /* This property does not animate */
-}
-
-.more-buttons:first-child { /* Round off top button */
-    border-top-right-radius: $more-button-size;
-    border-top-left-radius: $more-button-size;
+.force-hidden .more-buttons-outer {
+    display: none;
 }
 
 .more-button {
     width: $more-button-size;
     height: $more-button-size;
-    background: $looks-secondary-dark;
+    border-color: transparent;
+    border-radius: .375rem;
+    background: transparent;
+    color: var(--tw-dialog-background);
 }
 
-.more-icon {
-    width: calc($more-button-size - 1rem);
-    height: calc($more-button-size - 1rem);
+.more-button:hover {
+    border-color: color-mix(in srgb, var(--tw-dialog-background) 20%, transparent);
+    background: color-mix(in srgb, var(--tw-dialog-background) 12%, transparent);
+    opacity: 1;
+}
+
+.more-icon,
+.more-button svg {
+    width: 1rem;
+    height: 1rem;
+    stroke-width: 1.75;
 }
 
 .coming-soon .more-icon {
@@ -133,29 +133,28 @@ button::-moz-focus-inner {
     is not very easy to style.
 */
 .tooltip {
-    background-color: $extensions-primary !important;
+    background-color: var(--tw-dialog-foreground) !important;
+    color: var(--tw-dialog-background) !important;
     opacity: 1 !important;
-    border: 1px solid hsla(0, 0%, 0%, .1) !important;
-    box-shadow: 0 0 .5rem hsla(0, 0%, 0%, .25) !important;
+    border: 1px solid var(--tw-dialog-border) !important;
+    box-shadow: 0 .5rem 1.25rem -.5rem var(--tw-dialog-shadow) !important;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
 }
 
 .tooltip:after {
-    background-color: $extensions-primary;
+    background-color: var(--tw-dialog-foreground);
 }
 
 .coming-soon-tooltip {
-    background-color: $data-primary !important;
+    opacity: .72 !important;
 }
 
 .coming-soon-tooltip:after {
-    background-color: $data-primary !important;
+    background-color: var(--tw-dialog-foreground) !important;
 }
 
 .tooltip {
-    border: 1px solid hsla(0, 0%, 0%, .1) !important;
-    border-radius: $form-radius !important;
-    box-shadow: 0 0 .5rem hsla(0, 0%, 0%, .25) !important;
+    border-radius: .375rem !important;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
     z-index: $z-index-tooltip !important;
 }
@@ -166,10 +165,10 @@ $arrow-rounding: 0.125rem;
 
 .tooltip:after {
     content: "";
-    border-top: 1px solid hsla(0, 0%, 0%, .1) !important;
+    border-top: 1px solid var(--tw-dialog-border) !important;
     border-left: 0 !important;
     border-bottom: 0 !important;
-    border-right: 1px solid hsla(0, 0%, 0%, .1) !important;
+    border-right: 1px solid var(--tw-dialog-border) !important;
     border-radius: $arrow-rounding;
     height: $arrow-size !important;
     width: $arrow-size !important;

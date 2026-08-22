@@ -6,7 +6,7 @@
 }
 
 .body {
-    background: $ui-white;
+    background: var(--tw-dialog-background);
     padding: 1.5rem 2.25rem;
 }
 
@@ -25,7 +25,7 @@
 .type-selector-button {
     width: 100%;
     cursor: pointer;
-    border-bottom: 0.25rem solid $ui-tertiary;
+    border-bottom: 2px solid var(--tw-dialog-border);
     margin: 0 1rem;
     padding: 0.5rem 0;
     text-align: center;
@@ -34,19 +34,21 @@
     justify-content: center;
 }
 .type-selector-button[data-active="true"] {
-    border-color: $looks-secondary;
+    border-color: var(--tw-dialog-primary);
 }
 .type-selector-button:active {
-    border-color: $looks-transparent;
+    border-color: var(--tw-dialog-ring);
 }
 
 .url-input,
 .text-code-input {
     width: 100%;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 0.25rem;
+    border: 1px solid var(--tw-dialog-border);
+    border-radius: 0.375rem;
     padding: 0.5rem;
     font-size: inherit;
+    background: var(--tw-dialog-input);
+    color: var(--tw-dialog-foreground);
 }
 .url-input {
     height: 3rem;
@@ -69,15 +71,15 @@
 .trusted-extension,
 .unsandboxed-warning {
     padding: 0.5rem;
-    border-radius: 0.25rem;
+    border-radius: 0.375rem;
 }
 .trusted-extension {
-    background-color: rgba(94, 255, 94, 0.25);
-    border: 1px solid green;
+    background-color: var(--tw-dialog-muted);
+    border: 1px solid var(--tw-status-success);
 }
 .unsandboxed-warning {
-    background-color: rgba(255, 81, 81, 0.25);
-    border: 1px solid red;
+    background-color: var(--tw-dialog-muted);
+    border: 1px solid var(--tw-dialog-destructive);
 }
 .unsandboxed-warning > *:not(:last-child) {
     display: block;
@@ -92,12 +94,16 @@
     font: inherit;
     color: inherit;
     padding: 0.75rem 1rem;
-    border-radius: 0.25rem;
-    border: 1px solid $ui-black-transparent;
+    border-radius: 0.375rem;
+    border: 1px solid var(--tw-dialog-primary);
     font-weight: 600;
     font-size: 0.85rem;
-    color: white;
-    background: $looks-secondary;
+    color: var(--tw-dialog-primary-foreground);
+    background: var(--tw-dialog-primary);
+}
+.load-button:hover:not(:disabled) {
+    border-color: var(--tw-dialog-primary-hover);
+    background: var(--tw-dialog-primary-hover);
 }
 .load-button:disabled {
     opacity: 0.8;

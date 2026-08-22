@@ -2,14 +2,17 @@
 
 .menu {
     position: absolute;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 0 0 8px 8px;
-    background-color: $menu-bar-background;
-    padding: 0;
+    border: 1px solid var(--tw-menu-border, $ui-black-transparent);
+    border-radius: var(--tw-menu-radius, 0 0 8px 8px);
+    background-color: var(--tw-menu-background, $menu-bar-background);
+    color: var(--tw-menu-foreground, $menu-bar-foreground);
+    padding: var(--tw-menu-padding, 0);
     margin: 0;
-    min-width: 186px;
+    min-width: var(--tw-menu-min-width, 186px);
     overflow: visible;
-    box-shadow: 0 8px 8px 0 $shadow;
+    box-shadow: var(--tw-menu-shadow, 0 8px 8px 0 $shadow);
+    transform-origin: top;
+    animation: menu-enter 120ms ease-out;
 }
 
 .menu.left {
@@ -21,38 +24,80 @@
 }
 
 .menu-item {
-    display: block;
-    line-height: 34px;
+    display: flex;
+    min-height: var(--tw-menu-item-min-height, 0);
+    align-items: center;
+    border-radius: var(--tw-menu-item-radius, 0);
+    box-sizing: border-box;
+    line-height: var(--tw-menu-item-line-height, 34px);
     white-space: nowrap;
-    padding: 0 10px;
+    padding: var(--tw-menu-item-padding, 0 10px);
     font-size: .75rem;
     margin: 0;
-    font-weight: bold;
+    font-weight: var(--tw-menu-item-weight, bold);
     position: relative;
+    gap: .5rem;
+    list-style: none;
+    outline: none;
 }
 
 .menu-item.active,
 .menu-item:hover,
 .menu-item.expanded {
-    background-color: $ui-black-transparent;
+    background-color: var(--tw-menu-accent, $ui-black-transparent);
+    color: var(--tw-menu-accent-foreground, inherit);
 }
 
 .menu-item.hoverable {
     cursor: pointer;
 }
 
+.menu-item:focus-visible {
+    background-color: var(--tw-menu-accent, $ui-black-transparent);
+    color: var(--tw-menu-accent-foreground, inherit);
+}
+
+.menu-item svg {
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+    color: var(--tw-menu-muted-foreground, currentColor);
+    stroke-width: 1.75;
+}
+
 .menu-section {
-    border-top: 1px solid $ui-black-transparent;
+    border-top: 1px solid var(--tw-menu-border, $ui-black-transparent);
+    border-radius: var(--tw-menu-section-radius, 0);
+    margin: var(--tw-menu-section-margin, 0);
+    padding: var(--tw-menu-section-padding, 0);
+    list-style: none;
+}
+
+.menu > .menu-section:first-child {
+    border-top: 0;
+    margin-top: 0;
+    padding-top: 0;
+}
+
+.menu-group {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.menu-item > div {
+    flex: 1;
+    min-width: 0;
 }
 
 .submenu {
     display: none;
     position: absolute;
-    top: -1px;
-    min-width: 186px;
+    top: var(--tw-submenu-top, -1px);
+    min-width: var(--tw-menu-min-width, 186px);
     height: max-content;
     overflow: hidden;
-    border-radius: 8px;
+    border-radius: var(--tw-menu-radius, 8px);
 }
 
 .submenu.right {
@@ -67,8 +112,8 @@
     position: relative;
     overflow-y: auto;
     overflow-x: hidden;
-    scrollbar-color: $menu-bar-foreground $menu-bar-background;
-    border-radius: 8px;
+    scrollbar-color: var(--tw-menu-muted-foreground, $menu-bar-foreground) var(--tw-menu-background, $menu-bar-background);
+    border-radius: var(--tw-menu-radius, 8px);
 }
 
 .menu-item.expanded > .submenu {
@@ -86,11 +131,28 @@
 }
 
 .submenu > .menu::-webkit-scrollbar-track {
-    background: $menu-bar-background;
+    background: var(--tw-menu-background, $menu-bar-background);
 }
 
 .submenu > .menu::-webkit-scrollbar-thumb {
-    background-color: $menu-bar-foreground;
+    background-color: var(--tw-menu-muted-foreground, $menu-bar-foreground);
     border-radius: 12px;
-    border: 3px solid $menu-bar-background;
+    border: 3px solid var(--tw-menu-background, $menu-bar-background);
+}
+
+@keyframes menu-enter {
+    from {
+        opacity: 0;
+        transform: translateY(-.125rem) scale(.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .menu {
+        animation: none;
+    }
 }

@@ -3,11 +3,18 @@
 .save-now {
     cursor: pointer;
     padding: 0 0.5rem;
-    height: 100%;
+    height: 2rem;
     display: flex;
     align-items: center;
+    border: 1px solid transparent;
+    border-radius: .4rem;
+    box-sizing: border-box;
+    color: var(--tw-topbar-muted-foreground, inherit);
+    font-weight: 500;
 }
 
 .save-now:hover {
-    background-color: $ui-black-transparent;
+    background-color: var(--tw-topbar-accent, $ui-black-transparent);
+    border-color: var(--tw-topbar-border, $ui-black-transparent);
+    color: var(--tw-topbar-foreground, inherit);
 }

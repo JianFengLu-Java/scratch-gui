@@ -1,9 +1,9 @@
 import classNames from 'classnames';
 import React from 'react';
+import {ChevronDownIcon} from 'lucide-react';
 
 import {readPlanetEnvelope, refreshPlanetSession} from '../../lib/planet-session';
 
-import dropdownCaret from './dropdown-caret.svg';
 import styles from './planet-user-menu.css';
 
 const PROFILE_ENDPOINT = '/backend-api/users/me';
@@ -198,12 +198,9 @@ class PlanetUserMenu extends React.Component {
                     >
                         {profile.nickname}
                     </span>
-                    <img
-                        alt=""
-                        aria-hidden="true"
+                    <ChevronDownIcon
                         className={styles.caret}
-                        draggable={false}
-                        src={dropdownCaret}
+                        data-icon="inline-end"
                     />
                 </button>
                 {this.state.menuOpen ? this.renderProfileDetails() : null}

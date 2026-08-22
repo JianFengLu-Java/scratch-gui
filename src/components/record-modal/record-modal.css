@@ -17,8 +17,8 @@
 
 .meter-container, .waveform-container {
     background: $ui-primary;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 5px;
+    border: 1px solid var(--tw-dialog-border);
+    border-radius: 0.375rem;
     padding: 3px;
     /* Force these to be on their own render layer because they update often */
     transform: translateZ(0);
@@ -85,17 +85,26 @@
 .button-row button {
     padding: 0.75rem 1rem;
     border-radius: 0.25rem;
-    background: white;
-    border: 1px solid $ui-black-transparent;
+    background: var(--tw-dialog-background);
+    border: 1px solid var(--tw-dialog-border);
     font-weight: 600;
     font-size: 0.85rem;
-    color: $looks-secondary;
+    color: var(--tw-dialog-foreground);
 }
 
 .button-row button.ok-button {
-    background: $looks-secondary;
-    border: $looks-secondary;
-    color: white;
+    background: var(--tw-dialog-primary);
+    border-color: var(--tw-dialog-primary);
+    color: var(--tw-dialog-primary-foreground);
+}
+
+.button-row button:hover {
+    background: var(--tw-dialog-accent);
+}
+
+.button-row button.ok-button:hover {
+    background: var(--tw-dialog-primary-hover);
+    border-color: var(--tw-dialog-primary-hover);
 }
 
 .button-row button + button {

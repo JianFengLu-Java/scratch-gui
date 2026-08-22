@@ -1,0 +1,47 @@
+.status {
+    align-items: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: .4rem;
+    color: var(--tw-topbar-muted-foreground, #737373);
+    cursor: pointer;
+    display: inline-flex;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 500;
+    gap: 0.35rem;
+    height: 2rem;
+    line-height: 1;
+    min-height: 2rem;
+    padding: 0 0.5rem;
+    white-space: nowrap;
+}
+
+.status:hover,
+.status:focus-visible {
+    background: var(--tw-topbar-accent, #f5f5f5);
+    border-color: var(--tw-topbar-border, #e5e5e5);
+    color: var(--tw-topbar-foreground, #171717);
+    outline: none;
+}
+
+.dot {
+    background: var(--tw-status-neutral, #a3a3a3);
+    border-radius: 50%;
+    height: 0.45rem;
+    width: 0.45rem;
+}
+
+.connected .dot {
+    background: var(--tw-status-success, #16a34a);
+}
+
+.connecting .dot,
+.applying .dot {
+    background: var(--tw-status-warning, #d97706);
+}
+
+.disconnected .dot,
+.error .dot {
+    background: var(--tw-status-danger, #dc2626);
+}

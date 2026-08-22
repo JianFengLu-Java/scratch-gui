@@ -160,7 +160,7 @@ class SpriteInfo extends React.Component {
 
         if (stageSize === STAGE_DISPLAY_SIZES.small) {
             return (
-                <Box className={styles.spriteInfo}>
+                <Box className={classNames(styles.spriteInfo, styles.spriteInfoCompact)}>
                     <div className={classNames(styles.row, styles.rowPrimary)}>
                         <div className={styles.group}>
                             {spriteNameInput}

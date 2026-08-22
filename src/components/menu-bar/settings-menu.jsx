@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import {ChevronDownIcon, SettingsIcon} from 'lucide-react';
 
 import LanguageMenu from './language-menu.jsx';
 import MenuBarMenu from './menu-bar-menu.jsx';
@@ -12,9 +13,6 @@ import TWDesktopSettings from './tw-desktop-settings.jsx';
 
 import menuBarStyles from './menu-bar.css';
 import styles from './settings-menu.css';
-
-import dropdownCaret from './dropdown-caret.svg';
-import settingsIcon from './icon--settings.svg';
 
 const SettingsMenu = ({
     canChangeLanguage,
@@ -31,19 +29,9 @@ const SettingsMenu = ({
         onOpen={onRequestOpen}
         onClose={onRequestClose}
     >
-        <img
-            src={settingsIcon}
-            draggable={false}
-            width={20}
-            height={20}
-        />
-        <span className={styles.dropdownLabel}>设置</span>
-        <img
-            src={dropdownCaret}
-            draggable={false}
-            width={8}
-            height={5}
-        />
+        <SettingsIcon data-icon="inline-start" />
+        <span className={styles.dropdownLabel}>{'设置'}</span>
+        <ChevronDownIcon data-icon="inline-end" />
         <MenuBarMenu
             className={menuBarStyles.menuBarMenu}
             open={settingsMenuOpen}

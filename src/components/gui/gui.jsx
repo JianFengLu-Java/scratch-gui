@@ -2,7 +2,12 @@ import classNames from 'classnames';
 import omit from 'lodash.omit';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
+import {
+    BrushIcon,
+    Code2Icon,
+    Volume2Icon
+} from 'lucide-react';
+import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import MediaQuery from 'react-responsive';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
@@ -38,6 +43,8 @@ import TWFontsModal from '../../containers/tw-fonts-modal.jsx';
 import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.jsx';
 import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
 import PlanetAiAssistant from '../planet-ai-assistant/planet-ai-assistant.jsx';
+import PlanetProjectChat from '../menu-bar/planet-project-chat.jsx';
+import EditorDock from '../editor-dock/editor-dock.jsx';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/layout-constants';
 import {resolveStageSize} from '../../lib/screen-utils';
@@ -46,18 +53,6 @@ import {Theme} from '../../lib/themes';
 import {isRendererSupported, isBrowserSupported} from '../../lib/tw-environment-support-prober';
 
 import styles from './gui.css';
-import addExtensionIcon from './icon--extensions.svg';
-import codeIcon from '!../../lib/tw-recolor/build!./icon--code.svg';
-import costumesIcon from '!../../lib/tw-recolor/build!./icon--costumes.svg';
-import soundsIcon from '!../../lib/tw-recolor/build!./icon--sounds.svg';
-
-const messages = defineMessages({
-    addExtension: {
-        id: 'gui.gui.addExtension',
-        description: 'Button to add an extension in the target pane',
-        defaultMessage: 'Add Extension'
-    }
-});
 
 const getFullscreenBackgroundColor = () => {
     const params = new URLSearchParams(location.search);
@@ -130,8 +125,10 @@ const GUIComponent = props => {
         onActivateSoundsTab,
         onActivateTab,
         onClickLogo,
-        onExtensionButtonClick,
+        onOpenBackdropLibrary,
         onOpenCustomExtensionModal,
+        onOpenExtensionLibrary,
+        onOpenSpriteLibrary,
         onProjectTelemetryEvent,
         onRequestCloseBackdropLibrary,
         onRequestCloseCostumeLibrary,
@@ -339,9 +336,9 @@ const GUIComponent = props => {
                             >
                                 <TabList className={tabClassNames.tabList}>
                                     <Tab className={tabClassNames.tab}>
-                                        <img
-                                            draggable={false}
-                                            src={codeIcon()}
+                                        <Code2Icon
+                                            aria-hidden="true"
+                                            data-icon="inline-start"
                                         />
                                         <FormattedMessage
                                             defaultMessage="Code"
@@ -353,9 +350,9 @@ const GUIComponent = props => {
                                         className={tabClassNames.tab}
                                         onClick={onActivateCostumesTab}
                                     >
-                                        <img
-                                            draggable={false}
-                                            src={costumesIcon()}
+                                        <BrushIcon
+                                            aria-hidden="true"
+                                            data-icon="inline-start"
                                         />
                                         {targetIsStage ? (
                                             <FormattedMessage
@@ -375,9 +372,9 @@ const GUIComponent = props => {
                                         className={tabClassNames.tab}
                                         onClick={onActivateSoundsTab}
                                     >
-                                        <img
-                                            draggable={false}
-                                            src={soundsIcon()}
+                                        <Volume2Icon
+                                            aria-hidden="true"
+                                            data-icon="inline-start"
                                         />
                                         <FormattedMessage
                                             defaultMessage="Sounds"
@@ -401,19 +398,6 @@ const GUIComponent = props => {
                                             theme={theme}
                                             vm={vm}
                                         />
-                                    </Box>
-                                    <Box className={styles.extensionButtonContainer}>
-                                        <button
-                                            className={styles.extensionButton}
-                                            title={intl.formatMessage(messages.addExtension)}
-                                            onClick={onExtensionButtonClick}
-                                        >
-                                            <img
-                                                className={styles.extensionButtonIcon}
-                                                draggable={false}
-                                                src={addExtensionIcon}
-                                            />
-                                        </button>
                                     </Box>
                                     <Box className={styles.watermark}>
                                         <Watermark />
@@ -452,6 +436,16 @@ const GUIComponent = props => {
                 </Box>
                 <DragLayer />
                 <PlanetAiAssistant vm={vm} />
+                {!isPlayerOnly && <PlanetProjectChat />}
+                {!isPlayerOnly && (
+                    <EditorDock
+                        hasBackpack={backpackVisible && Boolean(backpackHost)}
+                        key={intl.locale}
+                        onOpenBackdropLibrary={onOpenBackdropLibrary}
+                        onOpenExtensionLibrary={onOpenExtensionLibrary}
+                        onOpenSpriteLibrary={onOpenSpriteLibrary}
+                    />
+                )}
             </Box>
         );
     }}</MediaQuery>);
@@ -509,8 +503,10 @@ GUIComponent.propTypes = {
     onClickPackager: PropTypes.func,
     onClickLogo: PropTypes.func,
     onCloseAccountNav: PropTypes.func,
-    onExtensionButtonClick: PropTypes.func,
+    onOpenBackdropLibrary: PropTypes.func,
     onOpenCustomExtensionModal: PropTypes.func,
+    onOpenExtensionLibrary: PropTypes.func,
+    onOpenSpriteLibrary: PropTypes.func,
     onLogOut: PropTypes.func,
     onOpenRegistration: PropTypes.func,
     onRequestCloseBackdropLibrary: PropTypes.func,

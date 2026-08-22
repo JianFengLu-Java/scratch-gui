@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import ReactModal from 'react-modal';
 import Box from '../box/box.jsx';
+import Modal from '../modal/modal.jsx';
 import {defineMessages, injectIntl, intlShape, FormattedMessage} from 'react-intl';
 import {
     isRendererSupported,
@@ -32,10 +33,10 @@ const BrowserModal = ({intl, ...props}) => {
     const title = props.onClickDesktopSettings ? messages.systemNotSupported : messages.browserNotSupported;
     const incompatibleUserscripts = findIncompatibleUserscripts();
     return (
-        <ReactModal
-            isOpen
+        <Modal
             className={styles.modalContent}
             contentLabel={intl.formatMessage(title)}
+            hideClose
             overlayClassName={styles.modalOverlay}
             onRequestClose={noop}
         >
@@ -120,7 +121,7 @@ const BrowserModal = ({intl, ...props}) => {
                     {/* eslint-enable max-len */}
                 </Box>
             </div>
-        </ReactModal>
+        </Modal>
     );
 };
 

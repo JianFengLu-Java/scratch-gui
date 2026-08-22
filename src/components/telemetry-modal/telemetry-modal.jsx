@@ -2,9 +2,9 @@ import bindAll from 'lodash.bindall';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {defineMessages, injectIntl, intlShape, FormattedMessage} from 'react-intl';
-import ReactModal from 'react-modal';
 
 import Box from '../box/box.jsx';
+import Modal from '../modal/modal.jsx';
 
 import styles from './telemetry-modal.css';
 
@@ -132,8 +132,7 @@ class TelemetryModal extends React.PureComponent {
         const settingWasUpdated = this.state.settingWasUpdatedTimer && (
             <FormattedMessage {...messages.settingWasUpdated} />
         );
-        return (<ReactModal
-            isOpen
+        return (<Modal
             className={styles.modalContent}
             contentLabel={this.props.intl.formatMessage(messages.label)}
             overlayClassName={styles.modalOverlay}
@@ -197,7 +196,7 @@ class TelemetryModal extends React.PureComponent {
                     </Box>
                 </Box>
             </div>
-        </ReactModal>);
+        </Modal>);
     }
 }
 

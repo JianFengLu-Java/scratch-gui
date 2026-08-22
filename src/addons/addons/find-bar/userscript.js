@@ -2,6 +2,29 @@ import BlockItem from "./blockly/BlockItem.js";
 import BlockInstance from "./blockly/BlockInstance.js";
 import Utils from "./blockly/Utils.js";
 
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+
+const createSearchIcon = () => {
+  const icon = document.createElementNS(SVG_NAMESPACE, "svg");
+  icon.classList.add("sa-find-search-icon");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("fill", "none");
+  icon.setAttribute("stroke", "currentColor");
+  icon.setAttribute("stroke-width", "2");
+  icon.setAttribute("stroke-linecap", "round");
+  icon.setAttribute("stroke-linejoin", "round");
+  icon.setAttribute("aria-hidden", "true");
+
+  const circle = document.createElementNS(SVG_NAMESPACE, "circle");
+  circle.setAttribute("cx", "11");
+  circle.setAttribute("cy", "11");
+  circle.setAttribute("r", "8");
+  const handle = document.createElementNS(SVG_NAMESPACE, "path");
+  handle.setAttribute("d", "m21 21-4.3-4.3");
+  icon.append(circle, handle);
+  return icon;
+};
+
 export default async function ({ addon, msg, console }) {
   const Blockly = await addon.tab.traps.getBlockly();
 
@@ -43,8 +66,20 @@ export default async function ({ addon, msg, console }) {
       // for <label>
       this.findInput.id = "sa-find-input";
       this.findInput.type = "search";
-      this.findInput.placeholder = msg("find-placeholder");
+      const placeholder = msg("find-placeholder");
+      const shortcutMatch = placeholder.match(/\s*[（(]([^()（）]+)[）)]\s*$/);
+      const searchLabel = shortcutMatch ? placeholder.slice(0, shortcutMatch.index).trim() : placeholder;
+      this.findInput.placeholder = searchLabel || placeholder;
       this.findInput.autocomplete = "off";
+      this.findInput.setAttribute("aria-label", searchLabel || placeholder);
+      this.findInput.setAttribute("aria-keyshortcuts", "Control+F Meta+F");
+
+      this.searchIcon = this.dropdownOut.appendChild(createSearchIcon());
+
+      this.findShortcut = this.dropdownOut.appendChild(document.createElement("kbd"));
+      this.findShortcut.className = "sa-find-shortcut";
+      this.findShortcut.textContent = shortcutMatch ? shortcutMatch[1] : "";
+      this.findShortcut.hidden = !shortcutMatch;
 
       this.dropdownOut.appendChild(this.dropdown.createDom());
 

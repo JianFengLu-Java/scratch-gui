@@ -1,6 +1,14 @@
 /* eslint-disable react/jsx-no-literals, react/jsx-no-bind, react/jsx-handler-names, react/jsx-max-props-per-line */
 import PropTypes from 'prop-types';
 import React from 'react';
+import classNames from 'classnames';
+import {
+    HistoryIcon,
+    PlusIcon,
+    SendIcon,
+    SparklesIcon,
+    XIcon
+} from 'lucide-react';
 import VM from 'scratch-vm';
 
 import {
@@ -16,6 +24,7 @@ import {
     installAssistantFloatingInterface,
     previewAssistantTool
 } from '../../lib/planet-ai-tools';
+import {PLANET_AI_ASSISTANT_STATE_EVENT} from '../../lib/editor-dock-events';
 
 import styles from './planet-ai-assistant.css';
 
@@ -53,15 +62,23 @@ class PlanetAiAssistant extends React.Component {
             messages: [],
             input: '',
             error: null,
-            toolStates: {}
+            toolStates: {},
+            position: null,
+            dragging: false
         };
         this.messagesEnd = React.createRef();
+        this.panelRef = React.createRef();
         this.handleSend = this.handleSend.bind(this);
         this.handleInputKeyDown = this.handleInputKeyDown.bind(this);
+        this.handleDragStart = this.handleDragStart.bind(this);
+        this.handleDragMove = this.handleDragMove.bind(this);
+        this.handleDragEnd = this.handleDragEnd.bind(this);
+        this.handleToggleHistory = this.handleToggleHistory.bind(this);
         this.open = this.open.bind(this);
         this.close = this.close.bind(this);
         this.toggle = this.toggle.bind(this);
         this.newConversation = this.newConversation.bind(this);
+        this.publishDockState = this.publishDockState.bind(this);
     }
 
     componentDidMount () {
@@ -71,6 +88,7 @@ class PlanetAiAssistant extends React.Component {
             toggle: this.toggle,
             newConversation: this.newConversation
         });
+        this.publishDockState();
     }
 
     componentDidUpdate (previousProps, previousState) {
@@ -78,10 +96,12 @@ class PlanetAiAssistant extends React.Component {
             this.state.toolStates !== previousState.toolStates) {
             this.scrollToLatest();
         }
+        if (this.state.open !== previousState.open) this.publishDockState();
     }
 
     componentWillUnmount () {
         if (this.uninstallFloatingInterface) this.uninstallFloatingInterface();
+        this.removeDragListeners();
     }
 
     open () {
@@ -98,6 +118,64 @@ class PlanetAiAssistant extends React.Component {
     toggle () {
         if (this.state.open) this.close();
         else this.open();
+    }
+
+    publishDockState () {
+        window.dispatchEvent(new CustomEvent(PLANET_AI_ASSISTANT_STATE_EVENT, {
+            detail: {open: this.state.open}
+        }));
+    }
+
+    handleToggleHistory () {
+        this.setState(previous => ({
+            historyOpen: !previous.historyOpen,
+            position: null
+        }));
+    }
+
+    handleDragStart (event) {
+        if (event.button !== 0 || event.target.closest('button, input, textarea, a')) return;
+        const panel = this.panelRef.current;
+        if (!panel) return;
+        const bounds = panel.getBoundingClientRect();
+        this.dragOffset = {
+            x: event.clientX - bounds.left,
+            y: event.clientY - bounds.top
+        };
+        this.setState({
+            dragging: true,
+            position: {x: bounds.left, y: bounds.top}
+        });
+        window.addEventListener('pointermove', this.handleDragMove);
+        window.addEventListener('pointerup', this.handleDragEnd);
+        document.body.style.userSelect = 'none';
+        event.preventDefault();
+    }
+
+    handleDragMove (event) {
+        const panel = this.panelRef.current;
+        if (!panel || !this.dragOffset) return;
+        const inset = 8;
+        const maxX = Math.max(inset, window.innerWidth - panel.offsetWidth - inset);
+        const maxY = Math.max(inset, window.innerHeight - panel.offsetHeight - inset);
+        this.setState({
+            position: {
+                x: Math.min(maxX, Math.max(inset, event.clientX - this.dragOffset.x)),
+                y: Math.min(maxY, Math.max(inset, event.clientY - this.dragOffset.y))
+            }
+        });
+    }
+
+    handleDragEnd () {
+        this.dragOffset = null;
+        this.removeDragListeners();
+        this.setState({dragging: false});
+    }
+
+    removeDragListeners () {
+        window.removeEventListener('pointermove', this.handleDragMove);
+        window.removeEventListener('pointerup', this.handleDragEnd);
+        document.body.style.userSelect = '';
     }
 
     async loadHistory () {
@@ -319,7 +397,10 @@ class PlanetAiAssistant extends React.Component {
             <aside className={styles.history} aria-label="历史对话">
                 <div className={styles.historyHeader}>
                     <strong>历史记录</strong>
-                    <button type="button" onClick={this.newConversation}>＋ 新对话</button>
+                    <button type="button" onClick={this.newConversation}>
+                        <PlusIcon aria-hidden="true" />
+                        新对话
+                    </button>
                 </div>
                 <div className={styles.historyList}>
                     {this.state.conversations.length ? this.state.conversations.map(item => (
@@ -342,18 +423,23 @@ class PlanetAiAssistant extends React.Component {
         return (
             <section
                 aria-labelledby="planet-ai-assistant-title"
+                aria-describedby="planet-ai-assistant-description"
                 className={this.state.historyOpen ? styles.panelWithHistory : styles.panel}
+                ref={this.panelRef}
                 role="dialog"
             >
                 {this.renderHistory()}
                 <div className={styles.chatColumn}>
-                    <header className={styles.header}>
+                    <header
+                        className={styles.header}
+                        onPointerDown={this.handleDragStart}
+                    >
                         <div>
                             <div className={styles.titleRow}>
-                                <span className={styles.spark}>✦</span>
+                                <SparklesIcon aria-hidden="true" className={styles.spark} />
                                 <h2 id="planet-ai-assistant-title">AI 创作助手</h2>
                             </div>
-                            <p>可以帮你规划并搭建基础积木</p>
+                            <p id="planet-ai-assistant-description">可以帮你规划并搭建基础积木</p>
                         </div>
                         <div className={styles.headerActions}>
                             <button
@@ -361,9 +447,9 @@ class PlanetAiAssistant extends React.Component {
                                 className={this.state.historyOpen ? styles.iconButtonActive : styles.iconButton}
                                 title="历史记录"
                                 type="button"
-                                onClick={() => this.setState(previous => ({historyOpen: !previous.historyOpen}))}
+                                onClick={this.handleToggleHistory}
                             >
-                                ◷
+                                <HistoryIcon aria-hidden="true" />
                             </button>
                             <button
                                 aria-label="关闭 AI 助手"
@@ -372,7 +458,7 @@ class PlanetAiAssistant extends React.Component {
                                 type="button"
                                 onClick={this.close}
                             >
-                                ×
+                                <XIcon aria-hidden="true" />
                             </button>
                         </div>
                     </header>
@@ -384,7 +470,7 @@ class PlanetAiAssistant extends React.Component {
                             message => this.renderMessage(message)
                         ) : (
                             <div className={styles.emptyState}>
-                                <span>✦</span>
+                                <SparklesIcon aria-hidden="true" />
                                 <strong>从一个小目标开始</strong>
                                 <p>例如：“给当前角色添加绿旗点击后移动并旋转的积木。”</p>
                             </div>
@@ -411,7 +497,7 @@ class PlanetAiAssistant extends React.Component {
                             type="button"
                             onClick={this.handleSend}
                         >
-                            ↑
+                            <SendIcon aria-hidden="true" />
                         </button>
                     </footer>
                     <div className={styles.disclaimer}>AI 可能会出错，应用前请检查积木计划。</div>
@@ -421,20 +507,21 @@ class PlanetAiAssistant extends React.Component {
     }
 
     render () {
+        if (!this.state.open) return null;
+        const positionStyle = this.state.position ? {
+            bottom: 'auto',
+            left: `${this.state.position.x}px`,
+            right: 'auto',
+            top: `${this.state.position.y}px`
+        } : null;
         return (
-            <div className={styles.root}>
-                {this.state.open ? this.renderPanel() : (
-                    <button
-                        aria-label="打开 AI 创作助手"
-                        className={styles.launcher}
-                        title="AI 创作助手"
-                        type="button"
-                        onClick={this.open}
-                    >
-                        <span>✦</span>
-                        <span>AI</span>
-                    </button>
-                )}
+            <div
+                className={classNames(styles.root, {
+                    [styles.dragging]: this.state.dragging
+                })}
+                style={positionStyle}
+            >
+                {this.renderPanel()}
             </div>
         );
     }

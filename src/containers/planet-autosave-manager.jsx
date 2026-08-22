@@ -12,6 +12,7 @@ import {
     sha256PlanetBlob
 } from '../lib/planet-cloud-autosave';
 import {isPlanetProjectRoute} from '../lib/planet-project-loader';
+import {PLANET_COLLABORATION_REMOTE_APPLIED_EVENT} from '../lib/planet-collaboration';
 import {refreshPlanetSession} from '../lib/planet-session';
 import {getIsShowingProject} from '../reducers/project-state';
 import {setProjectUnchanged} from '../reducers/project-changed';
@@ -29,6 +30,7 @@ class PlanetAutosaveManager extends React.Component {
         this.saving = false;
         this.mounted = false;
         this.handleProjectChanged = this.handleProjectChanged.bind(this);
+        this.handleRemoteProjectApplied = this.handleRemoteProjectApplied.bind(this);
         this.handleSaveRequest = this.handleSaveRequest.bind(this);
         this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
         this.queueDebouncedSave = this.queueDebouncedSave.bind(this);
@@ -38,18 +40,28 @@ class PlanetAutosaveManager extends React.Component {
         this.mounted = true;
         this.props.vm.on('PROJECT_CHANGED', this.handleProjectChanged);
         window.addEventListener(PLANET_AUTOSAVE_REQUEST_EVENT, this.handleSaveRequest);
+        window.addEventListener(PLANET_COLLABORATION_REMOTE_APPLIED_EVENT,
+            this.handleRemoteProjectApplied);
         document.addEventListener('visibilitychange', this.handleVisibilityChange);
-        if (this.active()) emitPlanetAutosaveStatus({status: 'saved'});
+        if (this.active()) {
+            this.applyProjectPreset();
+            emitPlanetAutosaveStatus({status: 'saved'});
+        }
     }
     componentDidUpdate (prevProps) {
         if (String(prevProps.projectId) !== String(this.props.projectId)) this.reset();
-        if (this.active() && !prevProps.isShowingProject) emitPlanetAutosaveStatus({status: 'saved'});
+        if (this.active() && !prevProps.isShowingProject) {
+            this.applyProjectPreset();
+            emitPlanetAutosaveStatus({status: 'saved'});
+        }
     }
     componentWillUnmount () {
         this.mounted = false;
         this.clearTimers();
         this.props.vm.off('PROJECT_CHANGED', this.handleProjectChanged);
         window.removeEventListener(PLANET_AUTOSAVE_REQUEST_EVENT, this.handleSaveRequest);
+        window.removeEventListener(PLANET_COLLABORATION_REMOTE_APPLIED_EVENT,
+            this.handleRemoteProjectApplied);
         document.removeEventListener('visibilitychange', this.handleVisibilityChange);
     }
     active () {
@@ -58,6 +70,7 @@ class PlanetAutosaveManager extends React.Component {
     }
     reset () {
         this.clearTimers();
+        this.presetApplied = false;
         this.changeRevision = 0;
         this.savedRevision = 0;
         this.editorSession = null;
@@ -78,6 +91,30 @@ class PlanetAutosaveManager extends React.Component {
         clearTimeout(this.debounceTimer);
         this.queueDebouncedSave();
         if (!this.maxWaitTimer) this.maxWaitTimer = setTimeout(this.save, MAX_WAIT_MS);
+    }
+    handleRemoteProjectApplied () {
+        this.savedRevision = this.changeRevision;
+        this.props.onProjectUnchanged();
+        emitPlanetAutosaveStatus({status: 'saved'});
+    }
+    applyProjectPreset () {
+        if (this.presetApplied) return;
+        this.presetApplied = true;
+        const url = new URL(location.href);
+        const preset = url.searchParams.get('preset');
+        const dimensions = {
+            wide: [640, 360],
+            portrait: [360, 640]
+        }[preset];
+        if (!dimensions) return;
+        url.searchParams.delete('preset');
+        history.replaceState(history.state, '', url);
+        if (
+            this.props.vm.runtime.stageWidth === dimensions[0] &&
+            this.props.vm.runtime.stageHeight === dimensions[1]
+        ) return;
+        this.props.vm.setStageSize(dimensions[0], dimensions[1]);
+        this.props.vm.storeProjectOptions();
     }
     queueDebouncedSave () {
         const delay = DEBOUNCE_MS + Math.floor(Math.random() * DEBOUNCE_JITTER_MS);

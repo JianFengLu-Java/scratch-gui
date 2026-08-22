@@ -3,14 +3,19 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import classNames from 'classnames';
 import bindAll from 'lodash.bindall';
+import {
+    CircleHelpIcon,
+    GaugeIcon,
+    SaveIcon,
+    SparklesIcon,
+    TriangleAlertIcon
+} from 'lucide-react';
 import Box from '../box/box.jsx';
 import Modal from '../../containers/modal.jsx';
-import FancyCheckbox from '../tw-fancy-checkbox/checkbox.jsx';
 import Input from '../forms/input.jsx';
 import BufferedInputHOC from '../forms/buffered-input-hoc.jsx';
 import DocumentationLink from '../tw-documentation-link/documentation-link.jsx';
 import styles from './settings-modal.css';
-import helpIcon from './help-icon.svg';
 import {APP_NAME} from '../../lib/brand.js';
 
 /* eslint-disable react/no-multi-comp */
@@ -66,31 +71,47 @@ class UnwrappedSetting extends React.Component {
         }));
     }
     render () {
+        const titleId = `advanced-setting-${this.props.slug}-title`;
+        const detailId = `advanced-setting-${this.props.slug}-description`;
         return (
             <div
                 className={classNames(styles.setting, {
                     [styles.active]: this.props.active
                 })}
             >
-                <div className={styles.label}>
-                    {this.props.primary}
-                    <button
-                        className={styles.helpIcon}
-                        onClick={this.handleClickHelp}
-                        title={this.props.intl.formatMessage(messages.help)}
-                    >
-                        <img
-                            src={helpIcon}
-                            draggable={false}
-                        />
-                    </button>
-                </div>
-                {this.state.helpVisible && (
-                    <div className={styles.detail}>
-                        {this.props.help}
-                        {this.props.slug && <LearnMore slug={this.props.slug} />}
+                <div className={styles.settingMain}>
+                    <div className={styles.settingContent}>
+                        <div
+                            className={styles.settingTitle}
+                            id={titleId}
+                        >
+                            {this.props.primary}
+                        </div>
+                        {this.state.helpVisible && (
+                            <div
+                                className={styles.settingDescription}
+                                id={detailId}
+                            >
+                                {this.props.help}
+                                {this.props.slug && <LearnMore slug={this.props.slug} />}
+                            </div>
+                        )}
                     </div>
-                )}
+                    <div className={styles.settingActions}>
+                        <button
+                            type="button"
+                            className={styles.helpIcon}
+                            onClick={this.handleClickHelp}
+                            title={this.props.intl.formatMessage(messages.help)}
+                            aria-label={this.props.intl.formatMessage(messages.help)}
+                            aria-expanded={this.state.helpVisible}
+                            aria-controls={detailId}
+                        >
+                            <CircleHelpIcon aria-hidden="true" />
+                        </button>
+                        {this.props.control}
+                    </div>
+                </div>
                 {this.props.secondary}
             </div>
         );
@@ -99,6 +120,7 @@ class UnwrappedSetting extends React.Component {
 UnwrappedSetting.propTypes = {
     intl: intlShape,
     active: PropTypes.bool,
+    control: PropTypes.node,
     help: PropTypes.node,
     primary: PropTypes.node,
     secondary: PropTypes.node,
@@ -106,26 +128,57 @@ UnwrappedSetting.propTypes = {
 };
 const Setting = injectIntl(UnwrappedSetting);
 
+class Switch extends React.Component {
+    constructor (props) {
+        super(props);
+        bindAll(this, [
+            'handleClick'
+        ]);
+    }
+    handleClick () {
+        this.props.onChange({target: {checked: !this.props.checked}});
+    }
+    render () {
+        return (
+            <button
+                type="button"
+                className={styles.switch}
+                data-state={this.props.checked ? 'checked' : 'unchecked'}
+                role="switch"
+                aria-checked={this.props.checked}
+                aria-labelledby={this.props.labelledBy}
+                onClick={this.handleClick}
+            >
+                <span className={styles.switchThumb} />
+            </button>
+        );
+    }
+}
+Switch.propTypes = {
+    checked: PropTypes.bool.isRequired,
+    labelledBy: PropTypes.string.isRequired,
+    onChange: PropTypes.func.isRequired
+};
+
 const BooleanSetting = ({value, onChange, label, ...props}) => (
     <Setting
         {...props}
         active={value}
-        primary={
-            <label className={styles.label}>
-                <FancyCheckbox
-                    className={styles.checkbox}
-                    checked={value}
-                    onChange={onChange}
-                />
-                {label}
-            </label>
-        }
+        primary={label}
+        control={(
+            <Switch
+                checked={value}
+                labelledBy={`advanced-setting-${props.slug}-title`}
+                onChange={onChange}
+            />
+        )}
     />
 );
 BooleanSetting.propTypes = {
     onChange: PropTypes.func.isRequired,
     value: PropTypes.bool.isRequired,
-    label: PropTypes.node.isRequired
+    label: PropTypes.node.isRequired,
+    slug: PropTypes.string.isRequired
 };
 
 const HighQualityPen = props => (
@@ -335,13 +388,22 @@ const CustomStageSize = ({
     <Setting
         active={customStageSizeEnabled}
         primary={(
-            <div className={classNames(styles.label, styles.customStageSize)}>
-                <FormattedMessage
-                    defaultMessage="Custom Stage Size:"
-                    description="Custom Stage Size option"
-                    id="tw.settingsModal.customStageSize"
-                />
+            <FormattedMessage
+                defaultMessage="Custom Stage Size"
+                description="Custom Stage Size option"
+                id="tw.settingsModal.customStageSize"
+            />
+        )}
+        control={(
+            <div className={styles.customStageSize}>
+                <label
+                    className={styles.dimensionLabel}
+                    htmlFor="advanced-stage-width"
+                >
+                    {'W'}
+                </label>
                 <BufferedInput
+                    id="advanced-stage-width"
                     value={stageWidth}
                     onSubmit={onStageWidthChange}
                     className={styles.customStageSizeInput}
@@ -350,8 +412,20 @@ const CustomStageSize = ({
                     max="1024"
                     step="1"
                 />
-                <span>{'×'}</span>
+                <span
+                    className={styles.stageSizeSeparator}
+                    aria-hidden="true"
+                >
+                    {'×'}
+                </span>
+                <label
+                    className={styles.dimensionLabel}
+                    htmlFor="advanced-stage-height"
+                >
+                    {'H'}
+                </label>
                 <BufferedInput
+                    id="advanced-stage-height"
                     value={stageHeight}
                     onSubmit={onStageHeightChange}
                     className={styles.customStageSizeInput}
@@ -364,14 +438,20 @@ const CustomStageSize = ({
         )}
         secondary={
             (stageWidth >= 1000 || stageHeight >= 1000) && (
-                <div className={styles.warning}>
-                    <FormattedMessage
-                        // eslint-disable-next-line max-len
-                        defaultMessage="Using a custom stage size this large is not recommended! Instead, use a lower size with the same aspect ratio and let fullscreen mode upscale it to match the user's display."
-                        description="Warning about using stages that are too large in settings modal"
-                        id="tw.settingsModal.largeStageWarning"
-                    />
-                    <LearnMore slug="custom-stage-size" />
+                <div
+                    className={styles.warning}
+                    role="alert"
+                >
+                    <TriangleAlertIcon aria-hidden="true" />
+                    <div>
+                        <FormattedMessage
+                            // eslint-disable-next-line max-len
+                            defaultMessage="Using a custom stage size this large is not recommended! Instead, use a lower size with the same aspect ratio and let fullscreen mode upscale it to match the user's display."
+                            description="Warning about using stages that are too large in settings modal"
+                            id="tw.settingsModal.largeStageWarning"
+                        />
+                        <LearnMore slug="custom-stage-size" />
+                    </div>
                 </div>
             )
         }
@@ -395,41 +475,58 @@ CustomStageSize.propTypes = {
 };
 
 const StoreProjectOptions = ({onStoreProjectOptions}) => (
-    <div className={styles.setting}>
-        <div>
-            <button
-                onClick={onStoreProjectOptions}
-                className={styles.button}
-            >
-                <FormattedMessage
-                    defaultMessage="Store settings in project"
-                    description="Button in settings modal"
-                    id="tw.settingsModal.storeProjectOptions"
-                />
-            </button>
-            <p>
+    <div className={styles.storeProjectOptions}>
+        <div className={styles.storeProjectContent}>
+            <div className={styles.storeProjectDescription}>
                 <FormattedMessage
                     // eslint-disable-next-line max-len
                     defaultMessage="Stores the selected settings in the project so they will be automatically applied when TurboWarp loads this project. Warp timer and disable compiler will not be saved."
                     description="Help text for the store settings in project button"
                     id="tw.settingsModal.storeProjectOptionsHelp"
                 />
-            </p>
+            </div>
         </div>
+        <button
+            type="button"
+            onClick={onStoreProjectOptions}
+            className={styles.button}
+        >
+            <SaveIcon aria-hidden="true" />
+            <FormattedMessage
+                defaultMessage="Store settings in project"
+                description="Button in settings modal"
+                id="tw.settingsModal.storeProjectOptions"
+            />
+        </button>
     </div>
 );
 StoreProjectOptions.propTypes = {
     onStoreProjectOptions: PropTypes.func
 };
 
-const Header = props => (
-    <div className={styles.header}>
-        {props.children}
-        <div className={styles.divider} />
-    </div>
+const SettingsSection = ({children, icon: Icon, title, variant}) => (
+    <section
+        className={styles.settingsSection}
+        data-variant={variant}
+    >
+        <header className={styles.sectionHeader}>
+            <div className={styles.sectionMedia}>
+                <Icon aria-hidden="true" />
+            </div>
+            <h3 className={styles.sectionTitle}>
+                {title}
+            </h3>
+        </header>
+        <div className={styles.fieldGroup}>
+            {children}
+        </div>
+    </section>
 );
-Header.propTypes = {
-    children: PropTypes.node
+SettingsSection.propTypes = {
+    children: PropTypes.node,
+    icon: PropTypes.oneOfType([PropTypes.func, PropTypes.object]).isRequired,
+    title: PropTypes.node.isRequired,
+    variant: PropTypes.string
 };
 
 const SettingsModalComponent = props => (
@@ -442,70 +539,85 @@ const SettingsModalComponent = props => (
         id="settingsModal"
     >
         <Box className={styles.body}>
-            <Header>
-                <FormattedMessage
-                    defaultMessage="Featured"
-                    description="Settings modal section"
-                    id="tw.settingsModal.featured"
-                />
-            </Header>
-            <CustomFPS
-                framerate={props.framerate}
-                onChange={props.onFramerateChange}
-                onCustomizeFramerate={props.onCustomizeFramerate}
-            />
-            <Interpolation
-                value={props.interpolation}
-                onChange={props.onInterpolationChange}
-            />
-            <HighQualityPen
-                value={props.highQualityPen}
-                onChange={props.onHighQualityPenChange}
-            />
-            <WarpTimer
-                value={props.warpTimer}
-                onChange={props.onWarpTimerChange}
-            />
-            <Header>
-                <FormattedMessage
-                    defaultMessage="Remove Limits"
-                    description="Settings modal section"
-                    id="tw.settingsModal.removeLimits"
-                />
-            </Header>
-            <InfiniteClones
-                value={props.infiniteClones}
-                onChange={props.onInfiniteClonesChange}
-            />
-            <RemoveFencing
-                value={props.removeFencing}
-                onChange={props.onRemoveFencingChange}
-            />
-            <RemoveMiscLimits
-                value={props.removeLimits}
-                onChange={props.onRemoveLimitsChange}
-            />
-            <Header>
-                <FormattedMessage
-                    defaultMessage="Danger Zone"
-                    description="Settings modal section"
-                    id="tw.settingsModal.dangerZone"
-                />
-            </Header>
-            {!props.isEmbedded && (
-                <CustomStageSize
-                    {...props}
-                />
-            )}
-            <DisableCompiler
-                value={props.disableCompiler}
-                onChange={props.onDisableCompilerChange}
-            />
-            {!props.isEmbedded && (
-                <StoreProjectOptions
-                    {...props}
-                />
-            )}
+            <div className={styles.settingsLayout}>
+                <SettingsSection
+                    icon={SparklesIcon}
+                    title={(
+                        <FormattedMessage
+                            defaultMessage="Featured"
+                            description="Settings modal section"
+                            id="tw.settingsModal.featured"
+                        />
+                    )}
+                >
+                    <CustomFPS
+                        framerate={props.framerate}
+                        onChange={props.onFramerateChange}
+                        onCustomizeFramerate={props.onCustomizeFramerate}
+                    />
+                    <Interpolation
+                        value={props.interpolation}
+                        onChange={props.onInterpolationChange}
+                    />
+                    <HighQualityPen
+                        value={props.highQualityPen}
+                        onChange={props.onHighQualityPenChange}
+                    />
+                    <WarpTimer
+                        value={props.warpTimer}
+                        onChange={props.onWarpTimerChange}
+                    />
+                </SettingsSection>
+                <SettingsSection
+                    icon={GaugeIcon}
+                    title={(
+                        <FormattedMessage
+                            defaultMessage="Remove Limits"
+                            description="Settings modal section"
+                            id="tw.settingsModal.removeLimits"
+                        />
+                    )}
+                >
+                    <InfiniteClones
+                        value={props.infiniteClones}
+                        onChange={props.onInfiniteClonesChange}
+                    />
+                    <RemoveFencing
+                        value={props.removeFencing}
+                        onChange={props.onRemoveFencingChange}
+                    />
+                    <RemoveMiscLimits
+                        value={props.removeLimits}
+                        onChange={props.onRemoveLimitsChange}
+                    />
+                </SettingsSection>
+                <SettingsSection
+                    icon={TriangleAlertIcon}
+                    variant="destructive"
+                    title={(
+                        <FormattedMessage
+                            defaultMessage="Danger Zone"
+                            description="Settings modal section"
+                            id="tw.settingsModal.dangerZone"
+                        />
+                    )}
+                >
+                    {!props.isEmbedded && (
+                        <CustomStageSize
+                            {...props}
+                        />
+                    )}
+                    <DisableCompiler
+                        value={props.disableCompiler}
+                        onChange={props.onDisableCompilerChange}
+                    />
+                    {!props.isEmbedded && (
+                        <StoreProjectOptions
+                            {...props}
+                        />
+                    )}
+                </SettingsSection>
+            </div>
         </Box>
     </Modal>
 );
