@@ -377,7 +377,7 @@ class PlanetAiAssistant extends React.Component {
                         </div>
                     </header>
                     <div className={styles.memoryBar}>
-                        <span /> 对话上下文和项目目标会保存在当前历史记录中
+                        <span /> 每次发送都会读取最新工作台；项目目标会保存在当前历史记录中
                     </div>
                     <div className={styles.messages} aria-live="polite">
                         {this.state.messages.length ? this.state.messages.map(

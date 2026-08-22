@@ -1,6 +1,14 @@
 const TOOL_NAME = 'blocks.create_script';
 const MAX_STEPS = 60;
 const MAX_DEPTH = 4;
+const MAX_CONTEXT_BLOCKS = 240;
+const MAX_CONTEXT_BLOCK_BYTES = 30 * 1024;
+const MAX_CONTEXT_VARIABLE_BYTES = 8 * 1024;
+const MAX_CONTEXT_ASSET_BYTES = 6 * 1024;
+const MAX_CONTEXT_TARGETS = 40;
+const MAX_CONTEXT_SCRIPTS_PER_TARGET = 40;
+const MAX_CONTEXT_VARIABLES_PER_TARGET = 80;
+const MAX_CONTEXT_ASSETS_PER_TARGET = 40;
 const MOTION_STEPS = new Set([
     'move_steps', 'turn_right', 'turn_left', 'go_to_xy', 'change_x', 'change_y',
     'set_x', 'set_y', 'if_on_edge_bounce'
@@ -161,55 +169,203 @@ const eventLabel = event => {
     return `当按下 ${event.key || 'space'} 键`;
 };
 
-const collectBlockIds = (blocks, id, seen, output) => {
-    if (!id || seen.has(id) || output.length >= 120) return;
+const compactValue = value => {
+    if (Array.isArray(value)) {
+        return {
+            length: value.length,
+            preview: value.slice(0, 12).map(item => String(item).slice(0, 120))
+        };
+    }
+    if (value === null || typeof value === 'undefined') return '';
+    return String(value).slice(0, 240);
+};
+
+const jsonByteLength = value => {
+    const json = JSON.stringify(value);
+    if (typeof TextEncoder === 'undefined') return json.length * 3;
+    return new TextEncoder().encode(json).length;
+};
+
+const collectBlockGraph = (blocks, id, seen, output, budget) => {
+    if (!id || seen.has(id) || budget.remaining <= 0 || budget.bytes <= 0) {
+        if (id && !seen.has(id)) budget.truncated = true;
+        return;
+    }
     const block = blocks.getBlock(id);
     if (!block) return;
-    seen.add(id);
-    output.push({
+    const snapshot = {
         id: block.id,
         opcode: block.opcode,
         fields: Object.keys(block.fields || {}).reduce((result, key) => {
-            result[key] = String(block.fields[key].value || '').slice(0, 120);
+            const field = block.fields[key] || {};
+            result[key] = {
+                value: compactValue(field.value),
+                id: field.id || null
+            };
             return result;
-        }, {})
-    });
-    Object.keys(block.inputs || {}).forEach(key => collectBlockIds(
+        }, {}),
+        inputs: Object.keys(block.inputs || {}).reduce((result, key) => {
+            const input = block.inputs[key] || {};
+            result[key] = {
+                block: input.block || null,
+                shadow: input.shadow || null
+            };
+            return result;
+        }, {}),
+        next: block.next || null
+    };
+    const snapshotBytes = jsonByteLength(snapshot);
+    if (snapshotBytes > budget.bytes) {
+        budget.truncated = true;
+        return;
+    }
+    seen.add(id);
+    budget.remaining--;
+    budget.bytes -= snapshotBytes;
+    output.push(snapshot);
+    Object.keys(block.inputs || {}).forEach(key => collectBlockGraph(
         blocks,
         block.inputs[key].block,
         seen,
-        output
+        output,
+        budget
     ));
-    collectBlockIds(blocks, block.next, seen, output);
+    collectBlockGraph(blocks, block.next, seen, output, budget);
+};
+
+const targetVariables = (target, budget) => {
+    const ids = Object.keys(target.variables || {});
+    const output = [];
+    ids.slice(0, MAX_CONTEXT_VARIABLES_PER_TARGET).some(id => {
+        const variable = target.variables[id];
+        const snapshot = {
+            id,
+            name: variable.name,
+            type: variable.type || 'scalar',
+            value: compactValue(variable.value),
+            isCloud: Boolean(variable.isCloud)
+        };
+        const snapshotBytes = jsonByteLength(snapshot);
+        if (snapshotBytes > budget.bytes) {
+            budget.truncated = true;
+            return true;
+        }
+        budget.bytes -= snapshotBytes;
+        output.push(snapshot);
+        return false;
+    });
+    if (ids.length > output.length) budget.truncated = true;
+    return output;
+};
+
+const targetAssets = (target, getter, budget) => {
+    if (typeof target[getter] !== 'function') return [];
+    const assets = target[getter]();
+    const output = [];
+    assets.slice(0, MAX_CONTEXT_ASSETS_PER_TARGET).some(asset => {
+        const name = String(asset.name || '').slice(0, 120);
+        const nameBytes = jsonByteLength(name);
+        if (nameBytes > budget.bytes) {
+            budget.truncated = true;
+            return true;
+        }
+        budget.bytes -= nameBytes;
+        output.push(name);
+        return false;
+    });
+    if (assets.length > output.length) budget.truncated = true;
+    return output;
+};
+
+const targetState = target => {
+    const costumes = typeof target.getCostumes === 'function' ? target.getCostumes() : [];
+    const currentCostume = costumes[target.currentCostume] ? costumes[target.currentCostume].name : null;
+    if (target.isStage) {
+        return {
+            currentBackdrop: currentCostume,
+            volume: number(target.volume, 100)
+        };
+    }
+    return {
+        x: number(target.x),
+        y: number(target.y),
+        direction: number(target.direction, 90),
+        size: number(target.size, 100),
+        visible: target.visible !== false,
+        draggable: Boolean(target.draggable),
+        rotationStyle: target.rotationStyle || 'all around',
+        currentCostume,
+        volume: number(target.volume, 100)
+    };
+};
+
+const targetScripts = (target, budget) => {
+    const topBlockIds = target.blocks.getScripts();
+    const scripts = [];
+    topBlockIds.slice(0, MAX_CONTEXT_SCRIPTS_PER_TARGET).forEach(topBlockId => {
+        const blocks = [];
+        collectBlockGraph(target.blocks, topBlockId, new Set(), blocks, budget);
+        if (blocks.length) scripts.push({topBlockId, blocks});
+    });
+    return {
+        scripts,
+        scriptCount: topBlockIds.length,
+        scriptsTruncated: topBlockIds.length > scripts.length || budget.remaining <= 0
+    };
 };
 
 export const buildAssistantEditorContext = vm => {
-    const targets = vm.runtime.targets.filter(target => target.isOriginal).map(target => ({
+    const originalTargets = vm.runtime.targets.filter(target => target.isOriginal);
+    const selected = vm.editingTarget;
+    const budget = {
+        remaining: MAX_CONTEXT_BLOCKS,
+        bytes: MAX_CONTEXT_BLOCK_BYTES,
+        truncated: false
+    };
+    const variableBudget = {bytes: MAX_CONTEXT_VARIABLE_BYTES, truncated: false};
+    const assetBudget = {bytes: MAX_CONTEXT_ASSET_BYTES, truncated: false};
+    const orderedTargets = selected ? [selected, ...originalTargets.filter(target => target !== selected)] :
+        originalTargets;
+    const capturedTargets = orderedTargets.slice(0, MAX_CONTEXT_TARGETS);
+    const scriptsByTarget = capturedTargets.reduce((result, target) => {
+        result[target.id] = targetScripts(target, budget);
+        return result;
+    }, {});
+    const targets = capturedTargets.map(target => ({
         id: target.id,
         name: target.getName(),
         isStage: target.isStage,
-        selected: vm.editingTarget === target
+        selected: selected === target,
+        state: targetState(target),
+        variables: targetVariables(target, variableBudget),
+        costumes: targetAssets(target, 'getCostumes', assetBudget),
+        sounds: targetAssets(target, 'getSounds', assetBudget),
+        ...scriptsByTarget[target.id]
     }));
-    const selected = vm.editingTarget;
-    const scripts = [];
-    if (selected) {
-        selected.blocks.getScripts().slice(0, 30)
-            .forEach(topBlockId => {
-                const blocks = [];
-                collectBlockIds(selected.blocks, topBlockId, new Set(), blocks);
-                scripts.push({topBlockId, blocks});
-            });
-    }
+    const selectedSnapshot = selected ? targets.find(target => target.id === selected.id) : null;
     return {
-        version: 1,
+        version: 2,
+        capturedAt: new Date().toISOString(),
+        source: 'scratch-vm-live-on-send',
         locale: document.documentElement.lang || 'zh-cn',
         selectedTarget: selected ? {
             id: selected.id,
             name: selected.getName(),
-            isStage: selected.isStage
+            isStage: selected.isStage,
+            scriptCount: selectedSnapshot ? selectedSnapshot.scriptCount : 0
         } : null,
+        stageSize: {
+            width: number(vm.runtime.stageWidth, 480),
+            height: number(vm.runtime.stageHeight, 360)
+        },
+        summary: {
+            targetCount: originalTargets.length,
+            capturedBlockCount: MAX_CONTEXT_BLOCKS - budget.remaining,
+            truncated: originalTargets.length > capturedTargets.length || budget.truncated ||
+                variableBudget.truncated || assetBudget.truncated ||
+                targets.some(target => target.scriptsTruncated)
+        },
         targets,
-        scripts,
         capabilityBoundary: {
             tools: [TOOL_NAME],
             writeScope: 'ADD_SCRIPT_TO_SELECTED_TARGET_ONLY',
