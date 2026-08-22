@@ -1,7 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
+import {BriefcaseIcon} from 'lucide-react';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
+import DockPanel from '../editor-dock/dock-panel.jsx';
 import DragConstants from '../../lib/drag-constants';
 import SpriteSelectorItem from '../../containers/sprite-selector-item.jsx';
 import styles from './backpack.css';
@@ -49,15 +51,21 @@ const Backpack = ({
     intl,
     loading,
     showMore,
+    onClose,
     onDelete,
     onRename,
     onMouseEnter,
     onMouseLeave,
     onMore
 }) => (expanded ? (
-    <section
-        aria-label="书包内容"
-        className={styles.backpackContainer}
+    <DockPanel
+        className={styles.backpackPanel}
+        description="保存并复用角色、造型、声音与积木"
+        dragLabel="拖动书包窗口"
+        icon={BriefcaseIcon}
+        onClose={onClose}
+        panelId="backpack"
+        title="书包"
     >
         <div
             className={classNames(styles.backpackList, {
@@ -131,7 +139,7 @@ const Backpack = ({
                 )
             )}
         </div>
-    </section>
+    </DockPanel>
 ) : null);
 
 Backpack.propTypes = {
@@ -148,6 +156,7 @@ Backpack.propTypes = {
     expanded: PropTypes.bool,
     intl: intlShape,
     loading: PropTypes.bool,
+    onClose: PropTypes.func.isRequired,
     onDelete: PropTypes.func,
     onRename: PropTypes.func,
     onMore: PropTypes.func,

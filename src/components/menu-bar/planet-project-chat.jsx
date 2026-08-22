@@ -1,11 +1,8 @@
-import {gsap} from 'gsap';
-import {Draggable} from 'gsap/Draggable';
-import {useGSAP} from '@gsap/react';
-import {GripVerticalIcon, SendIcon, XIcon} from 'lucide-react';
-import PropTypes from 'prop-types';
+import {MessageCircleIcon, SendIcon} from 'lucide-react';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
+import DockPanel from '../editor-dock/dock-panel.jsx';
 import {
     collaborationEnabled,
     PLANET_COLLABORATION_CHAT_EVENT,
@@ -21,94 +18,6 @@ import {
 import styles from './planet-project-chat.css';
 
 const MAX_MESSAGE_LENGTH = 500;
-
-gsap.registerPlugin(useGSAP, Draggable);
-
-const DraggableChatPanel = ({children, connected, onClose}) => {
-    const panelRef = React.useRef(null);
-    const dragHandleRef = React.useRef(null);
-
-    useGSAP(() => {
-        const matchMedia = gsap.matchMedia();
-        const draggable = Draggable.create(panelRef.current, {
-            bounds: document.documentElement,
-            edgeResistance: 0.88,
-            trigger: dragHandleRef.current,
-            type: 'x,y'
-        })[0];
-        const keepInViewport = () => draggable.applyBounds(document.documentElement);
-
-        matchMedia.add('(prefers-reduced-motion: no-preference)', () => {
-            gsap.fromTo(panelRef.current, {
-                autoAlpha: 0,
-                scale: 0.98
-            }, {
-                autoAlpha: 1,
-                duration: 0.2,
-                ease: 'power2.out',
-                scale: 1
-            });
-        });
-        window.addEventListener('resize', keepInViewport);
-
-        return () => {
-            window.removeEventListener('resize', keepInViewport);
-            draggable.kill();
-            matchMedia.revert();
-        };
-    }, {scope: panelRef});
-
-    return (
-        <section
-            aria-describedby="planet-project-chat-connection"
-            aria-labelledby="planet-project-chat-title"
-            className={styles.panel}
-            data-project-chat-panel
-            ref={panelRef}
-            role="dialog"
-        >
-            <header className={styles.header}>
-                <div
-                    aria-label="拖动项目聊天窗口"
-                    className={styles.dragHandle}
-                    data-project-chat-drag-handle
-                    ref={dragHandleRef}
-                >
-                    <GripVerticalIcon aria-hidden="true" />
-                    <div className={styles.headerCopy}>
-                        <h2
-                            className={styles.title}
-                            id="planet-project-chat-title"
-                        >
-                            {'项目聊天'}
-                        </h2>
-                        <span
-                            className={styles.connection}
-                            id="planet-project-chat-connection"
-                        >
-                            {connected ? '实时在线' : '正在连接'}
-                        </span>
-                    </div>
-                </div>
-                <button
-                    aria-label="关闭项目聊天"
-                    className={styles.closeButton}
-                    onClick={onClose}
-                    type="button"
-                >
-                    <XIcon aria-hidden="true" />
-                </button>
-            </header>
-            {children}
-        </section>
-    );
-};
-
-DraggableChatPanel.propTypes = {
-    children: PropTypes.node.isRequired,
-    connected: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired
-};
 
 class PlanetProjectChat extends React.Component {
     constructor (props) {
@@ -240,9 +149,14 @@ class PlanetProjectChat extends React.Component {
     renderPanel () {
         if (!this.state.open) return null;
         return ReactDOM.createPortal(
-            <DraggableChatPanel
-                connected={this.state.connected}
+            <DockPanel
+                className={styles.panel}
+                description={this.state.connected ? '实时在线' : '正在连接'}
+                dragLabel="拖动项目聊天窗口"
+                icon={MessageCircleIcon}
                 onClose={this.handleClose}
+                panelId="chat"
+                title="项目聊天"
             >
                 <div
                     aria-live="polite"
@@ -298,7 +212,7 @@ class PlanetProjectChat extends React.Component {
                         </button>
                     </div>
                 </form>
-            </DraggableChatPanel>,
+            </DockPanel>,
             document.body
         );
     }

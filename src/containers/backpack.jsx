@@ -289,6 +289,7 @@ class Backpack extends React.Component {
                 expanded={this.state.expanded}
                 loading={this.state.loading}
                 showMore={this.state.moreToLoad}
+                onClose={this.handleToggle}
                 onDelete={this.handleDelete}
                 onRename={this.handleRename}
                 onDrop={this.handleDrop}

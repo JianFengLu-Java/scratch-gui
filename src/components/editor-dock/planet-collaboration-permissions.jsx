@@ -1,16 +1,11 @@
 /* eslint-disable react/jsx-no-bind, react/jsx-max-props-per-line */
-import {gsap} from 'gsap';
-import {Draggable} from 'gsap/Draggable';
-import {useGSAP} from '@gsap/react';
 import {
     CatIcon,
-    GripVerticalIcon,
     ImageIcon,
     LoaderCircleIcon,
     SaveIcon,
     ShieldCheckIcon,
-    UsersIcon,
-    XIcon
+    UsersIcon
 } from 'lucide-react';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -32,8 +27,7 @@ import {
 import {isPlanetProjectRoute} from '../../lib/planet-project-loader';
 
 import styles from './planet-collaboration-permissions.css';
-
-gsap.registerPlugin(useGSAP, Draggable);
+import DockPanel from './dock-panel.jsx';
 
 const assignmentMap = data => (data.assignments || []).reduce((result, assignment) => ({
     ...result,
@@ -57,69 +51,6 @@ Avatar.propTypes = {
     }).isRequired
 };
 
-const DraggablePanel = ({children, onClose}) => {
-    const panelRef = React.useRef(null);
-    const handleRef = React.useRef(null);
-
-    useGSAP(() => {
-        const matchMedia = gsap.matchMedia();
-        const draggable = Draggable.create(panelRef.current, {
-            bounds: document.documentElement,
-            edgeResistance: 0.88,
-            trigger: handleRef.current,
-            type: 'x,y'
-        })[0];
-        const keepInViewport = () => draggable.applyBounds(document.documentElement);
-        matchMedia.add('(prefers-reduced-motion: no-preference)', () => {
-            gsap.fromTo(panelRef.current, {autoAlpha: 0, scale: 0.98}, {
-                autoAlpha: 1,
-                duration: 0.2,
-                ease: 'power2.out',
-                scale: 1
-            });
-        });
-        window.addEventListener('resize', keepInViewport);
-        return () => {
-            window.removeEventListener('resize', keepInViewport);
-            draggable.kill();
-            matchMedia.revert();
-        };
-    }, {scope: panelRef});
-
-    return (
-        <section
-            aria-describedby="planet-collaboration-permissions-description"
-            aria-labelledby="planet-collaboration-permissions-title"
-            className={styles.panel}
-            ref={panelRef}
-            role="dialog"
-        >
-            <header className={styles.header}>
-                <div
-                    aria-label="拖动角色权限窗口"
-                    className={styles.dragHandle}
-                    ref={handleRef}
-                >
-                    <GripVerticalIcon aria-hidden="true" />
-                    <div className={styles.headerIcon}><ShieldCheckIcon aria-hidden="true" /></div>
-                    <div className={styles.headerCopy}>
-                        <h2 id="planet-collaboration-permissions-title">{'角色权限'}</h2>
-                        <p id="planet-collaboration-permissions-description">{'管理角色与舞台的编辑范围'}</p>
-                    </div>
-                </div>
-                <button aria-label="关闭角色权限" className={styles.iconButton} type="button" onClick={onClose}>
-                    <XIcon aria-hidden="true" />
-                </button>
-            </header>
-            {children}
-        </section>
-    );
-};
-
-DraggablePanel.propTypes = {
-    children: PropTypes.node.isRequired,
-    onClose: PropTypes.func.isRequired
-};
 
 const PlanetCollaborationPermissions = ({projectId, targets}) => {
     const [open, setOpen] = React.useState(false);
@@ -216,7 +147,15 @@ const PlanetCollaborationPermissions = ({projectId, targets}) => {
     const viewerUserId = data && String(data.viewerUserId || '');
 
     return ReactDOM.createPortal(
-        <DraggablePanel onClose={() => setOpen(false)}>
+        <DockPanel
+            className={styles.panel}
+            description="管理角色与舞台的编辑范围"
+            dragLabel="拖动角色权限窗口"
+            icon={ShieldCheckIcon}
+            onClose={() => setOpen(false)}
+            panelId="permissions"
+            title="角色权限"
+        >
             <div className={styles.body}>
                 {loading && !data ? (
                     <div className={styles.loading}><LoaderCircleIcon aria-hidden="true" />{'正在加载权限'}</div>
@@ -327,7 +266,7 @@ const PlanetCollaborationPermissions = ({projectId, targets}) => {
                     </button>
                 </footer>
             ) : null}
-        </DraggablePanel>,
+        </DockPanel>,
         document.body
     );
 };

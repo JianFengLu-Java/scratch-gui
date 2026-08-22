@@ -1,16 +1,15 @@
 /* eslint-disable react/jsx-no-literals, react/jsx-no-bind, react/jsx-handler-names, react/jsx-max-props-per-line */
 import PropTypes from 'prop-types';
 import React from 'react';
-import classNames from 'classnames';
 import {
     HistoryIcon,
     PlusIcon,
     SendIcon,
-    SparklesIcon,
-    XIcon
+    SparklesIcon
 } from 'lucide-react';
 import VM from 'scratch-vm';
 
+import DockPanel from '../editor-dock/dock-panel.jsx';
 import {
     createAssistantConversation,
     listAssistantConversations,
@@ -62,17 +61,11 @@ class PlanetAiAssistant extends React.Component {
             messages: [],
             input: '',
             error: null,
-            toolStates: {},
-            position: null,
-            dragging: false
+            toolStates: {}
         };
         this.messagesEnd = React.createRef();
-        this.panelRef = React.createRef();
         this.handleSend = this.handleSend.bind(this);
         this.handleInputKeyDown = this.handleInputKeyDown.bind(this);
-        this.handleDragStart = this.handleDragStart.bind(this);
-        this.handleDragMove = this.handleDragMove.bind(this);
-        this.handleDragEnd = this.handleDragEnd.bind(this);
         this.handleToggleHistory = this.handleToggleHistory.bind(this);
         this.open = this.open.bind(this);
         this.close = this.close.bind(this);
@@ -101,7 +94,6 @@ class PlanetAiAssistant extends React.Component {
 
     componentWillUnmount () {
         if (this.uninstallFloatingInterface) this.uninstallFloatingInterface();
-        this.removeDragListeners();
     }
 
     open () {
@@ -128,54 +120,8 @@ class PlanetAiAssistant extends React.Component {
 
     handleToggleHistory () {
         this.setState(previous => ({
-            historyOpen: !previous.historyOpen,
-            position: null
+            historyOpen: !previous.historyOpen
         }));
-    }
-
-    handleDragStart (event) {
-        if (event.button !== 0 || event.target.closest('button, input, textarea, a')) return;
-        const panel = this.panelRef.current;
-        if (!panel) return;
-        const bounds = panel.getBoundingClientRect();
-        this.dragOffset = {
-            x: event.clientX - bounds.left,
-            y: event.clientY - bounds.top
-        };
-        this.setState({
-            dragging: true,
-            position: {x: bounds.left, y: bounds.top}
-        });
-        window.addEventListener('pointermove', this.handleDragMove);
-        window.addEventListener('pointerup', this.handleDragEnd);
-        document.body.style.userSelect = 'none';
-        event.preventDefault();
-    }
-
-    handleDragMove (event) {
-        const panel = this.panelRef.current;
-        if (!panel || !this.dragOffset) return;
-        const inset = 8;
-        const maxX = Math.max(inset, window.innerWidth - panel.offsetWidth - inset);
-        const maxY = Math.max(inset, window.innerHeight - panel.offsetHeight - inset);
-        this.setState({
-            position: {
-                x: Math.min(maxX, Math.max(inset, event.clientX - this.dragOffset.x)),
-                y: Math.min(maxY, Math.max(inset, event.clientY - this.dragOffset.y))
-            }
-        });
-    }
-
-    handleDragEnd () {
-        this.dragOffset = null;
-        this.removeDragListeners();
-        this.setState({dragging: false});
-    }
-
-    removeDragListeners () {
-        window.removeEventListener('pointermove', this.handleDragMove);
-        window.removeEventListener('pointerup', this.handleDragEnd);
-        document.body.style.userSelect = '';
     }
 
     async loadHistory () {
@@ -421,106 +367,74 @@ class PlanetAiAssistant extends React.Component {
 
     renderPanel () {
         return (
-            <section
-                aria-labelledby="planet-ai-assistant-title"
-                aria-describedby="planet-ai-assistant-description"
-                className={this.state.historyOpen ? styles.panelWithHistory : styles.panel}
-                ref={this.panelRef}
-                role="dialog"
-            >
-                {this.renderHistory()}
-                <div className={styles.chatColumn}>
-                    <header
-                        className={styles.header}
-                        onPointerDown={this.handleDragStart}
+            <DockPanel
+                actions={(
+                    <button
+                        aria-label="查看历史记录"
+                        className={this.state.historyOpen ? styles.iconButtonActive : styles.iconButton}
+                        title="历史记录"
+                        type="button"
+                        onClick={this.handleToggleHistory}
                     >
-                        <div>
-                            <div className={styles.titleRow}>
-                                <SparklesIcon aria-hidden="true" className={styles.spark} />
-                                <h2 id="planet-ai-assistant-title">AI 创作助手</h2>
-                            </div>
-                            <p id="planet-ai-assistant-description">可以帮你规划并搭建基础积木</p>
-                        </div>
-                        <div className={styles.headerActions}>
-                            <button
-                                aria-label="查看历史记录"
-                                className={this.state.historyOpen ? styles.iconButtonActive : styles.iconButton}
-                                title="历史记录"
-                                type="button"
-                                onClick={this.handleToggleHistory}
-                            >
-                                <HistoryIcon aria-hidden="true" />
-                            </button>
-                            <button
-                                aria-label="关闭 AI 助手"
-                                className={styles.iconButton}
-                                title="关闭"
-                                type="button"
-                                onClick={this.close}
-                            >
-                                <XIcon aria-hidden="true" />
-                            </button>
-                        </div>
-                    </header>
-                    <div className={styles.memoryBar}>
-                        <span /> 每次发送都会读取最新工作台；项目目标会保存在当前历史记录中
-                    </div>
-                    <div className={styles.messages} aria-live="polite">
-                        {this.state.messages.length ? this.state.messages.map(
-                            message => this.renderMessage(message)
-                        ) : (
-                            <div className={styles.emptyState}>
-                                <SparklesIcon aria-hidden="true" />
-                                <strong>从一个小目标开始</strong>
-                                <p>例如：“给当前角色添加绿旗点击后移动并旋转的积木。”</p>
-                            </div>
-                        )}
-                        {this.state.sending ? <div className={styles.thinking}>AI 正在整理积木计划…</div> : null}
-                        <div ref={this.messagesEnd} />
-                    </div>
-                    {this.state.error ? <div className={styles.error} role="alert">{this.state.error}</div> : null}
-                    <footer className={styles.composer}>
-                        <textarea
-                            aria-label="告诉 AI 你想制作什么"
-                            disabled={this.state.sending}
-                            maxLength={2000}
-                            placeholder="描述你想让角色做什么…"
-                            rows={2}
-                            value={this.state.input}
-                            onChange={event => this.setState({input: event.target.value})}
-                            onKeyDown={this.handleInputKeyDown}
-                        />
-                        <button
-                            aria-label="发送消息"
-                            className={styles.sendButton}
-                            disabled={this.state.sending || !this.state.input.trim()}
-                            type="button"
-                            onClick={this.handleSend}
-                        >
-                            <SendIcon aria-hidden="true" />
-                        </button>
-                    </footer>
-                    <div className={styles.disclaimer}>AI 可能会出错，应用前请检查积木计划。</div>
+                        <HistoryIcon aria-hidden="true" />
+                    </button>
+                )}
+                className={this.state.historyOpen ? styles.panelWithHistory : styles.panel}
+                description="规划并搭建基础积木"
+                dragLabel="拖动 AI 创作助手窗口"
+                icon={SparklesIcon}
+                leading={this.renderHistory()}
+                onClose={this.close}
+                panelId="ai"
+                title="AI 创作助手"
+            >
+                <div className={styles.memoryBar}>
+                    <span /> 每次发送都会读取最新工作台；项目目标会保存在当前历史记录中
                 </div>
-            </section>
+                <div className={styles.messages} aria-live="polite">
+                    {this.state.messages.length ? this.state.messages.map(
+                        message => this.renderMessage(message)
+                    ) : (
+                        <div className={styles.emptyState}>
+                            <SparklesIcon aria-hidden="true" />
+                            <strong>从一个小目标开始</strong>
+                            <p>例如：“给当前角色添加绿旗点击后移动并旋转的积木。”</p>
+                        </div>
+                    )}
+                    {this.state.sending ? <div className={styles.thinking}>AI 正在整理积木计划…</div> : null}
+                    <div ref={this.messagesEnd} />
+                </div>
+                {this.state.error ? <div className={styles.error} role="alert">{this.state.error}</div> : null}
+                <footer className={styles.composer}>
+                    <textarea
+                        aria-label="告诉 AI 你想制作什么"
+                        disabled={this.state.sending}
+                        maxLength={2000}
+                        placeholder="描述你想让角色做什么…"
+                        rows={2}
+                        value={this.state.input}
+                        onChange={event => this.setState({input: event.target.value})}
+                        onKeyDown={this.handleInputKeyDown}
+                    />
+                    <button
+                        aria-label="发送消息"
+                        className={styles.sendButton}
+                        disabled={this.state.sending || !this.state.input.trim()}
+                        type="button"
+                        onClick={this.handleSend}
+                    >
+                        <SendIcon aria-hidden="true" />
+                    </button>
+                </footer>
+                <div className={styles.disclaimer}>AI 可能会出错，应用前请检查积木计划。</div>
+            </DockPanel>
         );
     }
 
     render () {
         if (!this.state.open) return null;
-        const positionStyle = this.state.position ? {
-            bottom: 'auto',
-            left: `${this.state.position.x}px`,
-            right: 'auto',
-            top: `${this.state.position.y}px`
-        } : null;
         return (
-            <div
-                className={classNames(styles.root, {
-                    [styles.dragging]: this.state.dragging
-                })}
-                style={positionStyle}
-            >
+            <div className={styles.root}>
                 {this.renderPanel()}
             </div>
         );

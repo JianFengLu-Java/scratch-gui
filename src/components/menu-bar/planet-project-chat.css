@@ -1,98 +1,7 @@
 .panel {
-    background: var(--tw-menu-background, #fff);
-    border: 1px solid var(--tw-menu-border, #e5e5e5);
-    border-radius: .625rem;
-    box-shadow: 0 .5rem 1.5rem var(--tw-topbar-shadow, rgba(23, 23, 23, .1));
-    color: var(--tw-menu-foreground, #171717);
-    display: flex;
-    flex-direction: column;
-    max-height: min(34rem, calc(100vh - 4.5rem));
-    overflow: hidden;
-    position: fixed;
-    right: 0.85rem;
-    top: 3.4rem;
-    transform-origin: top right;
-    will-change: transform;
+    height: min(28rem, calc(100vh - 9rem));
+    height: min(28rem, calc(100dvh - 9rem));
     width: min(21rem, calc(100vw - 1.5rem));
-    z-index: 10003;
-}
-
-.header {
-    align-items: center;
-    border-bottom: 1px solid var(--tw-menu-border, #e5e5e5);
-    display: flex;
-    justify-content: space-between;
-    padding: 0.8rem 0.9rem;
-}
-
-.drag-handle {
-    align-items: center;
-    cursor: grab;
-    display: flex;
-    flex: 1;
-    gap: .45rem;
-    min-width: 0;
-    touch-action: none;
-    user-select: none;
-}
-
-.drag-handle:active {
-    cursor: grabbing;
-}
-
-.drag-handle > svg {
-    color: var(--tw-menu-muted-foreground, #737373);
-    flex: none;
-    height: 1rem;
-    stroke-width: 1.7;
-    width: 1rem;
-}
-
-.header-copy {
-    min-width: 0;
-}
-
-.title {
-    font-size: 0.9rem;
-    font-weight: 650;
-    line-height: 1.2;
-    margin: 0;
-}
-
-.connection {
-    color: var(--tw-menu-muted-foreground, #737373);
-    display: block;
-    font-size: 0.68rem;
-    margin-top: 0.15rem;
-}
-
-.close-button {
-    align-items: center;
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 0.4rem;
-    color: var(--tw-menu-muted-foreground, #737373);
-    cursor: pointer;
-    display: inline-flex;
-    font: inherit;
-    font-size: 1.15rem;
-    height: 1.8rem;
-    justify-content: center;
-    width: 1.8rem;
-}
-
-.close-button:hover,
-.close-button:focus-visible {
-    background: var(--tw-menu-accent, #f5f5f5);
-    border-color: var(--tw-menu-border, #e5e5e5);
-    color: var(--tw-menu-accent-foreground, #171717);
-    outline: none;
-}
-
-.close-button svg {
-    height: 1rem;
-    stroke-width: 1.8;
-    width: 1rem;
 }
 
 .messages {
@@ -238,8 +147,6 @@
 
 @media (max-width: 640px) {
     .panel {
-        right: 0.5rem;
-        top: 3.2rem;
         width: calc(100vw - 1rem);
     }
 }

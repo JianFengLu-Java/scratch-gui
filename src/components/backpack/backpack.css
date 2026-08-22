@@ -1,21 +1,8 @@
 @import "../../css/units.css";
 @import "../../css/colors.css";
-@import "../../css/z-index.css";
-
-.backpack-container {
-    background: var(--tw-dialog-background, #fff);
-    border: 1px solid var(--tw-dialog-border, #e5e5e5);
-    border-radius: .75rem;
-    bottom: 4.65rem;
-    box-shadow: 0 .75rem 2rem -.9rem var(--tw-dialog-shadow, rgba(23, 23, 23, .2));
-    color: var(--tw-dialog-foreground, #171717);
-    left: 50%;
+.backpack-panel {
     max-width: calc(100vw - 1rem);
-    overflow: hidden;
-    position: fixed;
-    transform: translateX(-50%);
     width: min(42rem, calc(100vw - 1rem));
-    z-index: $z-index-menu-bar;
 }
 
 .backpack-list {
@@ -93,10 +80,4 @@
 
 .more:focus-visible {
     box-shadow: 0 0 0 2px var(--tw-dialog-ring, #a3a3a3);
-}
-
-@media (max-width: 640px) {
-    .backpack-container {
-        bottom: 4.1rem;
-    }
 }

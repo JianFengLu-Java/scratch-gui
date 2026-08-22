@@ -24,6 +24,7 @@ import {
     PLANET_BACKPACK_TOGGLE_EVENT,
     PLANET_COLLABORATION_PERMISSIONS_READY_EVENT,
     PLANET_COLLABORATION_PERMISSIONS_STATE_EVENT,
+    PLANET_DOCK_PANEL_OPEN_EVENT,
     PLANET_PROJECT_CHAT_READY_EVENT,
     PLANET_PROJECT_CHAT_STATE_EVENT,
     dispatchEditorResourceCommand
@@ -148,6 +149,7 @@ const EditorDock = ({
 
     const toggleChat = () => {
         if (!chatAvailable) return;
+        setOpenMenu(null);
         if (window.PlanetProjectChat) {
             window.PlanetProjectChat.toggle();
             return;
@@ -157,6 +159,7 @@ const EditorDock = ({
         }, {once: true});
     };
     const toggleAi = () => {
+        setOpenMenu(null);
         if (window.PlanetAiAssistant) {
             window.PlanetAiAssistant.toggle();
             return;
@@ -167,10 +170,12 @@ const EditorDock = ({
     };
     const toggleBackpack = () => {
         if (!hasBackpack) return;
+        setOpenMenu(null);
         window.dispatchEvent(new CustomEvent(PLANET_BACKPACK_TOGGLE_EVENT));
     };
     const togglePermissions = () => {
         if (!chatAvailable) return;
+        setOpenMenu(null);
         if (window.PlanetCollaborationPermissions) {
             window.PlanetCollaborationPermissions.toggle();
             return;
@@ -184,6 +189,24 @@ const EditorDock = ({
         if (command === 'sprite-library') onOpenSpriteLibrary();
         else if (command === 'backdrop-library') onOpenBackdropLibrary();
         else dispatchEditorResourceCommand(command);
+    };
+    const toggleResourceMenu = kind => {
+        setOpenMenu(previous => {
+            const next = previous === kind ? null : kind;
+            if (next) {
+                window.dispatchEvent(new CustomEvent(PLANET_DOCK_PANEL_OPEN_EVENT, {
+                    detail: {panelId: `resource-${kind}`}
+                }));
+            }
+            return next;
+        });
+    };
+    const openExtensionLibrary = () => {
+        setOpenMenu(null);
+        window.dispatchEvent(new CustomEvent(PLANET_DOCK_PANEL_OPEN_EVENT, {
+            detail: {panelId: 'extensions'}
+        }));
+        onOpenExtensionLibrary();
     };
 
     const renderDockButton = ({
@@ -226,7 +249,7 @@ const EditorDock = ({
                 expanded: openMenu === kind,
                 icon: Icon,
                 label,
-                onClick: () => setOpenMenu(previous => (previous === kind ? null : kind))
+                onClick: () => toggleResourceMenu(kind)
             })}
             {openMenu === kind && (
                 <div aria-label={`${label}选项`} className={styles.resourceMenu} role="menu">
@@ -252,7 +275,7 @@ const EditorDock = ({
     );
 
     return (
-        <nav aria-label="编辑器快捷工具" className={styles.root} ref={dockRef}>
+        <nav aria-label="编辑器快捷工具" className={styles.root} data-editor-dock ref={dockRef}>
             <div className={styles.surface}>
                 {renderResource('sprite', '角色', CatIcon)}
                 {renderResource('backdrop', '背景', ImageIcon)}
@@ -277,7 +300,7 @@ const EditorDock = ({
                 {renderDockButton({
                     icon: PuzzleIcon,
                     label: '扩展',
-                    onClick: onOpenExtensionLibrary
+                    onClick: openExtensionLibrary
                 })}
                 {renderDockButton({
                     active: aiOpen,

@@ -1,50 +1,9 @@
-@import "../../css/z-index.css";
-
 .panel {
-    background: var(--tw-dialog-background, #fff);
-    border: 1px solid var(--tw-dialog-border, #e5e5e5);
-    border-radius: .875rem;
-    box-shadow: 0 1rem 2.8rem -.9rem var(--tw-dialog-shadow, rgba(23, 23, 23, .2));
-    color: var(--tw-dialog-foreground, #171717);
-    display: flex;
-    flex-direction: column;
-    left: max(1rem, calc(100vw - 29rem));
-    max-height: min(72vh, 44rem);
-    overflow: hidden;
-    position: fixed;
-    top: 5.2rem;
+    max-height: min(72vh, 44rem, calc(100vh - 9rem));
+    max-height: min(72dvh, 44rem, calc(100dvh - 9rem));
     width: min(27rem, calc(100vw - 2rem));
-    z-index: $z-index-menu-bar;
 }
 
-.header {
-    align-items: center;
-    border-bottom: 1px solid var(--tw-dialog-border, #e5e5e5);
-    display: flex;
-    min-height: 4rem;
-    padding: .7rem .75rem .7rem .5rem;
-}
-
-.dragHandle {
-    align-items: center;
-    cursor: grab;
-    display: flex;
-    flex: 1;
-    gap: .6rem;
-    min-width: 0;
-}
-
-.dragHandle:active {
-    cursor: grabbing;
-}
-
-.dragHandle > svg {
-    color: var(--tw-dialog-muted-foreground, #737373);
-    height: 1rem;
-    width: 1rem;
-}
-
-.headerIcon,
 .targetIcon {
     align-items: center;
     background: var(--tw-dialog-accent, #f5f5f5);
@@ -57,53 +16,7 @@
     width: 2rem;
 }
 
-.headerIcon svg,
 .targetIcon svg {
-    height: 1rem;
-    width: 1rem;
-}
-
-.headerCopy {
-    min-width: 0;
-}
-
-.headerCopy h2,
-.headerCopy p {
-    margin: 0;
-}
-
-.headerCopy h2 {
-    font-size: .85rem;
-    font-weight: 700;
-}
-
-.headerCopy p {
-    color: var(--tw-dialog-muted-foreground, #737373);
-    font-size: .68rem;
-    margin-top: .16rem;
-}
-
-.iconButton {
-    align-items: center;
-    background: transparent;
-    border: 0;
-    border-radius: .45rem;
-    color: var(--tw-dialog-muted-foreground, #737373);
-    cursor: pointer;
-    display: inline-flex;
-    height: 2rem;
-    justify-content: center;
-    width: 2rem;
-}
-
-.iconButton:hover,
-.iconButton:focus-visible {
-    background: var(--tw-dialog-accent, #f5f5f5);
-    color: var(--tw-dialog-foreground, #171717);
-    outline: none;
-}
-
-.iconButton svg {
     height: 1rem;
     width: 1rem;
 }
@@ -411,9 +324,9 @@
 
 @media (max-width: 640px) {
     .panel {
-        left: 1rem;
-        max-height: calc(100vh - 7rem);
-        top: 4rem;
+        max-height: calc(100vh - 8.25rem);
+        max-height: calc(100dvh - 8.25rem);
+        width: calc(100vw - 1rem);
     }
 
     .footer > span {
