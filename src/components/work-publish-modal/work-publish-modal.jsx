@@ -1,29 +1,41 @@
 /* eslint-disable react/jsx-no-literals, react/jsx-no-bind, react/jsx-max-props-per-line, max-len */
 import PropTypes from 'prop-types';
 import React from 'react';
+import {
+    CheckIcon,
+    FileDownIcon,
+    ImageIcon,
+    MonitorIcon,
+    UploadCloudIcon,
+    SparklesIcon,
+    UploadIcon
+} from 'lucide-react';
 
 import Box from '../box/box.jsx';
 import Modal from '../../containers/modal.jsx';
-import {
-    loadWorkPublishOptions,
-    publishCurrentProject,
-    saveCurrentProjectDraft
-} from '../../lib/planet-work-publisher.js';
+import {loadWorkPublishOptions, publishCurrentProject} from '../../lib/planet-work-publisher.js';
 
 import styles from './work-publish-modal.css';
 
 const MAX_COVER_SIZE = 10 * 1024 * 1024;
 const DRAFT_FIELDS = [
-    'name',
-    'categoryId',
-    'tagIds',
-    'summary',
-    'instructions',
-    'visibility',
-    'remixPermission',
-    'versionType',
-    'notifyFollowers',
-    'copyrightAccepted'
+    'categoryId', 'tagIds', 'summary', 'instructions', 'visibility',
+    'remixPermission', 'versionType', 'notifyFollowers', 'copyrightAccepted'
+];
+
+const VISIBILITY_OPTIONS = [
+    {value: 'PUBLIC', label: '公开', description: '审核通过后所有人可见'},
+    {value: 'PRIVATE', label: '私密', description: '仅自己可以查看'}
+];
+const VERSION_OPTIONS = [
+    {value: 'RELEASE', label: '正式版', description: '内容完整，可正式发布'},
+    {value: 'IMPROVED', label: '改进版', description: '在原版本上继续完善'},
+    {value: 'BETA', label: '测试版', description: '仍在测试与收集反馈'}
+];
+const REMIX_OPTIONS = [
+    {value: 'DOWNLOAD_AND_REMIX', label: '允许下载与改编', description: '其他人可学习并二次创作'},
+    {value: 'VIEW_SOURCE', label: '仅查看源码', description: '可学习，但不能下载改编'},
+    {value: 'NO_REMIX', label: '不开放源码', description: '仅提供作品运行体验'}
 ];
 
 const draftKey = projectId => `pp:work-publish-draft:${projectId || 'local-project'}`;
@@ -37,18 +49,10 @@ const readDraft = projectId => {
 };
 
 const writeDraft = (projectId, state) => {
-    const draft = {
-        name: state.name,
-        categoryId: state.categoryId,
-        tagIds: state.tagIds,
-        summary: state.summary,
-        instructions: state.instructions,
-        visibility: state.visibility,
-        remixPermission: state.remixPermission,
-        versionType: state.versionType,
-        notifyFollowers: state.notifyFollowers,
-        copyrightAccepted: state.copyrightAccepted
-    };
+    const draft = {};
+    DRAFT_FIELDS.forEach(field => {
+        draft[field] = state[field];
+    });
     localStorage.setItem(draftKey(projectId), JSON.stringify(draft));
 };
 
@@ -57,7 +61,7 @@ class WorkPublishModal extends React.Component {
         super(props);
         const draft = readDraft(props.projectId);
         this.state = {
-            name: draft && draft.name ? draft.name : props.projectTitle,
+            name: props.projectTitle,
             cover: null,
             coverPreview: '',
             coverSource: '',
@@ -80,7 +84,6 @@ class WorkPublishModal extends React.Component {
             progress: 0,
             progressLabel: '',
             publishing: false,
-            savingDraft: false,
             generatingCover: false,
             exporting: false,
             submitted: false
@@ -89,7 +92,7 @@ class WorkPublishModal extends React.Component {
         this.coverInput = React.createRef();
         this.handleCoverChange = this.handleCoverChange.bind(this);
         this.handleExport = this.handleExport.bind(this);
-        this.handleSaveDraft = this.handleSaveDraft.bind(this);
+        this.handleNameChange = this.handleNameChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleUseStage = this.handleUseStage.bind(this);
         this.loadOptions = this.loadOptions.bind(this);
@@ -106,8 +109,11 @@ class WorkPublishModal extends React.Component {
             try {
                 writeDraft(this.props.projectId, this.state);
             } catch (error) {
-                // A local draft is a convenience only; publishing remains available.
+                // Publishing form recovery is best effort; the project itself is cloud-saved separately.
             }
+        }
+        if (previousProps.projectId !== this.props.projectId) {
+            localStorage.removeItem(draftKey(previousProps.projectId));
         }
     }
     componentWillUnmount () {
@@ -137,6 +143,11 @@ class WorkPublishModal extends React.Component {
             });
         }
     }
+    handleNameChange (event) {
+        const name = event.target.value;
+        this.setState({name, notice: ''});
+        this.props.onChangeProjectTitle(name);
+    }
     handleCoverChange (event) {
         const file = event.target.files && event.target.files[0];
         if (!file) return;
@@ -154,7 +165,7 @@ class WorkPublishModal extends React.Component {
             coverPreview: URL.createObjectURL(file),
             coverSource: 'upload',
             error: '',
-            notice: '已使用上传图片作为作品封面。'
+            notice: '已选择自定义作品封面。'
         });
         event.target.value = '';
     }
@@ -163,7 +174,7 @@ class WorkPublishModal extends React.Component {
         this.setState({
             generatingCover: true,
             error: '',
-            notice: automatic ? '正在从当前舞台生成封面…' : '正在重新截取当前舞台…'
+            notice: automatic ? '正在准备舞台封面…' : '正在重新截取当前舞台…'
         });
         Promise.resolve(this.props.onGenerateCover(this.state.name.trim() || this.props.projectTitle))
             .then(file => {
@@ -175,7 +186,7 @@ class WorkPublishModal extends React.Component {
                     coverSource: 'stage',
                     generatingCover: false,
                     error: '',
-                    notice: '已使用当前舞台生成作品封面。'
+                    notice: automatic ? '' : '已更新为当前舞台封面。'
                 });
             })
             .catch(error => {
@@ -198,16 +209,16 @@ class WorkPublishModal extends React.Component {
             return {tagIds: state.tagIds.concat(tagId), error: '', notice: ''};
         });
     }
-    validate (forSubmission) {
+    validate () {
         const name = this.state.name.trim();
         if (name.length < 2 || name.length > 40) return '作品名称需为 2–40 个字符。';
-        if (!this.state.cover) return '请选择一张作品封面。';
+        if (!this.state.cover) return '请先准备作品封面。';
         if (!this.state.categoryId) return '请选择作品分类。';
         if (this.state.summary.trim().length < 10 || this.state.summary.trim().length > 500) {
             return '作品介绍需为 10–500 个字符。';
         }
         if (this.state.instructions.length > 1000) return '操作说明不能超过 1000 个字符。';
-        if (forSubmission && !this.state.copyrightAccepted) return '请确认版权承诺后再提交审核。';
+        if (!this.state.copyrightAccepted) return '请确认版权承诺后再发布。';
         if (!this.state.session) return '发布会话尚未就绪，请稍后重试。';
         return '';
     }
@@ -221,24 +232,28 @@ class WorkPublishModal extends React.Component {
             visibility: this.state.visibility,
             remixPermission: this.state.remixPermission,
             versionType: this.state.versionType,
+            stageWidth: this.props.stageWidth,
+            stageHeight: this.props.stageHeight,
             notifyFollowers: this.state.notifyFollowers,
             copyrightAccepted: this.state.copyrightAccepted
         };
     }
     async handleSubmit () {
-        const error = this.validate(true);
+        const error = this.validate();
         if (error) {
             this.setState({error, notice: ''});
             return;
         }
-        this.props.onSaveProjectTitle(this.state.name.trim());
+        const normalizedName = this.state.name.trim();
+        this.props.onChangeProjectTitle(normalizedName);
         this.setState({publishing: true, error: '', notice: '', progress: 2, progressLabel: '准备发布'});
         try {
+            await this.props.onSaveProjectTitle(normalizedName);
             const result = await publishCurrentProject({
                 coverFile: this.state.cover,
                 form: this.formValue(),
                 projectId: this.props.projectId,
-                projectTitle: this.props.projectTitle,
+                projectTitle: normalizedName,
                 serializeProject: this.props.onSerializeProject,
                 session: this.state.session,
                 onProgress: (progressLabel, progress) => this.setState({progressLabel, progress})
@@ -254,40 +269,7 @@ class WorkPublishModal extends React.Component {
         } catch (publishError) {
             this.setState({
                 publishing: false,
-                error: `${publishError.message} 请修正后重试，已完成的上传不会影响当前编辑内容。`,
-                notice: ''
-            });
-        }
-    }
-    async handleSaveDraft () {
-        const error = this.validate(false);
-        if (error) {
-            this.setState({error, notice: ''});
-            return;
-        }
-        this.props.onSaveProjectTitle(this.state.name.trim());
-        this.setState({savingDraft: true, error: '', notice: '', progress: 2, progressLabel: '准备保存草稿'});
-        try {
-            const result = await saveCurrentProjectDraft({
-                coverFile: this.state.cover,
-                form: this.formValue(),
-                projectId: this.props.projectId,
-                projectTitle: this.props.projectTitle,
-                serializeProject: this.props.onSerializeProject,
-                session: this.state.session,
-                onProgress: (progressLabel, progress) => this.setState({progressLabel, progress})
-            });
-            writeDraft(result.projectId, this.state);
-            this.setState({
-                savingDraft: false,
-                notice: `云端草稿已保存（作品编号 ${result.work.id}），尚未提交审核。`,
-                progress: 100,
-                progressLabel: '云端草稿已保存'
-            });
-        } catch (saveError) {
-            this.setState({
-                savingDraft: false,
-                error: `${saveError.message} 请修正后重试，当前编辑内容不会丢失。`,
+                error: `${publishError.message} 当前创作草稿不会丢失。`,
                 notice: ''
             });
         }
@@ -298,32 +280,51 @@ class WorkPublishModal extends React.Component {
             .then(() => this.setState({exporting: false, notice: '本地 .sb3 备份已导出。'}))
             .catch(() => this.setState({exporting: false, error: '作品导出失败，请稍后再试。', notice: ''}));
     }
+    renderOptionGroup (name, value, options) {
+        const busy = this.state.publishing || this.state.exporting;
+        return (
+            <div className={styles.optionGroup} role="radiogroup" aria-label={name}>
+                {options.map(option => {
+                    const active = option.value === value;
+                    return (
+                        <button
+                            key={option.value}
+                            type="button"
+                            className={active ? styles.optionActive : styles.option}
+                            disabled={busy}
+                            role="radio"
+                            aria-checked={active}
+                            onClick={() => this.setState({[name]: option.value, notice: ''})}
+                        >
+                            <span className={styles.optionIndicator} aria-hidden="true">
+                                {active && <CheckIcon />}
+                            </span>
+                            <span><b>{option.label}</b><small>{option.description}</small></span>
+                        </button>
+                    );
+                })}
+            </div>
+        );
+    }
     render () {
-        const busy = this.state.publishing || this.state.savingDraft || this.state.exporting;
+        const busy = this.state.publishing || this.state.exporting;
         const profileLabel = this.state.profile ?
             `${this.state.profile.nickname} · UID ${this.state.profile.uid}` : '正在确认登录账号';
+        const dimensionLabel = `${this.props.stageWidth} × ${this.props.stageHeight}`;
         return (
             <Modal
                 className={styles.modalContent}
-                contentLabel="上传并提交作品"
+                contentLabel="发布作品"
                 headerClassName={styles.modalHeader}
                 id="workPublishModal"
                 overlayClassName={styles.modalOverlay}
                 onRequestClose={busy ? () => {} : this.props.onCancel}
             >
                 <Box className={styles.body}>
-                    <section className={styles.introRow}>
-                        <div className={styles.introIcon} aria-hidden="true">↑</div>
-                        <div className={styles.introCopy}>
-                            <strong>上传当前项目并提交审核</strong>
-                            <p>可先保存云端草稿；准备完成后再提交审核，审核通过才会出现在社区。</p>
-                        </div>
-                        <span className={styles.mockBadge}><i />发布服务</span>
-                    </section>
                     <form className={styles.form} onSubmit={event => event.preventDefault()}>
-                        <section className={`${styles.surfaceCard} ${styles.coverColumn}`}>
-                            <div className={styles.sectionHeading}>
-                                <span>作品封面</span>
+                        <aside className={styles.coverPanel}>
+                            <div className={styles.sectionHeader}>
+                                <span><ImageIcon />作品封面</span>
                                 <small>必填</small>
                             </div>
                             <button
@@ -337,203 +338,142 @@ class WorkPublishModal extends React.Component {
                                     <img src={this.state.coverPreview} alt="待发布作品封面预览" />
                                 ) : (
                                     <span>
-                                        <b aria-hidden="true">{this.state.generatingCover ? '…' : '＋'}</b>
-                                        <em>{this.state.generatingCover ? '正在生成舞台封面' : '添加作品封面'}</em>
-                                        <small>使用当前舞台，或上传一张图片</small>
+                                        <ImageIcon aria-hidden="true" />
+                                        <b>{this.state.generatingCover ? '正在生成封面' : '添加作品封面'}</b>
+                                        <small>支持 JPG、PNG、WebP，最大 10 MB</small>
                                     </span>
                                 )}
                             </button>
                             <div className={styles.coverActions}>
-                                <button
-                                    type="button"
-                                    className={styles.stageCoverButton}
-                                    disabled={busy || this.state.generatingCover}
-                                    onClick={() => this.handleUseStage(false)}
-                                >
-                                    <span aria-hidden="true">▣</span>
-                                    {this.state.coverSource === 'stage' ? '重新截取当前舞台' : '使用当前舞台'}
+                                <button type="button" className={styles.secondaryButton} disabled={busy || this.state.generatingCover} onClick={() => this.handleUseStage(false)}>
+                                    <MonitorIcon data-icon="inline-start" />
+                                    {this.state.coverSource === 'stage' ? '重新截取' : '使用舞台'}
                                 </button>
-                                <button
-                                    type="button"
-                                    className={styles.uploadCoverButton}
-                                    disabled={busy || this.state.generatingCover}
-                                    onClick={() => this.coverInput.current.click()}
-                                >
-                                    上传图片
+                                <button type="button" className={styles.secondaryButton} disabled={busy || this.state.generatingCover} onClick={() => this.coverInput.current.click()}>
+                                    <UploadIcon data-icon="inline-start" />上传图片
                                 </button>
                             </div>
-                            <input
-                                ref={this.coverInput}
-                                className={styles.hiddenInput}
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp"
-                                disabled={busy}
-                                onChange={this.handleCoverChange}
-                            />
-                            <div className={styles.accountSummary}>
-                                <span>发布账号</span>
-                                <strong>{profileLabel}</strong>
-                            </div>
-                        </section>
-                        <section className={styles.fieldsColumn}>
-                            <div className={styles.surfaceCard}>
-                                <div className={styles.sectionHeading}>
-                                    <span>基本信息</span>
-                                    <small>名称、分类与标签</small>
+                            <input ref={this.coverInput} className={styles.hiddenInput} type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={this.handleCoverChange} />
+                            <dl className={styles.metadataList}>
+                                <div><dt>发布账号</dt><dd>{profileLabel}</dd></div>
+                                <div><dt>作品尺寸</dt><dd>{dimensionLabel}</dd></div>
+                                <div><dt>草稿状态</dt><dd>创作中心自动保存</dd></div>
+                            </dl>
+                        </aside>
+
+                        <main className={styles.formSections}>
+                            <section className={styles.formSection}>
+                                <div className={styles.sectionHeader}>
+                                    <span><SparklesIcon />基本信息</span>
+                                    <small>用于社区展示与检索</small>
                                 </div>
-                                <div className={styles.twoColumnGrid}>
-                                    <label className={styles.field}>
-                                        <span>作品名称</span>
-                                        <input
-                                            autoFocus
-                                            disabled={busy}
-                                            value={this.state.name}
-                                            maxLength={40}
-                                            placeholder="给作品起一个名字"
-                                            onChange={event => this.setState({name: event.target.value, notice: ''})}
-                                        />
+                                <div className={styles.fieldList}>
+                                    <label className={styles.fieldRow}>
+                                        <span className={styles.fieldCopy}><b>作品名称</b><small>与编辑器 Header 和项目名称保持一致</small></span>
+                                        <span className={styles.fieldControl}>
+                                            <input autoFocus disabled={busy} value={this.state.name} maxLength={40} placeholder="给作品起一个名字" onChange={this.handleNameChange} />
+                                            <small>{this.state.name.length}/40</small>
+                                        </span>
                                     </label>
-                                    <label className={styles.field}>
-                                        <span>作品分类</span>
-                                        <select
-                                            disabled={busy || this.state.loadingOptions}
-                                            value={this.state.categoryId}
-                                            onChange={event => this.setState({categoryId: event.target.value, notice: ''})}
-                                        >
-                                            <option value="">请选择分类</option>
-                                            {this.state.categories.map(category => (
-                                                <option key={category.id} value={category.id}>{category.name}</option>
-                                            ))}
-                                        </select>
+                                    <label className={styles.fieldRow}>
+                                        <span className={styles.fieldCopy}><b>作品分类</b><small>选择最符合内容的分类</small></span>
+                                        <span className={styles.fieldControl}>
+                                            <select disabled={busy || this.state.loadingOptions} value={this.state.categoryId} onChange={event => this.setState({categoryId: event.target.value, notice: ''})}>
+                                                <option value="">请选择分类</option>
+                                                {this.state.categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}
+                                            </select>
+                                        </span>
                                     </label>
+                                    <fieldset className={`${styles.fieldRow} ${styles.fieldRowStack}`}>
+                                        <legend className={styles.fieldCopy}><b>作品标签</b><small>最多选择 5 个，帮助别人发现作品</small></legend>
+                                        <div className={styles.tagOptions} aria-busy={this.state.loadingOptions}>
+                                            {this.state.tags.map(tag => {
+                                                const active = this.state.tagIds.includes(tag.id);
+                                                return (
+                                                    <button key={tag.id} type="button" disabled={busy} aria-pressed={active} className={active ? styles.tagActive : styles.tag} onClick={() => this.toggleTag(tag.id)}>
+                                                        {active && <CheckIcon />}{tag.name}
+                                                    </button>
+                                                );
+                                            })}
+                                            {!this.state.loadingOptions && this.state.tags.length === 0 && <span className={styles.emptyOptions}>暂时没有可用标签</span>}
+                                        </div>
+                                    </fieldset>
                                 </div>
-                                <fieldset className={styles.fieldset}>
-                                    <legend>作品标签 <small>最多选择 5 个</small></legend>
-                                    <div className={styles.choiceList} aria-busy={this.state.loadingOptions}>
-                                        {this.state.tags.map(tag => {
-                                            const active = this.state.tagIds.includes(tag.id);
-                                            return (
-                                                <button
-                                                    key={tag.id}
-                                                    type="button"
-                                                    disabled={busy}
-                                                    aria-pressed={active}
-                                                    className={active ? styles.choiceActive : styles.choice}
-                                                    onClick={() => this.toggleTag(tag.id)}
-                                                >
-                                                    {active && <span aria-hidden="true">✓</span>}
-                                                    {tag.name}
-                                                </button>
-                                            );
-                                        })}
-                                        {!this.state.loadingOptions && this.state.tags.length === 0 && (
-                                            <span className={styles.emptyOptions}>暂时没有可用标签</span>
-                                        )}
-                                    </div>
-                                </fieldset>
-                            </div>
-                            <div className={styles.surfaceCard}>
-                                <div className={styles.sectionHeading}>
+                            </section>
+
+                            <section className={styles.formSection}>
+                                <div className={styles.sectionHeader}>
                                     <span>作品说明</span>
-                                    <small>让审核人员和学习者快速了解玩法</small>
+                                    <small>简洁说明玩法和操作方式</small>
                                 </div>
-                                <div className={styles.textareaGrid}>
-                                    <label className={styles.field}>
-                                        <span>作品介绍</span>
-                                        <textarea
-                                            disabled={busy}
-                                            value={this.state.summary}
-                                            maxLength={500}
-                                            placeholder="介绍玩法、故事或创作灵感（10–500 字）"
-                                            onChange={event => this.setState({summary: event.target.value, notice: ''})}
-                                        />
-                                        <small>{this.state.summary.length}/500</small>
+                                <div className={`${styles.fieldList} ${styles.descriptionGrid}`}>
+                                    <label className={`${styles.fieldRow} ${styles.fieldRowStack}`}>
+                                        <span className={styles.fieldCopy}><b>作品介绍</b><small>10–500 个字符</small></span>
+                                        <span className={styles.fieldControl}>
+                                            <textarea disabled={busy} value={this.state.summary} maxLength={500} placeholder="介绍玩法、故事或创作灵感" onChange={event => this.setState({summary: event.target.value, notice: ''})} />
+                                            <small>{this.state.summary.length}/500</small>
+                                        </span>
                                     </label>
-                                    <label className={styles.field}>
-                                        <span>操作说明 <small>选填</small></span>
-                                        <textarea
-                                            disabled={busy}
-                                            value={this.state.instructions}
-                                            maxLength={1000}
-                                            placeholder="例如：方向键移动，空格键跳跃"
-                                            onChange={event => this.setState({instructions: event.target.value, notice: ''})}
-                                        />
-                                        <small>{this.state.instructions.length}/1000</small>
+                                    <label className={`${styles.fieldRow} ${styles.fieldRowStack}`}>
+                                        <span className={styles.fieldCopy}><b>操作说明</b><small>选填，最多 1000 个字符</small></span>
+                                        <span className={styles.fieldControl}>
+                                            <textarea disabled={busy} value={this.state.instructions} maxLength={1000} placeholder="例如：方向键移动，空格键跳跃" onChange={event => this.setState({instructions: event.target.value, notice: ''})} />
+                                            <small>{this.state.instructions.length}/1000</small>
+                                        </span>
                                     </label>
                                 </div>
-                            </div>
-                            <div className={styles.surfaceCard}>
-                                <div className={styles.sectionHeading}>
-                                    <span>发布设置</span>
-                                    <small>可见范围、版本与源码权限</small>
+                            </section>
+
+                            <section className={styles.formSection}>
+                                <div className={styles.sectionHeader}>
+                                    <span>发布选项</span>
+                                    <small>选择可见范围、版本和源码权限</small>
                                 </div>
-                                <div className={styles.threeColumnGrid}>
-                                    <label className={styles.field}>
-                                        <span>可见范围</span>
-                                        <select disabled={busy} value={this.state.visibility} onChange={event => this.setState({visibility: event.target.value})}>
-                                            <option value="PUBLIC">公开</option>
-                                            <option value="PRIVATE">私密</option>
-                                        </select>
-                                    </label>
-                                    <label className={styles.field}>
-                                        <span>版本类型</span>
-                                        <select disabled={busy} value={this.state.versionType} onChange={event => this.setState({versionType: event.target.value})}>
-                                            <option value="RELEASE">正式版</option>
-                                            <option value="IMPROVED">改进版</option>
-                                            <option value="BETA">测试版</option>
-                                        </select>
-                                    </label>
-                                    <label className={styles.field}>
-                                        <span>源码权限</span>
-                                        <select disabled={busy} value={this.state.remixPermission} onChange={event => this.setState({remixPermission: event.target.value})}>
-                                            <option value="DOWNLOAD_AND_REMIX">允许下载与改编</option>
-                                            <option value="VIEW_SOURCE">仅查看源码</option>
-                                            <option value="NO_REMIX">不开放源码</option>
-                                        </select>
-                                    </label>
-                                </div>
-                                <div className={styles.confirmations}>
-                                    <label>
+                                <div className={styles.fieldList}>
+                                    <fieldset className={`${styles.fieldRow} ${styles.fieldRowStack}`}>
+                                        <legend className={styles.fieldCopy}><b>可见范围</b><small>决定审核通过后的访问范围</small></legend>
+                                        {this.renderOptionGroup('visibility', this.state.visibility, VISIBILITY_OPTIONS)}
+                                    </fieldset>
+                                    <fieldset className={`${styles.fieldRow} ${styles.fieldRowStack}`}>
+                                        <legend className={styles.fieldCopy}><b>版本类型</b><small>标记当前发布版本的完成度</small></legend>
+                                        {this.renderOptionGroup('versionType', this.state.versionType, VERSION_OPTIONS)}
+                                    </fieldset>
+                                    <fieldset className={`${styles.fieldRow} ${styles.fieldRowStack}`}>
+                                        <legend className={styles.fieldCopy}><b>源码权限</b><small>控制其他用户学习和改编的方式</small></legend>
+                                        {this.renderOptionGroup('remixPermission', this.state.remixPermission, REMIX_OPTIONS)}
+                                    </fieldset>
+                                    <label className={styles.checkRow}>
                                         <input type="checkbox" disabled={busy} checked={this.state.notifyFollowers} onChange={event => this.setState({notifyFollowers: event.target.checked})} />
                                         <span><b>审核通过后通知关注者</b><small>仅公开作品会发送站内通知</small></span>
                                     </label>
-                                    <label>
+                                    <label className={styles.checkRow}>
                                         <input type="checkbox" disabled={busy} checked={this.state.copyrightAccepted} onChange={event => this.setState({copyrightAccepted: event.target.checked})} />
-                                        <span><b>我确认拥有发布与授权该作品的权利</b><small>提交后将进入人工审核，版权承诺会随版本留存</small></span>
+                                        <span><b>我确认拥有发布与授权该作品的权利</b><small>版权承诺会随本次发布版本留存</small></span>
                                     </label>
                                 </div>
-                            </div>
-                        </section>
+                            </section>
+                        </main>
                     </form>
+
                     {(this.state.publishing || this.state.progress > 0) && (
-                        <section className={styles.progressPanel} aria-live="polite" aria-label="作品上传进度">
+                        <section className={styles.progressPanel} aria-live="polite" aria-label="作品发布进度">
                             <div><strong>{this.state.progressLabel}</strong><span>{this.state.progress}%</span></div>
                             <progress max="100" value={this.state.progress}>{this.state.progress}%</progress>
                         </section>
                     )}
                     {this.state.error && <p className={styles.error} role="alert">{this.state.error}</p>}
                     {this.state.notice && <p className={styles.notice} aria-live="polite">{this.state.notice}</p>}
+
                     <footer className={styles.footer}>
-                        <span>{busy ? '正在处理，请保持当前页面打开' : '保存草稿不会进入审核，也不会公开作品'}</span>
+                        <span>{busy ? '正在生成发布版本，请保持页面打开' : '创作草稿会继续自动保存，不需要在此重复保存'}</span>
                         <div className={styles.footerActions}>
-                            <button type="button" className={styles.saveButton} disabled={busy} onClick={this.handleExport}>
-                                {this.state.exporting ? '正在导出…' : '导出本地备份'}
+                            <button type="button" className={styles.secondaryButton} disabled={busy} onClick={this.handleExport}>
+                                <FileDownIcon data-icon="inline-start" />
+                                {this.state.exporting ? '正在导出…' : '导出备份'}
                             </button>
-                            <button
-                                type="button"
-                                className={styles.draftButton}
-                                disabled={busy || this.state.loadingOptions || this.state.submitted || this.state.generatingCover}
-                                onClick={this.handleSaveDraft}
-                            >
-                                {this.state.savingDraft ? '正在保存草稿…' : '保存云端草稿'}
-                            </button>
-                            <button
-                                type="button"
-                                className={styles.exportButton}
-                                disabled={busy || this.state.loadingOptions || this.state.submitted || this.state.generatingCover}
-                                onClick={this.handleSubmit}
-                            >
-                                {this.state.publishing ? '正在上传并提交…' : this.state.submitted ? '已提交审核' : '上传并提交审核'}
+                            <button type="button" className={styles.primaryButton} disabled={busy || this.state.loadingOptions || this.state.submitted || this.state.generatingCover} onClick={this.handleSubmit}>
+                                <UploadCloudIcon data-icon="inline-start" />
+                                {this.state.publishing ? '正在发布…' : this.state.submitted ? '已提交审核' : '发布作品'}
                             </button>
                         </div>
                     </footer>
@@ -545,17 +485,22 @@ class WorkPublishModal extends React.Component {
 
 WorkPublishModal.propTypes = {
     onCancel: PropTypes.func.isRequired,
+    onChangeProjectTitle: PropTypes.func.isRequired,
     onExport: PropTypes.func.isRequired,
     onGenerateCover: PropTypes.func.isRequired,
     onSaveProjectTitle: PropTypes.func.isRequired,
     onSerializeProject: PropTypes.func.isRequired,
     projectId: PropTypes.string,
-    projectTitle: PropTypes.string
+    projectTitle: PropTypes.string,
+    stageHeight: PropTypes.number,
+    stageWidth: PropTypes.number
 };
 
 WorkPublishModal.defaultProps = {
     projectId: 'local-project',
-    projectTitle: '未命名作品'
+    projectTitle: '未命名作品',
+    stageHeight: 360,
+    stageWidth: 480
 };
 
 export default WorkPublishModal;

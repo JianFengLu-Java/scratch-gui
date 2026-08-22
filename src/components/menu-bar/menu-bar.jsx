@@ -28,10 +28,10 @@ import {
     PencilIcon,
     PuzzleIcon,
     SaveIcon,
+    UploadCloudIcon,
     ShuffleIcon,
     SlidersHorizontalIcon,
     Undo2Icon,
-    UploadIcon,
     UserRoundPenIcon,
 } from "lucide-react";
 
@@ -144,6 +144,11 @@ import WorkPublishModal from "../work-publish-modal/work-publish-modal.jsx";
 import { notScratchDesktop } from "../../lib/isScratchDesktop.js";
 import { APP_NAME } from "../../lib/brand.js";
 import { setProjectTitle } from "../../reducers/project-title";
+import { emitPlanetAutosaveStatus } from "../../lib/planet-cloud-autosave";
+import {
+    isPlanetProjectRoute,
+    savePlanetProjectName,
+} from "../../lib/planet-project-loader";
 
 const ariaMessages = defineMessages({
     tutorials: {
@@ -272,6 +277,7 @@ class MenuBar extends React.Component {
             "getSaveToComputerHandler",
             "handleOpenWorkPublish",
             "handleCloseWorkPublish",
+            "handleChangeWorkProjectTitle",
             "handleSaveWorkProjectTitle",
             "restoreOptionMessage",
         ]);
@@ -445,8 +451,22 @@ class MenuBar extends React.Component {
     handleCloseWorkPublish() {
         this.setState({workPublishOpen: false});
     }
+    handleChangeWorkProjectTitle(title) {
+        this.props.onSetProjectTitle(title);
+    }
     handleSaveWorkProjectTitle(title) {
         this.props.onSetProjectTitle(title);
+        if (!isPlanetProjectRoute()) return Promise.resolve();
+        emitPlanetAutosaveStatus({status: "saving"});
+        return savePlanetProjectName(this.props.projectId, title)
+            .then(() => emitPlanetAutosaveStatus({
+                status: "saved",
+                savedAt: new Date().toISOString(),
+            }))
+            .catch((error) => {
+                emitPlanetAutosaveStatus({status: "error", message: error.message});
+                throw new Error(`作品名称同步失败：${error.message}`);
+            });
     }
     restoreOptionMessage(deletedItem) {
         switch (deletedItem) {
@@ -1227,11 +1247,11 @@ class MenuBar extends React.Component {
                     {!this.props.isPlayerOnly && <PlanetRoleLockOverlay />}
                     {!this.props.isPlayerOnly && (
                         <Button
-                            className={styles.uploadWorkButton}
+                            className={styles.publishWorkButton}
                             onClick={this.handleOpenWorkPublish}
                         >
-                            <UploadIcon data-icon="inline-start" />
-                            上传作品
+                            <UploadCloudIcon data-icon="inline-start" />
+                            {'发布作品'}
                         </Button>
                     )}
                     <div
@@ -1267,12 +1287,15 @@ class MenuBar extends React.Component {
                         {(_className, downloadProject) => (
                             <WorkPublishModal
                                 onCancel={this.handleCloseWorkPublish}
+                                onChangeProjectTitle={this.handleChangeWorkProjectTitle}
                                 onExport={downloadProject}
                                 onGenerateCover={this.handleGenerateWorkCover}
                                 onSaveProjectTitle={this.handleSaveWorkProjectTitle}
                                 onSerializeProject={() => this.props.vm.saveProjectSb3()}
                                 projectId={this.props.projectId}
                                 projectTitle={this.props.projectTitle}
+                                stageHeight={this.props.vm.runtime.stageHeight}
+                                stageWidth={this.props.vm.runtime.stageWidth}
                             />
                         )}
                     </SB3Downloader>

@@ -120,10 +120,10 @@ const findProjectWork = async (session, projectId) => {
 };
 
 const uploadVersionFiles = async (session, projectFile, coverFile, onProgress) => {
-    onProgress('正在上传项目文件', 30);
+    onProgress('正在生成发布版本', 30);
     const projectUpload = await uploadFile(session, projectFile, 'PROJECT_FILE');
     try {
-        onProgress('正在上传作品封面', 48);
+        onProgress('正在保存作品封面', 48);
         const coverUpload = await uploadFile(session, coverFile, 'WORK_COVER');
         return {coverUpload, projectUpload};
     } catch (error) {
@@ -148,7 +148,12 @@ const saveVersion = async (session, projectId, uploads, form, onProgress) => {
         body: JSON.stringify({
             fileObjectId: uploads.projectUpload.objectId,
             stageCoverObjectId: uploads.coverUpload.objectId,
-            manifest: {editor: 'TURBOWARP', source: 'WEB_EDITOR'},
+            manifest: {
+                editor: 'TURBOWARP',
+                source: 'WEB_EDITOR',
+                stageWidth: form.stageWidth,
+                stageHeight: form.stageHeight
+            },
             versionType: form.versionType,
             changeLog: '从 TurboWarp 编辑器提交',
             sourceAccess: form.remixPermission
@@ -171,6 +176,8 @@ const workPayload = (projectId, version, form, revision) => ({
     remixPermission: form.remixPermission,
     visibility: form.visibility,
     versionType: form.versionType,
+    stageWidth: form.stageWidth,
+    stageHeight: form.stageHeight,
     introVideoUrl: null,
     notifyFollowers: form.notifyFollowers,
     copyrightAccepted: form.copyrightAccepted,

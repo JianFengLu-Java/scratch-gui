@@ -5,7 +5,7 @@ import log from './log';
 
 import {setProjectTitle} from '../reducers/project-title';
 import {setAuthor, setDescription} from '../reducers/tw';
-import {isPlanetProjectRoute} from './planet-project-loader';
+import {isPlanetProjectRoute, loadPlanetProjectMetadata} from './planet-project-loader';
 
 export const fetchProjectMeta = async projectId => {
     // When people reopen tabs, sometimes the browser is *very* aggressive about caching even when the
@@ -53,6 +53,15 @@ const setIndexable = indexable => {
 
 const TWProjectMetaFetcherHOC = function (WrappedComponent) {
     class ProjectMetaFetcherComponent extends React.Component {
+        componentDidMount () {
+            if (
+                isPlanetProjectRoute() &&
+                this.props.reduxProjectId &&
+                String(this.props.reduxProjectId) !== '0'
+            ) {
+                this.fetchPlanetMetadata(this.props.reduxProjectId);
+            }
+        }
         componentDidUpdate (prevProps) {
             // project title resetting is handled in titled-hoc.jsx
             if (this.props.reduxProjectId !== prevProps.reduxProjectId) {
@@ -60,8 +69,10 @@ const TWProjectMetaFetcherHOC = function (WrappedComponent) {
                 this.props.onSetDescription('', '');
                 const projectId = this.props.reduxProjectId;
 
-                if (projectId === '0' || isPlanetProjectRoute()) {
-                    // don't try to get metadata
+                if (String(projectId) === '0') {
+                    // New local projects do not have server metadata yet.
+                } else if (isPlanetProjectRoute()) {
+                    this.fetchPlanetMetadata(projectId);
                 } else {
                     fetchProjectMeta(projectId).then(data => {
                         // If project ID changed, ignore the results.
@@ -92,6 +103,14 @@ const TWProjectMetaFetcherHOC = function (WrappedComponent) {
                         });
                 }
             }
+        }
+        fetchPlanetMetadata (projectId) {
+            loadPlanetProjectMetadata(projectId)
+                .then(project => {
+                    if (String(this.props.reduxProjectId) !== String(projectId)) return;
+                    if (project && project.name) this.props.onSetProjectTitle(project.name);
+                })
+                .catch(err => log.warn('cannot fetch Programming Planet project metadata', err));
         }
         render () {
             const {

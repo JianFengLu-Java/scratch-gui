@@ -6,11 +6,14 @@ import {
 
 const API_ROOT = '/backend-api';
 
-const request = (session, path) => fetch(`${API_ROOT}${path}`, {
+const request = (session, path, options = {}) => fetch(`${API_ROOT}${path}`, {
+    ...options,
     credentials: 'include',
     headers: {
         Accept: 'application/json',
-        Authorization: `${session.tokenType || 'Bearer'} ${session.accessToken}`
+        Authorization: `${session.tokenType || 'Bearer'} ${session.accessToken}`,
+        ...(options.body ? {'Content-Type': 'application/json'} : {}),
+        ...options.headers
     }
 }).then(readPlanetEnvelope);
 
@@ -41,6 +44,22 @@ const download = async (session, objectId) => {
 };
 
 export const isPlanetProjectRoute = () => /^\/create\/\d+\/(editor|fullscreen)\/?$/.test(location.pathname);
+
+export const loadPlanetProjectMetadata = async projectId => {
+    const session = await refreshPlanetSession();
+    return request(session, `/projects/${encodeURIComponent(projectId)}`);
+};
+
+export const savePlanetProjectName = async (projectId, name) => {
+    if (!projectId || !/^\d+$/.test(String(projectId)) || String(projectId) === '0') return;
+    const normalizedName = String(name || '').trim();
+    if (!normalizedName) return;
+    const session = await refreshPlanetSession();
+    return request(session, `/projects/${encodeURIComponent(projectId)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({name: normalizedName})
+    });
+};
 
 export const loadPlanetProject = async projectId => {
     const session = await refreshPlanetSession();
