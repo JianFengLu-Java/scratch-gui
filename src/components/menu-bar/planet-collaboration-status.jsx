@@ -6,6 +6,7 @@ import {
     PLANET_COLLABORATION_INVITATION_EVENT,
     PLANET_COLLABORATION_STATUS_EVENT
 } from '../../lib/planet-collaboration';
+import {PLANET_COLLABORATION_INVITE_READY_EVENT} from '../../lib/editor-dock-events';
 import {isPlanetProjectRoute} from '../../lib/planet-project-loader';
 
 import styles from './planet-collaboration-status.css';
@@ -38,7 +39,13 @@ class PlanetCollaborationStatus extends React.Component {
             return;
         }
         if (!this.props.projectId) return;
-        window.open(`/create/${encodeURIComponent(this.props.projectId)}/collaboration`, '_blank', 'noopener');
+        if (window.PlanetCollaborationInvite) {
+            window.PlanetCollaborationInvite.open();
+            return;
+        }
+        window.addEventListener(PLANET_COLLABORATION_INVITE_READY_EVENT, event => {
+            if (event.detail) event.detail.open();
+        }, {once: true});
     }
     label () {
         if (this.state.invitation) return '收到协作邀请';

@@ -45,6 +45,7 @@ import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx
 import PlanetAiAssistant from '../planet-ai-assistant/planet-ai-assistant.jsx';
 import PlanetProjectChat from '../menu-bar/planet-project-chat.jsx';
 import EditorDock from '../editor-dock/editor-dock.jsx';
+import PlanetCollaborationInvite from '../editor-dock/planet-collaboration-invite.jsx';
 import PlanetCollaborationPermissions from '../editor-dock/planet-collaboration-permissions.jsx';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/layout-constants';
@@ -438,6 +439,7 @@ const GUIComponent = props => {
                 <DragLayer />
                 <PlanetAiAssistant vm={vm} />
                 {!isPlayerOnly && <PlanetProjectChat />}
+                {!isPlayerOnly && <PlanetCollaborationInvite />}
                 {!isPlayerOnly && <PlanetCollaborationPermissions />}
                 {!isPlayerOnly && (
                     <EditorDock
