@@ -173,14 +173,14 @@ class StageSelector extends React.Component {
             <DroppableThrottledStage
                 componentRef={this.setRef}
                 fileInputRef={this.setFileInput}
-                onBackdropFileUpload={this.handleBackdropUpload}
-                onBackdropFileUploadClick={this.handleFileUploadClick}
+                onBackdropFileUpload={this.props.readOnly ? null : this.handleBackdropUpload}
+                onBackdropFileUploadClick={this.props.readOnly ? null : this.handleFileUploadClick}
                 onClick={this.handleClick}
-                onDrop={this.handleDrop}
-                onEmptyBackdropClick={this.handleEmptyBackdrop}
+                onDrop={this.props.readOnly ? null : this.handleDrop}
+                onEmptyBackdropClick={this.props.readOnly ? null : this.handleEmptyBackdrop}
                 onMouseEnter={this.handleMouseEnter}
                 onMouseLeave={this.handleMouseLeave}
-                onSurpriseBackdropClick={this.handleSurpriseBackdrop}
+                onSurpriseBackdropClick={this.props.readOnly ? null : this.handleSurpriseBackdrop}
                 {...componentProps}
             />
         );
@@ -193,6 +193,7 @@ StageSelector.propTypes = {
     isRtl: PropTypes.bool,
     onCloseImporting: PropTypes.func,
     onSelect: PropTypes.func,
+    readOnly: PropTypes.bool,
     onShowImporting: PropTypes.func,
     workspaceMetrics: PropTypes.shape({
         targets: PropTypes.object

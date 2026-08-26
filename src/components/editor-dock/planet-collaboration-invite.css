@@ -1,3 +1,5 @@
+@import "../../css/colors.css";
+
 .panel {
     max-height: min(76vh, 44rem, calc(100vh - 9rem));
     max-height: min(76dvh, 44rem, calc(100dvh - 9rem));
@@ -102,6 +104,11 @@
     color: var(--tw-dialog-foreground, #171717);
     font-size: .72rem;
     font-weight: 650;
+}
+
+.personCopy .member-name {
+    color: $error-primary;
+    font-weight: 800;
 }
 
 .sectionHeader p,

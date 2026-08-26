@@ -282,22 +282,22 @@ class TargetPane extends React.Component {
                 {...componentProps}
                 fileInputRef={this.setFileInput}
                 onActivateBlocksTab={this.handleActivateBlocksTab}
-                onChangeSpriteDirection={this.handleChangeSpriteDirection}
-                onChangeSpriteName={this.handleChangeSpriteName}
-                onChangeSpriteRotationStyle={this.handleChangeSpriteRotationStyle}
-                onChangeSpriteSize={this.handleChangeSpriteSize}
-                onChangeSpriteVisibility={this.handleChangeSpriteVisibility}
-                onChangeSpriteX={this.handleChangeSpriteX}
-                onChangeSpriteY={this.handleChangeSpriteY}
-                onDeleteSprite={this.handleDeleteSprite}
-                onDrop={this.handleDrop}
-                onDuplicateSprite={this.handleDuplicateSprite}
-                onExportSprite={this.handleExportSprite}
-                onFileUploadClick={this.handleFileUploadClick}
-                onPaintSpriteClick={this.handlePaintSpriteClick}
+                onChangeSpriteDirection={this.props.readOnly ? null : this.handleChangeSpriteDirection}
+                onChangeSpriteName={this.props.readOnly ? null : this.handleChangeSpriteName}
+                onChangeSpriteRotationStyle={this.props.readOnly ? null : this.handleChangeSpriteRotationStyle}
+                onChangeSpriteSize={this.props.readOnly ? null : this.handleChangeSpriteSize}
+                onChangeSpriteVisibility={this.props.readOnly ? null : this.handleChangeSpriteVisibility}
+                onChangeSpriteX={this.props.readOnly ? null : this.handleChangeSpriteX}
+                onChangeSpriteY={this.props.readOnly ? null : this.handleChangeSpriteY}
+                onDeleteSprite={this.props.readOnly ? null : this.handleDeleteSprite}
+                onDrop={this.props.readOnly ? null : this.handleDrop}
+                onDuplicateSprite={this.props.readOnly ? null : this.handleDuplicateSprite}
+                onExportSprite={this.props.readOnly ? null : this.handleExportSprite}
+                onFileUploadClick={this.props.readOnly ? null : this.handleFileUploadClick}
+                onPaintSpriteClick={this.props.readOnly ? null : this.handlePaintSpriteClick}
                 onSelectSprite={this.handleSelectSprite}
-                onSpriteUpload={this.handleSpriteUpload}
-                onSurpriseSpriteClick={this.handleSurpriseSpriteClick}
+                onSpriteUpload={this.props.readOnly ? null : this.handleSpriteUpload}
+                onSurpriseSpriteClick={this.props.readOnly ? null : this.handleSurpriseSpriteClick}
                 assetLoadNotice={this.state.assetLoadNotice}
             />
         );
@@ -314,6 +314,7 @@ TargetPane.propTypes = {
     intl: intlShape.isRequired,
     onCloseImporting: PropTypes.func,
     onShowImporting: PropTypes.func,
+    readOnly: PropTypes.bool,
     ...targetPaneProps
 };
 

@@ -1,4 +1,8 @@
-import {clearPlanetSession, refreshPlanetSession} from '../../../src/lib/planet-session';
+import {
+    clearPlanetSession,
+    refreshPlanetSession,
+    resolvePlanetAssetUrl
+} from '../../../src/lib/planet-session';
 
 const envelope = data => ({
     ok: true,
@@ -12,6 +16,14 @@ describe('planet session', () => {
     afterEach(() => {
         clearPlanetSession();
         global.fetch = originalFetch;
+    });
+
+    test('routes backend avatar paths through the same-origin API proxy', () => {
+        expect(resolvePlanetAssetUrl('/api/v1/files/88')).toBe('/backend-api/files/88');
+        expect(resolvePlanetAssetUrl('/backend-api/files/88')).toBe('/backend-api/files/88');
+        expect(resolvePlanetAssetUrl('https://cdn.example/avatar.webp'))
+            .toBe('https://cdn.example/avatar.webp');
+        expect(resolvePlanetAssetUrl(null)).toBe('');
     });
 
     test('shares one rotating refresh request between concurrent consumers', async () => {

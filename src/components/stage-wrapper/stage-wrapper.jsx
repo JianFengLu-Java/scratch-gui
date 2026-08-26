@@ -18,6 +18,7 @@ const StageWrapperComponent = function (props) {
         isRtl,
         isRendererSupported,
         loading,
+        readOnly,
         stageSize,
         vm
     } = props;
@@ -45,6 +46,7 @@ const StageWrapperComponent = function (props) {
                 {
                     isRendererSupported ?
                         <Stage
+                            readOnly={readOnly}
                             stageSize={stageSize}
                             vm={vm}
                         /> :
@@ -64,8 +66,13 @@ StageWrapperComponent.propTypes = {
     isRendererSupported: PropTypes.bool.isRequired,
     isRtl: PropTypes.bool.isRequired,
     loading: PropTypes.bool,
+    readOnly: PropTypes.bool,
     stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)).isRequired,
     vm: PropTypes.instanceOf(VM).isRequired
+};
+
+StageWrapperComponent.defaultProps = {
+    readOnly: false
 };
 
 export default StageWrapperComponent;

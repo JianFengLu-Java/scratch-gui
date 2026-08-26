@@ -1,8 +1,18 @@
-import {MessageCircleIcon, SendIcon} from 'lucide-react';
+import {
+    KeyboardIcon,
+    MessageCircleIcon,
+    MicIcon,
+    RadioIcon,
+    SendIcon
+} from 'lucide-react';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
 import DockPanel from '../editor-dock/dock-panel.jsx';
+import {
+    PlanetProjectVoiceControls,
+    PlanetProjectVoiceMessage
+} from './planet-project-voice.jsx';
 import {
     collaborationEnabled,
     PLANET_COLLABORATION_CHAT_EVENT,
@@ -23,13 +33,16 @@ class PlanetProjectChat extends React.Component {
     constructor (props) {
         super(props);
         this.state = {
+            composerMode: 'text',
             connected: false,
             draft: '',
             error: '',
             messages: [],
             open: false,
             ownUserId: null,
-            unread: 0
+            projectId: null,
+            unread: 0,
+            view: 'chat'
         };
         this.messageList = React.createRef();
         this.handleChatEvent = this.handleChatEvent.bind(this);
@@ -37,6 +50,9 @@ class PlanetProjectChat extends React.Component {
         this.handleKeyDown = this.handleKeyDown.bind(this);
         this.handleStatus = this.handleStatus.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
+        this.handleToggleComposer = this.handleToggleComposer.bind(this);
+        this.handleViewChat = this.handleViewChat.bind(this);
+        this.handleViewVoice = this.handleViewVoice.bind(this);
         this.handleOpen = this.handleOpen.bind(this);
         this.handleClose = this.handleClose.bind(this);
         this.handleToggleOpen = this.handleToggleOpen.bind(this);
@@ -85,7 +101,10 @@ class PlanetProjectChat extends React.Component {
     handleChatEvent (event) {
         const detail = event.detail || {};
         if (detail.type === 'session-ready') {
-            this.setState({ownUserId: String(detail.userId || '')});
+            this.setState({
+                ownUserId: String(detail.userId || ''),
+                projectId: detail.projectId || null
+            });
         } else if (detail.type === 'chat-history') {
             this.setState({messages: Array.isArray(detail.messages) ? detail.messages : []});
         } else if (detail.type === 'chat-message' && detail.message) {
@@ -100,7 +119,13 @@ class PlanetProjectChat extends React.Component {
         } else if (detail.type === 'chat-error') {
             this.setState({error: detail.message || '消息发送失败'});
         } else if (detail.type === 'collaboration-destroyed') {
-            this.setState({connected: false, messages: [], ownUserId: null, unread: 0});
+            this.setState({
+                connected: false,
+                messages: [],
+                ownUserId: null,
+                projectId: null,
+                unread: 0
+            });
         }
     }
     handleDraftChange (event) {
@@ -117,6 +142,17 @@ class PlanetProjectChat extends React.Component {
             detail: {content}
         }));
         this.setState({draft: '', error: ''});
+    }
+    handleToggleComposer () {
+        this.setState(previous => ({
+            composerMode: previous.composerMode === 'voice' ? 'text' : 'voice'
+        }));
+    }
+    handleViewChat () {
+        this.setState({view: 'chat'});
+    }
+    handleViewVoice () {
+        this.setState({view: 'voice'});
     }
     handleToggleOpen () {
         this.setState(previous => ({open: !previous.open, unread: 0}));
@@ -148,10 +184,11 @@ class PlanetProjectChat extends React.Component {
     }
     renderPanel () {
         if (!this.state.open) return null;
+        const voiceComposer = this.state.composerMode === 'voice';
         return ReactDOM.createPortal(
             <DockPanel
                 className={styles.panel}
-                description={this.state.connected ? '实时在线' : '正在连接'}
+                description={this.state.connected ? '实时消息' : '正在连接'}
                 dragLabel="拖动项目聊天窗口"
                 icon={MessageCircleIcon}
                 onClose={this.handleClose}
@@ -159,59 +196,119 @@ class PlanetProjectChat extends React.Component {
                 title="项目聊天"
             >
                 <div
-                    aria-live="polite"
-                    className={styles.messages}
-                    ref={this.messageList}
+                    aria-label="聊天类型"
+                    className={styles.roomTabs}
+                    role="tablist"
                 >
-                    {this.state.messages.length === 0 ? (
-                        <div className={styles.empty}>{'还没有消息'}</div>
-                    ) : this.state.messages.map(message => {
-                        const own = String(message.userId) === this.state.ownUserId;
-                        return (
-                            <article
-                                className={`${styles.message} ${own ? styles.ownMessage : ''}`}
-                                key={message.messageId}
-                            >
-                                <div className={styles.messageMeta}>
-                                    <span
-                                        aria-hidden="true"
-                                        className={styles.userDot}
-                                        style={{backgroundColor: message.color || '#0ea5e9'}}
-                                    />
-                                    <strong>{own ? '我' : (message.nickname || '协作者')}</strong>
-                                    <time>{this.formatTime(message.sentAt)}</time>
-                                </div>
-                                <p>{message.content}</p>
-                            </article>
-                        );
-                    })}
+                    <button
+                        aria-selected={this.state.view === 'chat'}
+                        className={this.state.view === 'chat' ? styles.roomTabActive : ''}
+                        role="tab"
+                        type="button"
+                        onClick={this.handleViewChat}
+                    >
+                        <MessageCircleIcon aria-hidden="true" />
+                        <span>{'聊天'}</span>
+                    </button>
+                    <button
+                        aria-selected={this.state.view === 'voice'}
+                        className={this.state.view === 'voice' ? styles.roomTabActive : ''}
+                        role="tab"
+                        type="button"
+                        onClick={this.handleViewVoice}
+                    >
+                        <RadioIcon aria-hidden="true" />
+                        <span>{'语音房'}</span>
+                    </button>
                 </div>
-                <form
-                    className={styles.composer}
-                    onSubmit={this.handleSubmit}
-                >
-                    {this.state.error && <div className={styles.error}>{this.state.error}</div>}
-                    <div className={styles.composerRow}>
-                        <input
-                            aria-label="聊天消息"
-                            autoComplete="off"
-                            className={styles.input}
-                            disabled={!this.state.connected}
-                            maxLength={MAX_MESSAGE_LENGTH}
-                            onChange={this.handleDraftChange}
-                            placeholder={this.state.connected ? '输入消息…' : '等待协作连接…'}
-                            value={this.state.draft}
+                {this.state.view === 'voice' ? (
+                    <div className={styles.voicePanelBody}>
+                        <PlanetProjectVoiceControls
+                            connected={this.state.connected}
+                            recorder={false}
                         />
-                        <button
-                            className={styles.sendButton}
-                            disabled={!this.state.connected || !this.state.draft.trim()}
-                            type="submit"
-                        >
-                            <SendIcon aria-hidden="true" />
-                            <span>{'发送'}</span>
-                        </button>
                     </div>
-                </form>
+                ) : (
+                    <React.Fragment>
+                        <div
+                            aria-live="polite"
+                            className={styles.messages}
+                            ref={this.messageList}
+                        >
+                            {this.state.messages.length === 0 ? (
+                                <div className={styles.empty}>{'还没有消息'}</div>
+                            ) : this.state.messages.map(message => {
+                                const own = String(message.userId) === this.state.ownUserId;
+                                return (
+                                    <article
+                                        className={`${styles.message} ${own ? styles.ownMessage : ''}`}
+                                        key={message.messageId}
+                                    >
+                                        <div className={styles.messageMeta}>
+                                            <span
+                                                aria-hidden="true"
+                                                className={styles.userDot}
+                                                style={{backgroundColor: message.color || '#0ea5e9'}}
+                                            />
+                                            <strong>{own ? '我' : (message.nickname || '协作者')}</strong>
+                                            <time>{this.formatTime(message.sentAt)}</time>
+                                        </div>
+                                        {message.messageType === 'VOICE' ? (
+                                            <PlanetProjectVoiceMessage
+                                                message={message}
+                                                projectId={this.state.projectId}
+                                            />
+                                        ) : <p>{message.content}</p>}
+                                    </article>
+                                );
+                            })}
+                        </div>
+                        <form
+                            className={styles.composer}
+                            onSubmit={this.handleSubmit}
+                        >
+                            {this.state.error && <div className={styles.error}>{this.state.error}</div>}
+                            <div className={styles.composerRow}>
+                                <button
+                                    aria-label={voiceComposer ? '切换到文字输入' : '切换到按住说话'}
+                                    className={styles.modeButton}
+                                    type="button"
+                                    onClick={this.handleToggleComposer}
+                                >
+                                    {voiceComposer ?
+                                        <KeyboardIcon aria-hidden="true" /> : <MicIcon aria-hidden="true" />}
+                                </button>
+                                {voiceComposer ? (
+                                    <PlanetProjectVoiceControls
+                                        connected={this.state.connected}
+                                        room={false}
+                                    />
+                                ) : (
+                                    <React.Fragment>
+                                        <input
+                                            aria-label="聊天消息"
+                                            autoComplete="off"
+                                            className={styles.input}
+                                            disabled={!this.state.connected}
+                                            maxLength={MAX_MESSAGE_LENGTH}
+                                            onChange={this.handleDraftChange}
+                                            placeholder={this.state.connected ? '输入消息…' : '等待协作连接…'}
+                                            value={this.state.draft}
+                                        />
+                                        <button
+                                            aria-label="发送消息"
+                                            className={styles.sendButton}
+                                            disabled={!this.state.connected || !this.state.draft.trim()}
+                                            type="submit"
+                                        >
+                                            <SendIcon aria-hidden="true" />
+                                        </button>
+                                    </React.Fragment>
+                                )}
+                            </div>
+                        </form>
+                    </React.Fragment>
+                )}
             </DockPanel>,
             document.body
         );

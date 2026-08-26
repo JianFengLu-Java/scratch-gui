@@ -40,6 +40,7 @@ const SpriteSelectorComponent = function (props) {
         onSelectSprite,
         onSpriteUpload,
         onSurpriseSpriteClick,
+        readOnly,
         raised,
         selectedId,
         spriteFileInput,
@@ -61,9 +62,11 @@ const SpriteSelectorComponent = function (props) {
             else if (command === 'sprite-surprise') onSurpriseSpriteClick();
             else if (command === 'sprite-upload') onFileUploadClick();
         };
-        window.addEventListener(PLANET_EDITOR_RESOURCE_COMMAND_EVENT, handleResourceCommand);
-        return () => window.removeEventListener(PLANET_EDITOR_RESOURCE_COMMAND_EVENT, handleResourceCommand);
-    }, [onFileUploadClick, onNewSpriteClick, onPaintSpriteClick, onSurpriseSpriteClick]);
+        if (!readOnly) window.addEventListener(PLANET_EDITOR_RESOURCE_COMMAND_EVENT, handleResourceCommand);
+        return () => {
+            if (!readOnly) window.removeEventListener(PLANET_EDITOR_RESOURCE_COMMAND_EVENT, handleResourceCommand);
+        };
+    }, [onFileUploadClick, onNewSpriteClick, onPaintSpriteClick, onSurpriseSpriteClick, readOnly]);
     return (
         <Box
             aria-label={intl.formatMessage(messages.addSpriteFromLibrary)}
@@ -73,7 +76,7 @@ const SpriteSelectorComponent = function (props) {
 
             <SpriteInfo
                 direction={selectedSprite.direction}
-                disabled={spriteInfoDisabled}
+                disabled={spriteInfoDisabled || readOnly}
                 name={selectedSprite.name}
                 rotationStyle={selectedSprite.rotationStyle}
                 size={selectedSprite.size}
@@ -95,6 +98,7 @@ const SpriteSelectorComponent = function (props) {
                 hoveredTarget={hoveredTarget}
                 items={Object.keys(sprites).map(id => sprites[id])}
                 raised={raised}
+                readOnly={readOnly}
                 selectedId={selectedId}
                 onDeleteSprite={onDeleteSprite}
                 onDrop={onDrop}
@@ -102,14 +106,14 @@ const SpriteSelectorComponent = function (props) {
                 onExportSprite={onExportSprite}
                 onSelectSprite={onSelectSprite}
             />
-            <input
+            {!readOnly && <input
                 accept=".svg,.png,.bmp,.jpg,.jpeg,.jfif,.webp,.sprite2,.sprite3,.gif"
                 className={styles.fileInput}
                 multiple
                 ref={spriteFileInput}
                 type="file"
                 onChange={onSpriteUpload}
-            />
+            />}
         </Box>
     );
 };
@@ -139,6 +143,7 @@ SpriteSelectorComponent.propTypes = {
     onSpriteUpload: PropTypes.func,
     onSurpriseSpriteClick: PropTypes.func,
     raised: PropTypes.bool,
+    readOnly: PropTypes.bool,
     selectedId: PropTypes.string,
     spriteFileInput: PropTypes.func,
     sprites: PropTypes.shape({

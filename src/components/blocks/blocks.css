@@ -98,3 +98,19 @@
     min-width: auto;
     min-height: auto;
 }
+
+/*
+    The review editor keeps the normal toolbox so reviewers can browse every
+    category. Blockly's readOnly option is not sufficient for already-bound
+    gesture handlers, so block nodes must never become pointer targets.
+    Events fall through to the workspace canvas, preserving pan and zoom.
+*/
+.read-only :global(.blocklyDraggable),
+.read-only :global(.blocklyDraggable *),
+.read-only :global(.blocklyFlyoutButton),
+.read-only :global(.blocklyFlyoutButton *),
+.read-only :global(.blocklyWorkspaceComment),
+.read-only :global(.blocklyWorkspaceComment *) {
+    cursor: default !important;
+    pointer-events: none !important;
+}

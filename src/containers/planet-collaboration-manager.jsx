@@ -8,9 +8,15 @@ import {
     emitPlanetCollaborationStatus,
     PLANET_COLLABORATION_CHAT_SEND_EVENT,
     PLANET_COLLABORATION_REMOTE_APPLIED_EVENT,
+    PLANET_COLLABORATION_VOICE_SEND_EVENT,
     PlanetYjsCollaboration
 } from '../lib/planet-collaboration';
+import {
+    findVmTarget,
+    getSelectedTarget
+} from '../lib/planet-collaboration-targets';
 import {isPlanetProjectRoute} from '../lib/planet-project-loader';
+import {COSTUMES_TAB_INDEX} from '../reducers/editor-tab';
 import {getIsShowingProject} from '../reducers/project-state';
 
 const PUBLISH_DEBOUNCE_MS = 500;
@@ -29,6 +35,7 @@ class PlanetCollaborationManager extends React.Component {
         this.reconnectDelay = 1000;
         this.handleProjectChanged = this.handleProjectChanged.bind(this);
         this.handleChatSend = this.handleChatSend.bind(this);
+        this.handleVoiceSend = this.handleVoiceSend.bind(this);
         this.handleInteractionEnd = this.handleInteractionEnd.bind(this);
         this.handleInteractionStart = this.handleInteractionStart.bind(this);
         this.handleKeyDown = this.handleKeyDown.bind(this);
@@ -42,6 +49,7 @@ class PlanetCollaborationManager extends React.Component {
         this.mounted = true;
         this.props.vm.on('PROJECT_CHANGED', this.handleProjectChanged);
         window.addEventListener(PLANET_COLLABORATION_CHAT_SEND_EVENT, this.handleChatSend);
+        window.addEventListener(PLANET_COLLABORATION_VOICE_SEND_EVENT, this.handleVoiceSend);
         document.addEventListener('pointerdown', this.handleInteractionStart, true);
         window.addEventListener('pointerup', this.handleInteractionEnd, true);
         window.addEventListener('pointercancel', this.handleInteractionEnd, true);
@@ -66,6 +74,7 @@ class PlanetCollaborationManager extends React.Component {
         clearTimeout(this.reconnectTimer);
         this.props.vm.off('PROJECT_CHANGED', this.handleProjectChanged);
         window.removeEventListener(PLANET_COLLABORATION_CHAT_SEND_EVENT, this.handleChatSend);
+        window.removeEventListener(PLANET_COLLABORATION_VOICE_SEND_EVENT, this.handleVoiceSend);
         document.removeEventListener('pointerdown', this.handleInteractionStart, true);
         window.removeEventListener('pointerup', this.handleInteractionEnd, true);
         window.removeEventListener('pointercancel', this.handleInteractionEnd, true);
@@ -146,6 +155,14 @@ class PlanetCollaborationManager extends React.Component {
     handleChatSend (event) {
         if (this.collaboration && event.detail) {
             this.collaboration.sendChatMessage(event.detail.content);
+        }
+    }
+    handleVoiceSend (event) {
+        if (!this.collaboration || !event.detail) return;
+        if (event.detail.frame) {
+            this.collaboration.sendVoiceMessage(event.detail.frame);
+        } else if (event.detail.message) {
+            this.collaboration.sendVoiceCommand(event.detail.message);
         }
     }
     interactionSurfaceContains (target) {
@@ -233,10 +250,13 @@ class PlanetCollaborationManager extends React.Component {
             const editingTargetKey = this.props.editingTargetKey;
             this.suppressLocalEventsUntil = Date.now() + REMOTE_EVENT_SUPPRESSION_MS;
             await this.props.vm.loadProject(data);
-            const target = this.props.vm.runtime.targets.find(item => (
-                editingTargetKey === 'stage' ? item.isStage : `sprite:${item.getName()}` === editingTargetKey
-            ));
-            if (target) this.props.vm.setEditingTarget(target.id);
+            const targetMatch = findVmTarget(this.props.vm.runtime.targets, editingTargetKey);
+            if (targetMatch) {
+                this.props.vm.setEditingTarget(targetMatch.target.id);
+                if (targetMatch.costumeIndex !== null) {
+                    targetMatch.target.setCostume(targetMatch.costumeIndex);
+                }
+            }
             this.lastAppliedRevision = remoteProject.revision;
             this.lastRemoteAppliedAt = Date.now();
             window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_REMOTE_APPLIED_EVENT));
@@ -264,13 +284,13 @@ PlanetCollaborationManager.propTypes = {
 
 const mapStateToProps = state => {
     const targets = state.scratchGui.targets;
-    const editingTargetId = targets.editingTarget;
-    const selected = targets.stage && targets.stage.id === editingTargetId ?
-        targets.stage : targets.sprites[editingTargetId];
-    const targetName = selected && (selected.name || (selected.isStage ? '舞台' : '角色'));
+    const selected = getSelectedTarget(
+        targets,
+        state.scratchGui.editorTab.activeTabIndex === COSTUMES_TAB_INDEX
+    );
     return {
-        editingTargetKey: selected ? (selected.isStage ? 'stage' : `sprite:${targetName}`) : null,
-        editingTargetName: targetName,
+        editingTargetKey: selected && selected.targetId,
+        editingTargetName: selected && selected.targetName,
         isShowingProject: getIsShowingProject(state.scratchGui.projectState.loadingState)
     };
 };

@@ -8,7 +8,10 @@ const LOCAL_ORIGIN = 'planet-local-project';
 const REMOTE_ORIGIN = 'planet-remote-project';
 const MAX_UPDATE_BYTES = 8 * 1024 * 1024;
 const HEARTBEAT_INTERVAL_MS = 25000;
+const VOICE_ICE_REFRESH_MARGIN_MS = 5 * 60 * 1000;
+const VOICE_ICE_REFRESH_MIN_DELAY_MS = 30 * 1000;
 const SESSION_REPLACED_CLOSE_CODE = 4001;
+let latestVoiceState = null;
 
 export const PLANET_COLLABORATION_STATUS_EVENT = 'planet-collaboration-status';
 export const PLANET_COLLABORATION_REMOTE_APPLIED_EVENT = 'planet-collaboration-remote-applied';
@@ -16,6 +19,8 @@ export const PLANET_COLLABORATION_CURSOR_EVENT = 'planet-collaboration-cursor';
 export const PLANET_COLLABORATION_INVITATION_EVENT = 'planet-collaboration-invitation';
 export const PLANET_COLLABORATION_CHAT_EVENT = 'planet-collaboration-chat';
 export const PLANET_COLLABORATION_CHAT_SEND_EVENT = 'planet-collaboration-chat-send';
+export const PLANET_COLLABORATION_VOICE_EVENT = 'planet-collaboration-voice';
+export const PLANET_COLLABORATION_VOICE_SEND_EVENT = 'planet-collaboration-voice-send';
 export const PLANET_COLLABORATION_PERMISSION_EVENT = 'planet-collaboration-permission';
 export const PLANET_ROLE_LOCK_STATUS_EVENT = 'planet-role-lock-status';
 
@@ -26,6 +31,14 @@ export const collaborationEnabled = () => {
 
 export const emitPlanetCollaborationStatus = detail => {
     window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_STATUS_EVENT, {detail}));
+};
+
+export const getPlanetCollaborationVoiceState = () => {
+    if (!latestVoiceState) return null;
+    return {
+        ...latestVoiceState,
+        participants: [...latestVoiceState.participants]
+    };
 };
 
 const resolveWebSocketUrl = (projectId, ticket) => {
@@ -130,6 +143,17 @@ export class PlanetYjsCollaboration {
         }
         if (message.type === 'session-ready') {
             this.sessionId = message.sessionId;
+            latestVoiceState = {
+                canCreateRoom: Boolean(message.voiceCanCreateRoom),
+                enabled: Boolean(message.voiceEnabled),
+                iceExpiresAt: message.voiceIceExpiresAt || null,
+                iceServers: Array.isArray(message.voiceIceServers) ? message.voiceIceServers : [],
+                participantLimit: 4,
+                participants: [],
+                roomActive: false,
+                sessionId: message.sessionId
+            };
+            this.scheduleVoiceIceRefresh(message.voiceEnabled ? message.voiceIceExpiresAt : null);
             this.flushRoleLock();
             window.dispatchEvent(new CustomEvent(PLANET_ROLE_LOCK_STATUS_EVENT, {
                 detail: {type: 'session-ready', sessionId: message.sessionId}
@@ -138,7 +162,24 @@ export class PlanetYjsCollaboration {
                 detail: {
                     type: 'session-ready',
                     sessionId: message.sessionId,
-                    userId: message.userId
+                    userId: message.userId,
+                    projectId: this.projectId,
+                    voiceCanCreateRoom: message.voiceCanCreateRoom,
+                    voiceEnabled: message.voiceEnabled,
+                    voiceIceExpiresAt: message.voiceIceExpiresAt,
+                    voiceIceServers: message.voiceIceServers
+                }
+            }));
+            window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_VOICE_EVENT, {
+                detail: {
+                    type: 'session-ready',
+                    sessionId: message.sessionId,
+                    userId: message.userId,
+                    projectId: this.projectId,
+                    voiceCanCreateRoom: message.voiceCanCreateRoom,
+                    voiceEnabled: message.voiceEnabled,
+                    voiceIceExpiresAt: message.voiceIceExpiresAt,
+                    voiceIceServers: message.voiceIceServers
                 }
             }));
             window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_PERMISSION_EVENT, {
@@ -207,6 +248,31 @@ export class PlanetYjsCollaboration {
             window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_CHAT_EVENT, {
                 detail: message
             }));
+        } else if (message.type === 'voice-room' || message.type === 'voice-signal' ||
+            message.type === 'voice-error' || message.type === 'voice-room-closed' ||
+            message.type === 'voice-ice-servers') {
+            if (message.type === 'voice-room' && latestVoiceState) {
+                latestVoiceState = {
+                    ...latestVoiceState,
+                    hostUserId: message.hostUserId || null,
+                    participantLimit: Number(message.participantLimit || 4),
+                    participants: Array.isArray(message.participants) ? message.participants : [],
+                    roomActive: Boolean(message.active)
+                };
+            } else if (message.type === 'voice-ice-servers' && latestVoiceState) {
+                latestVoiceState = {
+                    ...latestVoiceState,
+                    iceExpiresAt: message.voiceIceExpiresAt || null,
+                    iceServers: Array.isArray(message.voiceIceServers) ?
+                        message.voiceIceServers : []
+                };
+                this.scheduleVoiceIceRefresh(message.voiceIceExpiresAt);
+            } else if (message.type === 'voice-room-closed' && latestVoiceState) {
+                latestVoiceState = {...latestVoiceState, participants: [], roomActive: false};
+            }
+            window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_VOICE_EVENT, {
+                detail: message
+            }));
         } else if (message.type === 'project-access-removed' &&
             String(message.projectId) === this.projectId) {
             this.status({status: 'error', message: '你已不再是这个项目的协作者'});
@@ -248,6 +314,17 @@ export class PlanetYjsCollaboration {
         this.sendJson({type: 'chat-message', content: value});
     }
 
+    sendVoiceCommand (message) {
+        if (!message || typeof message.type !== 'string') return;
+        this.sendJson(message);
+    }
+
+    sendVoiceMessage (frame) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        if (!(frame instanceof ArrayBuffer) && !(frame instanceof Uint8Array)) return;
+        this.socket.send(frame);
+    }
+
     sendJson (message) {
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
         this.socket.send(JSON.stringify(message));
@@ -267,16 +344,35 @@ export class PlanetYjsCollaboration {
         this.heartbeatTimer = null;
     }
 
+    scheduleVoiceIceRefresh (expiresAt) {
+        clearTimeout(this.voiceIceRefreshTimer);
+        this.voiceIceRefreshTimer = null;
+        const expires = Date.parse(expiresAt || '');
+        if (!Number.isFinite(expires)) return;
+        const delay = Math.max(VOICE_ICE_REFRESH_MIN_DELAY_MS,
+            expires - Date.now() - VOICE_ICE_REFRESH_MARGIN_MS);
+        this.voiceIceRefreshTimer = setTimeout(() => {
+            this.voiceIceRefreshTimer = null;
+            this.sendJson({type: 'voice-ice-refresh'});
+        }, delay);
+    }
+
     handlePageHide () {
         this.destroy();
     }
 
     clearTransientUi (reason = 'closed') {
+        clearTimeout(this.voiceIceRefreshTimer);
+        this.voiceIceRefreshTimer = null;
+        latestVoiceState = null;
         window.dispatchEvent(new CustomEvent(PLANET_ROLE_LOCK_STATUS_EVENT, {
             detail: {type: 'collaboration-destroyed', reason}
         }));
         window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_CHAT_EVENT, {
             detail: {type: 'collaboration-destroyed'}
+        }));
+        window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_VOICE_EVENT, {
+            detail: {type: 'collaboration-destroyed', reason}
         }));
     }
 

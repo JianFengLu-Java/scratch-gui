@@ -130,12 +130,12 @@ import mystuffIcon from "./icon--mystuff.png";
 import profileIcon from "./icon--profile.png";
 import remixIcon from "./icon--remix.svg";
 import aboutIcon from "./icon--about.svg";
+import planetBrandLockup from "../../../../../../logo/Frame 4.svg";
 
 import ninetiesLogo from "./nineties_logo.svg";
 import catLogo from "./cat_logo.svg";
 import prehistoricLogo from "./prehistoric-logo.svg";
 import oldtimeyLogo from "./oldtimey-logo.svg";
-import planetLogo from "./planet-logo.svg";
 
 import sharedMessages from "../../lib/shared-messages";
 
@@ -421,6 +421,10 @@ class MenuBar extends React.Component {
     }
     handleKeyPress(event) {
         const modifier = bowser.mac ? event.metaKey : event.ctrlKey;
+        if (this.props.readOnly && modifier && ['s', 'o'].includes(event.key.toLowerCase())) {
+            event.preventDefault();
+            return;
+        }
         if (modifier) {
             if (event.key.toLowerCase() === "s") {
                 this.props.handleSaveProject();
@@ -607,8 +611,12 @@ class MenuBar extends React.Component {
                         type="button"
                         onClick={this.handleClickBrand}
                     >
-                        <img src={planetLogo} draggable={false} alt="" />
-                        <span>{APP_NAME}</span>
+                        <img
+                            alt=""
+                            aria-hidden="true"
+                            className={styles.planetBrandLogo}
+                            src={planetBrandLockup}
+                        />
                     </button>
                     <div
                         aria-label="编辑器命令"
@@ -1108,7 +1116,7 @@ class MenuBar extends React.Component {
                             </MenuLabel>
                         )}
 
-                        {this.props.onClickAddonSettings && (
+                        {!this.props.readOnly && this.props.onClickAddonSettings && (
                             <div
                                 aria-label={this.props.intl.formatMessage({
                                     defaultMessage: 'Addons',
@@ -1133,7 +1141,7 @@ class MenuBar extends React.Component {
                                 </span>
                             </div>
                         )}
-                        {this.props.onClickSettingsModal && (
+                        {!this.props.readOnly && this.props.onClickSettingsModal && (
                             <div
                                 aria-label={this.props.intl.formatMessage({
                                     defaultMessage: 'Advanced',
@@ -1231,21 +1239,21 @@ class MenuBar extends React.Component {
                     aria-label="项目状态与账户"
                     className={styles.accountInfoGroup}
                 >
-                    {!this.props.isPlayerOnly && (
+                    {!this.props.isPlayerOnly && !this.props.readOnly && (
                         <PlanetAutosaveManager
                             projectId={this.props.projectId}
                             vm={this.props.vm}
                         />
                     )}
-                    {!this.props.isPlayerOnly && (
+                    {!this.props.isPlayerOnly && !this.props.readOnly && (
                         <PlanetCollaborationManager
                             projectId={this.props.projectId}
                             vm={this.props.vm}
                         />
                     )}
-                    {!this.props.isPlayerOnly && <PlanetRemoteCursors />}
-                    {!this.props.isPlayerOnly && <PlanetRoleLockOverlay />}
-                    {!this.props.isPlayerOnly && (
+                    {!this.props.isPlayerOnly && !this.props.readOnly && <PlanetRemoteCursors />}
+                    {!this.props.isPlayerOnly && !this.props.readOnly && <PlanetRoleLockOverlay />}
+                    {!this.props.isPlayerOnly && !this.props.readOnly && (
                         <Button
                             className={styles.publishWorkButton}
                             onClick={this.handleOpenWorkPublish}
@@ -1254,15 +1262,20 @@ class MenuBar extends React.Component {
                             {'发布作品'}
                         </Button>
                     )}
-                    <div
+                    {this.props.readOnly && (
+                        <div className={styles.reviewModeBadge}>{'审核模式 · 仅查看'}</div>
+                    )}
+                    {!this.props.readOnly && <div
                         aria-label="项目同步状态"
                         className={styles.statusGroup}
                     >
                         <PlanetAutosaveStatus />
                         <PlanetCollaborationStatus projectId={this.props.projectId} />
-                    </div>
-                    <TWSaveStatus showSaveFilePicker={this.props.showSaveFilePicker} />
-                    {!this.props.isPlayerOnly && <PlanetUserMenu />}
+                    </div>}
+                    {!this.props.readOnly && (
+                        <TWSaveStatus showSaveFilePicker={this.props.showSaveFilePicker} />
+                    )}
+                    {!this.props.isPlayerOnly && !this.props.readOnly && <PlanetUserMenu />}
                 </div>
 
                 {aboutButton}
@@ -1272,7 +1285,7 @@ class MenuBar extends React.Component {
         return (
             <React.Fragment>
                 {menuBar}
-                <TWNews />
+                {!this.props.readOnly && <TWNews />}
                 <AlertDialog
                     cancelLabel="继续创作"
                     confirmLabel="确定返回"
@@ -1348,6 +1361,7 @@ MenuBar.propTypes = {
     isTotallyNormal: PropTypes.bool,
     isUpdating: PropTypes.bool,
     locale: PropTypes.string.isRequired,
+    readOnly: PropTypes.bool,
     loginMenuOpen: PropTypes.bool,
     mode1920: PropTypes.bool,
     mode1990: PropTypes.bool,
@@ -1414,6 +1428,7 @@ MenuBar.propTypes = {
 
 MenuBar.defaultProps = {
     onShare: () => {},
+    readOnly: false
 };
 
 const mapStateToProps = (state, ownProps) => {

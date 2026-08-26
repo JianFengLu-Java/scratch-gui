@@ -89,6 +89,12 @@
     white-space: nowrap;
 }
 
+.trigger .member-name,
+.profile-identity .member-name {
+    color: $error-primary;
+    font-weight: 800;
+}
+
 .caret {
     width: .5rem;
     height: .5rem;

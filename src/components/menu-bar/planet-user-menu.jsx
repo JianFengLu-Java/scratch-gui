@@ -2,7 +2,11 @@ import classNames from 'classnames';
 import React from 'react';
 import {ChevronDownIcon} from 'lucide-react';
 
-import {readPlanetEnvelope, refreshPlanetSession} from '../../lib/planet-session';
+import {
+    readPlanetEnvelope,
+    refreshPlanetSession,
+    resolvePlanetAssetUrl
+} from '../../lib/planet-session';
 
 import styles from './planet-user-menu.css';
 
@@ -45,7 +49,13 @@ class PlanetUserMenu extends React.Component {
                 },
                 signal: this.abortController.signal
             }).then(readPlanetEnvelope);
-            this.setState({profile, status: 'ready'});
+            this.setState({
+                profile: {
+                    ...profile,
+                    avatarUrl: resolvePlanetAssetUrl(profile.avatarUrl)
+                },
+                status: 'ready'
+            });
         } catch (error) {
             if (error.name === 'AbortError') return;
             this.setState({status: [401, 403].includes(error.status) ? 'signedOut' : 'error'});
@@ -101,7 +111,12 @@ class PlanetUserMenu extends React.Component {
                         ) : null}
                     </span>
                     <span className={styles.profileIdentity}>
-                        <strong title={profile.nickname}>{profile.nickname}</strong>
+                        <strong
+                            className={classNames({[styles.memberName]: profile.member})}
+                            title={profile.nickname}
+                        >
+                            {profile.nickname}
+                        </strong>
                         <span>{`UID ${profile.uid}`}</span>
                     </span>
                 </div>
@@ -193,7 +208,7 @@ class PlanetUserMenu extends React.Component {
                         ) : null}
                     </span>
                     <span
-                        className={styles.nickname}
+                        className={classNames(styles.nickname, {[styles.memberName]: profile.member})}
                         title={profile.nickname}
                     >
                         {profile.nickname}

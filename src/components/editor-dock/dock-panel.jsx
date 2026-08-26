@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import {gsap} from 'gsap';
 import {Draggable} from 'gsap/Draggable';
 import {useGSAP} from '@gsap/react';
-import {GripVerticalIcon, XIcon} from 'lucide-react';
+import {XIcon} from 'lucide-react';
 import PropTypes from 'prop-types';
 import React from 'react';
 
@@ -67,6 +67,7 @@ const DockPanel = ({
 
         const draggable = Draggable.create(panelRef.current, {
             bounds: calculateBounds(),
+            dragClickables: false,
             edgeResistance: 0.88,
             onPress () {
                 this.applyBounds(calculateBounds(this.x, this.y));
@@ -120,10 +121,6 @@ const DockPanel = ({
                         className={styles.dragHandle}
                         ref={dragHandleRef}
                     >
-                        <GripVerticalIcon
-                            aria-hidden="true"
-                            className={styles.grip}
-                        />
                         {Icon ? (
                             <span className={styles.headerIcon}><Icon aria-hidden="true" /></span>
                         ) : null}

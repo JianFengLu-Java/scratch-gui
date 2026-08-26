@@ -22,6 +22,7 @@ const StageSelector = props => {
         dragOver,
         fileInputRef,
         intl,
+        readOnly,
         selected,
         raised,
         receivedBlocks,
@@ -44,9 +45,11 @@ const StageSelector = props => {
             else if (command === 'backdrop-surprise') onSurpriseBackdropClick();
             else if (command === 'backdrop-upload') onBackdropFileUploadClick();
         };
-        window.addEventListener(PLANET_EDITOR_RESOURCE_COMMAND_EVENT, handleResourceCommand);
-        return () => window.removeEventListener(PLANET_EDITOR_RESOURCE_COMMAND_EVENT, handleResourceCommand);
-    }, [onBackdropFileUploadClick, onEmptyBackdropClick, onNewBackdropClick, onSurpriseBackdropClick]);
+        if (!readOnly) window.addEventListener(PLANET_EDITOR_RESOURCE_COMMAND_EVENT, handleResourceCommand);
+        return () => {
+            if (!readOnly) window.removeEventListener(PLANET_EDITOR_RESOURCE_COMMAND_EVENT, handleResourceCommand);
+        };
+    }, [onBackdropFileUploadClick, onEmptyBackdropClick, onNewBackdropClick, onSurpriseBackdropClick, readOnly]);
     return (
         <Box
             aria-label={intl.formatMessage(messages.addBackdropFromLibrary)}
@@ -85,14 +88,14 @@ const StageSelector = props => {
                 />
             </div>
             <div className={styles.count}>{backdropCount}</div>
-            <input
+            {!readOnly && <input
                 accept=".svg,.png,.bmp,.jpg,.jpeg,.jfif,.webp,.gif"
                 className={styles.fileInput}
                 multiple
                 ref={fileInputRef}
                 type="file"
                 onChange={onBackdropFileUpload}
-            />
+            />}
         </Box>
     );
 };
@@ -111,10 +114,15 @@ StageSelector.propTypes = {
     onMouseLeave: PropTypes.func,
     onNewBackdropClick: PropTypes.func,
     onSurpriseBackdropClick: PropTypes.func,
+    readOnly: PropTypes.bool,
     raised: PropTypes.bool.isRequired,
     receivedBlocks: PropTypes.bool.isRequired,
     selected: PropTypes.bool.isRequired,
     url: PropTypes.string
+};
+
+StageSelector.defaultProps = {
+    readOnly: false
 };
 
 export default injectIntl(StageSelector);

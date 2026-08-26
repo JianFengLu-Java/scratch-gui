@@ -7,7 +7,9 @@ import {
     collaborationEnabled,
     PLANET_COLLABORATION_CURSOR_EVENT
 } from '../../lib/planet-collaboration';
+import {getSelectedTarget} from '../../lib/planet-collaboration-targets';
 import {isPlanetProjectRoute} from '../../lib/planet-project-loader';
+import {COSTUMES_TAB_INDEX} from '../../reducers/editor-tab';
 
 import styles from './planet-remote-cursors.css';
 
@@ -100,12 +102,12 @@ PlanetRemoteCursors.propTypes = {
 
 const mapStateToProps = state => {
     const targets = state.scratchGui.targets;
-    const editingTargetId = targets.editingTarget;
-    const selected = targets.stage && targets.stage.id === editingTargetId ?
-        targets.stage : targets.sprites[editingTargetId];
-    const targetName = selected && (selected.name || (selected.isStage ? '舞台' : '角色'));
+    const selected = getSelectedTarget(
+        targets,
+        state.scratchGui.editorTab.activeTabIndex === COSTUMES_TAB_INDEX
+    );
     return {
-        editingTargetKey: selected ? (selected.isStage ? 'stage' : `sprite:${targetName}`) : null
+        editingTargetKey: selected && selected.targetId
     };
 };
 

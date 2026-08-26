@@ -4,10 +4,10 @@
     bottom: .75rem;
     display: flex;
     justify-content: center;
-    left: 50%;
-    max-width: calc(100vw - 1rem);
+    left: var(--editor-dock-center-x, 50%);
+    max-width: var(--editor-dock-max-width, calc(100% - 1rem));
     pointer-events: none;
-    position: fixed;
+    position: absolute;
     transform: translateX(-50%);
     z-index: $z-index-menu-bar;
 }

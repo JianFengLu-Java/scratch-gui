@@ -1,11 +1,12 @@
 /* eslint-disable react/jsx-no-bind, react/jsx-max-props-per-line */
+import classNames from 'classnames';
 import {
     CatIcon,
     ImageIcon,
     LoaderCircleIcon,
+    PaletteIcon,
     SaveIcon,
-    ShieldCheckIcon,
-    UsersIcon
+    ShieldCheckIcon
 } from 'lucide-react';
 import PropTypes from 'prop-types';
 import React from 'react';
@@ -24,6 +25,7 @@ import {
     collaborationEnabled,
     PLANET_COLLABORATION_PERMISSION_EVENT
 } from '../../lib/planet-collaboration';
+import {listPermissionTargets} from '../../lib/planet-collaboration-targets';
 import {isPlanetProjectRoute} from '../../lib/planet-project-loader';
 
 import styles from './planet-collaboration-permissions.css';
@@ -60,12 +62,21 @@ const PlanetCollaborationPermissions = ({projectId, targets}) => {
     const [data, setData] = React.useState(null);
     const [mode, setMode] = React.useState('FREE');
     const [assignments, setAssignments] = React.useState({});
+    const [selectedUserId, setSelectedUserId] = React.useState('');
     const available = isPlanetProjectRoute() && collaborationEnabled() && projectId && String(projectId) !== '0';
 
     const applyData = React.useCallback(next => {
         setData(next);
         setMode(next.mode || 'FREE');
         setAssignments(assignmentMap(next));
+        setSelectedUserId(previous => {
+            const members = next.members || [];
+            const viewerUserId = String(next.viewerUserId || '');
+            const visibleMembers = next.canManage ? members :
+                members.filter(member => String(member.id) === viewerUserId);
+            return visibleMembers.some(member => String(member.id) === previous) ?
+                previous : visibleMembers.length ? String(visibleMembers[0].id) : '';
+        });
     }, []);
 
     const load = React.useCallback(async () => {
@@ -75,7 +86,7 @@ const PlanetCollaborationPermissions = ({projectId, targets}) => {
         try {
             applyData(await fetchPlanetCollaborationPermissions(projectId));
         } catch (requestError) {
-            setError(requestError.message || '角色权限加载失败');
+            setError(requestError.message || '协作权限加载失败');
         } finally {
             setLoading(false);
         }
@@ -111,7 +122,7 @@ const PlanetCollaborationPermissions = ({projectId, targets}) => {
         if (open) load();
     }, [load, open]);
 
-    const setMemberPermission = (targetId, userId, enabled) => {
+    const setUserTargetPermission = (userId, targetId, enabled) => {
         setAssignments(previous => {
             const current = previous[targetId] || [];
             return {
@@ -132,29 +143,44 @@ const PlanetCollaborationPermissions = ({projectId, targets}) => {
                     targetId: target.targetId,
                     targetName: target.targetName,
                     userIds: assignments[target.targetId] || []
-                })) : []
+                })).filter(target => target.userIds.length) : []
             };
             applyData(await savePlanetCollaborationPermissions(projectId, payload));
         } catch (requestError) {
-            setError(requestError.message || '角色权限保存失败');
+            setError(requestError.message || '协作权限保存失败');
         } finally {
             setSaving(false);
         }
     };
 
     if (!available || !open) return null;
-    const members = data ? data.members.filter(member => member.role !== 'OWNER') : [];
+    const members = data ? data.members : [];
     const viewerUserId = data && String(data.viewerUserId || '');
+    const visibleMembers = data && data.canManage ? members :
+        members.filter(member => String(member.id) === viewerUserId);
+    const selectedMember = visibleMembers.find(member => String(member.id) === selectedUserId);
+    const selectedAssignedCount = selectedMember ? selectedMember.role === 'OWNER' ? targets.length :
+        targets.reduce((count, target) => (
+            (assignments[target.targetId] || []).includes(selectedUserId) ? count + 1 : count
+        ), 0) : 0;
+    const targetGroups = [
+        {icon: ImageIcon, kind: 'stage', label: '舞台'},
+        {icon: CatIcon, kind: 'sprite', label: '角色'},
+        {icon: PaletteIcon, kind: 'costume', label: '造型'}
+    ].map(group => ({
+        ...group,
+        targets: targets.filter(target => target.kind === group.kind)
+    })).filter(group => group.targets.length);
 
     return ReactDOM.createPortal(
         <DockPanel
             className={styles.panel}
-            description="管理角色与舞台的编辑范围"
-            dragLabel="拖动角色权限窗口"
+            description="按用户设置"
+            dragLabel="拖动协作权限窗口"
             icon={ShieldCheckIcon}
             onClose={() => setOpen(false)}
             panelId="permissions"
-            title="角色权限"
+            title="协作权限"
         >
             <div className={styles.body}>
                 {loading && !data ? (
@@ -163,28 +189,21 @@ const PlanetCollaborationPermissions = ({projectId, targets}) => {
                 {error ? <div className={styles.alert} role="alert">{error}</div> : null}
                 {data ? (
                     <React.Fragment>
-                        <div aria-label="协作权限模式" className={styles.modeGroup} role="radiogroup">
-                            <button
-                                aria-checked={mode === 'FREE'}
-                                className={mode === 'FREE' ? styles.modeActive : ''}
-                                disabled={!data.canManage}
-                                role="radio"
-                                type="button"
-                                onClick={() => setMode('FREE')}
-                            >
-                                <UsersIcon aria-hidden="true" />
-                                <span><strong>{'自由编辑'}</strong><small>{'成员可抢占空闲角色'}</small></span>
-                            </button>
+                        <div aria-label="协作权限模式" className={styles.modeSetting}>
+                            <span className={styles.modeCopy}>
+                                <strong>{'房主分配'}</strong>
+                                <small>{mode === 'ASSIGNED' ? '按用户设置' : '关闭 · 自由编辑'}</small>
+                            </span>
                             <button
                                 aria-checked={mode === 'ASSIGNED'}
-                                className={mode === 'ASSIGNED' ? styles.modeActive : ''}
+                                aria-label="房主分配"
+                                className={styles.modeSwitch}
                                 disabled={!data.canManage}
-                                role="radio"
+                                role="switch"
                                 type="button"
-                                onClick={() => setMode('ASSIGNED')}
+                                onClick={() => setMode(mode === 'ASSIGNED' ? 'FREE' : 'ASSIGNED')}
                             >
-                                <ShieldCheckIcon aria-hidden="true" />
-                                <span><strong>{'指定成员'}</strong><small>{'仅分配账户可编辑'}</small></span>
+                                <span />
                             </button>
                         </div>
                         {data.canManage ? null : (
@@ -195,63 +214,123 @@ const PlanetCollaborationPermissions = ({projectId, targets}) => {
                         {mode === 'FREE' ? (
                             <div className={styles.freeState}>
                                 <ShieldCheckIcon aria-hidden="true" />
-                                <span><strong>{'角色锁仍然生效'}</strong><small>{'同一时间每个角色或舞台只允许一人编辑。'}</small></span>
+                                <span><strong>{'自由编辑已开启'}</strong><small>{'成员可编辑空闲内容'}</small></span>
                             </div>
                         ) : (
-                            <div className={styles.targetList}>
-                                {targets.map(target => {
-                                    const Icon = target.stage ? ImageIcon : CatIcon;
-                                    const selected = assignments[target.targetId] || [];
-                                    const viewerAssigned = selected.includes(viewerUserId);
-                                    return (
-                                        <section className={styles.targetCard} key={target.targetId}>
+                            <div className={styles.permissionLayout}>
+                                <aside className={styles.userPane}>
+                                    <header className={styles.paneTitle}>
+                                        <strong>{'用户'}</strong>
+                                        <span>{visibleMembers.length}</span>
+                                    </header>
+                                    <div aria-label="协作用户" className={styles.userList} role="listbox">
+                                        {visibleMembers.length ? visibleMembers.map(member => {
+                                            const userId = String(member.id);
+                                            const assignedCount = member.role === 'OWNER' ? targets.length :
+                                                targets.reduce((count, target) => (
+                                                    (assignments[target.targetId] || []).includes(userId) ?
+                                                        count + 1 : count
+                                                ), 0);
+                                            return (
+                                                <button
+                                                    aria-selected={userId === selectedUserId}
+                                                    className={userId === selectedUserId ? styles.userActive : ''}
+                                                    key={member.id}
+                                                    role="option"
+                                                    type="button"
+                                                    onClick={() => setSelectedUserId(userId)}
+                                                >
+                                                    <Avatar member={member} />
+                                                    <span className={styles.memberCopy}>
+                                                        <strong className={classNames({[styles.memberName]: member.member})}>
+                                                            {member.nickname}
+                                                        </strong>
+                                                        <small>
+                                                            {member.role === 'OWNER' ? '房主 · 全部权限' :
+                                                                (member.online ? '在线' : '离线')}
+                                                        </small>
+                                                    </span>
+                                                    <span className={styles.userCount}>{assignedCount}</span>
+                                                </button>
+                                            );
+                                        }) : <div className={styles.empty}>{'暂无协作者'}</div>}
+                                    </div>
+                                </aside>
+                                <section className={styles.targetPane}>
+                                    {selectedMember ? (
+                                        <React.Fragment>
                                             <header className={styles.targetHeader}>
-                                                <span className={styles.targetIcon}><Icon aria-hidden="true" /></span>
-                                                <div>
-                                                    <strong>{target.targetName}</strong>
-                                                    <small>{target.stage ? '舞台' : '角色'}</small>
-                                                </div>
-                                                <span className={styles.count}>
-                                                    {data.canManage ? `${selected.length} 人` :
-                                                        (viewerAssigned ? '可编辑' : '只读')}
+                                                <span>
+                                                    <strong className={classNames({[styles.memberName]: selectedMember.member})}>
+                                                        {selectedMember.nickname}
+                                                    </strong>
+                                                    <small>{selectedMember.role === 'OWNER' ? '全部权限' :
+                                                        `${selectedAssignedCount}/${targets.length} 已开启`}</small>
                                                 </span>
                                             </header>
-                                            <div className={styles.memberList}>
-                                                {members.length ? members.map(member => {
-                                                    const checked = selected.includes(String(member.id));
-                                                    const visible = data.canManage ||
-                                                        String(member.id) === viewerUserId;
-                                                    if (!visible) return null;
+                                            <div className={styles.resourceList}>
+                                                {targetGroups.map(group => {
+                                                    const Icon = group.icon;
                                                     return (
-                                                        <div className={styles.memberRow} key={member.id}>
-                                                            <Avatar member={member} />
-                                                            <span className={styles.memberCopy}>
-                                                                <strong>{member.nickname}</strong>
-                                                                <small>{member.online ? '在线' : '离线'}</small>
-                                                            </span>
-                                                            <button
-                                                                aria-checked={checked}
-                                                                aria-label={
-                                                                    `${member.nickname}${checked ?
-                                                                        '可以' : '不可以'}编辑${target.targetName}`
-                                                                }
-                                                                className={styles.switch}
-                                                                disabled={!data.canManage}
-                                                                role="switch"
-                                                                type="button"
-                                                                onClick={() => setMemberPermission(
-                                                                    target.targetId, String(member.id), !checked
-                                                                )}
-                                                            >
-                                                                <span />
-                                                            </button>
-                                                        </div>
+                                                        <section className={styles.resourceGroup} key={group.kind}>
+                                                            <header>
+                                                                <strong>{group.label}</strong>
+                                                                <span>{group.targets.length}</span>
+                                                            </header>
+                                                            <div>
+                                                                {group.targets.map(target => {
+                                                                    const checked = selectedMember.role === 'OWNER' ||
+                                                                        (assignments[target.targetId] || [])
+                                                                            .includes(selectedUserId);
+                                                                    return (
+                                                                        <div
+                                                                            className={styles.targetRow}
+                                                                            key={target.targetId}
+                                                                        >
+                                                                            <span className={styles.targetIcon}>
+                                                                                <Icon aria-hidden="true" />
+                                                                            </span>
+                                                                            <span className={styles.targetCopy}>
+                                                                                <strong>{target.targetName}</strong>
+                                                                                {target.parentName ?
+                                                                                    <small>
+                                                                                        {target.parentName}
+                                                                                    </small> : null}
+                                                                            </span>
+                                                                            <button
+                                                                                aria-checked={checked}
+                                                                                aria-label={
+                                                                                    `${selectedMember.nickname}` +
+                                                                                    `${checked ? '可以' : '不可以'}` +
+                                                                                    `编辑${target.targetName}`
+                                                                                }
+                                                                                className={styles.switch}
+                                                                                disabled={!data.canManage ||
+                                                                                    selectedMember.role === 'OWNER'}
+                                                                                role="switch"
+                                                                                type="button"
+                                                                                onClick={() => setUserTargetPermission(
+                                                                                    selectedUserId,
+                                                                                    target.targetId,
+                                                                                    !checked
+                                                                                )}
+                                                                            >
+                                                                                <span />
+                                                                            </button>
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </section>
                                                     );
-                                                }) : <div className={styles.empty}>{'还没有可分配的协作者'}</div>}
+                                                })}
+                                                {targets.length ? null : (
+                                                    <div className={styles.empty}>{'暂无可分配内容'}</div>
+                                                )}
                                             </div>
-                                        </section>
-                                    );
-                                })}
+                                        </React.Fragment>
+                                    ) : <div className={styles.empty}>{'请选择用户'}</div>}
+                                </section>
                             </div>
                         )}
                     </React.Fragment>
@@ -259,7 +338,6 @@ const PlanetCollaborationPermissions = ({projectId, targets}) => {
             </div>
             {data && data.canManage ? (
                 <footer className={styles.footer}>
-                    <span>{'保存后立即清理不符合新规则的角色锁'}</span>
                     <button className={styles.saveButton} disabled={saving} type="button" onClick={save}>
                         {saving ? <LoaderCircleIcon aria-hidden="true" /> : <SaveIcon aria-hidden="true" />}
                         {saving ? '保存中' : '保存权限'}
@@ -274,7 +352,8 @@ const PlanetCollaborationPermissions = ({projectId, targets}) => {
 PlanetCollaborationPermissions.propTypes = {
     projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     targets: PropTypes.arrayOf(PropTypes.shape({
-        stage: PropTypes.bool.isRequired,
+        kind: PropTypes.oneOf(['stage', 'sprite', 'costume']).isRequired,
+        parentName: PropTypes.string,
         targetId: PropTypes.string.isRequired,
         targetName: PropTypes.string.isRequired
     })).isRequired
@@ -282,19 +361,9 @@ PlanetCollaborationPermissions.propTypes = {
 
 const mapStateToProps = state => {
     const targets = state.scratchGui.targets;
-    const stage = targets.stage ? [{
-        stage: true,
-        targetId: 'stage',
-        targetName: targets.stage.name || '舞台'
-    }] : [];
-    const sprites = Object.values(targets.sprites || {}).map(sprite => ({
-        stage: false,
-        targetId: `sprite:${sprite.name}`,
-        targetName: sprite.name
-    }));
     return {
         projectId: state.scratchGui.projectState.projectId,
-        targets: [...stage, ...sprites]
+        targets: listPermissionTargets(targets)
     };
 };
 

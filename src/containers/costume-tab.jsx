@@ -251,6 +251,7 @@ class CostumeTab extends React.Component {
             isRtl,
             onNewLibraryBackdropClick,
             onNewLibraryCostumeClick,
+            readOnly,
             vm
         } = this.props;
 
@@ -275,7 +276,7 @@ class CostumeTab extends React.Component {
         })) : [];
         return (
             <AssetPanel
-                buttons={[
+                buttons={readOnly ? [] : [
                     {
                         title: intl.formatMessage(addLibraryMessage),
                         img: addLibraryIcon,
@@ -309,12 +310,13 @@ class CostumeTab extends React.Component {
                 dragType={DragConstants.COSTUME}
                 isRtl={isRtl}
                 items={costumeData}
+                readOnly={readOnly}
                 selectedItemIndex={this.state.selectedCostumeIndex}
-                onDeleteClick={target && target.costumes && target.costumes.length > 1 ?
+                onDeleteClick={!readOnly && target && target.costumes && target.costumes.length > 1 ?
                     this.handleDeleteCostume : null}
-                onDrop={this.handleDrop}
-                onDuplicateClick={this.handleDuplicateCostume}
-                onExportClick={this.handleExportCostume}
+                onDrop={readOnly ? null : this.handleDrop}
+                onDuplicateClick={readOnly ? null : this.handleDuplicateCostume}
+                onExportClick={readOnly ? null : this.handleExportCostume}
                 onItemClick={this.handleSelectCostume}
             >
                 {target.costumes ?
@@ -338,6 +340,7 @@ CostumeTab.propTypes = {
     onNewLibraryBackdropClick: PropTypes.func.isRequired,
     onNewLibraryCostumeClick: PropTypes.func.isRequired,
     onShowImporting: PropTypes.func.isRequired,
+    readOnly: PropTypes.bool,
     sprites: PropTypes.shape({
         id: PropTypes.shape({
             costumes: PropTypes.arrayOf(PropTypes.shape({

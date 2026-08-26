@@ -27,6 +27,11 @@
     overflow: visible;
 }
 
+.read-only .detail-area {
+    opacity: .78;
+    pointer-events: none;
+}
+
 [dir="ltr"] .detail-area {
     border-left: 1px solid $ui-black-transparent;
 }

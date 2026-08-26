@@ -43,6 +43,7 @@ const TargetPane = ({
     onSpriteUpload,
     onSurpriseSpriteClick,
     raiseSprites,
+    readOnly,
     stage,
     stageSize,
     sprites,
@@ -60,6 +61,7 @@ const TargetPane = ({
             hoveredTarget={hoveredTarget}
             raised={raiseSprites}
             selectedId={editingTarget}
+            readOnly={readOnly}
             spriteFileInput={fileInputRef}
             sprites={sprites}
             stageSize={stageSize}
@@ -89,11 +91,12 @@ const TargetPane = ({
                 }
                 backdropCount={stage.costumeCount}
                 id={stage.id}
+                readOnly={readOnly}
                 selected={stage.id === editingTarget}
                 onSelect={onSelectSprite}
             />}
             <div>
-                {spriteLibraryVisible ? (
+                {spriteLibraryVisible && !readOnly ? (
                     <SpriteLibrary
                         vm={vm}
                         onActivateBlocksTab={onActivateBlocksTab}
@@ -164,6 +167,7 @@ TargetPane.propTypes = {
     onSpriteUpload: PropTypes.func,
     onSurpriseSpriteClick: PropTypes.func,
     raiseSprites: PropTypes.bool,
+    readOnly: PropTypes.bool,
     spriteLibraryVisible: PropTypes.bool,
     sprites: PropTypes.objectOf(spriteShape),
     stage: spriteShape,

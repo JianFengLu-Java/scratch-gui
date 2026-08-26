@@ -43,11 +43,12 @@ import {loadServiceWorker} from './load-service-worker';
 import runAddons from '../addons/entry';
 import InvalidEmbed from '../components/tw-invalid-embed/invalid-embed.jsx';
 import AddonSettingsModal from '../components/tw-addon-settings-modal/addon-settings-modal.jsx';
-import {APP_NAME} from '../lib/brand.js';
+import {APP_NAME, DOCUMENT_APP_NAME} from '../lib/brand.js';
 
 import styles from './interface.css';
 
-const isInvalidEmbed = window.parent !== window;
+const sourceReviewEntry = /(?:^|\/)review-editor(?:\/|\.html|$)/.test(location.pathname);
+const isInvalidEmbed = window.parent !== window && !sourceReviewEntry;
 
 const messages = defineMessages({
     defaultTitle: {
@@ -74,7 +75,7 @@ if (AddonChannels.changeChannel) {
     });
 }
 
-runAddons();
+if (!sourceReviewEntry) runAddons();
 
 const Footer = () => (
     <footer className={styles.footer}>
@@ -190,14 +191,14 @@ class Interface extends React.Component {
     }
     componentDidUpdate (prevProps) {
         if (prevProps.isLoading && !this.props.isLoading) {
-            loadServiceWorker();
+            if (!this.props.readOnly) loadServiceWorker();
         }
     }
     handleUpdateProjectTitle (title, isDefault) {
         if (isDefault || !title) {
-            document.title = `${APP_NAME} - ${this.props.intl.formatMessage(messages.defaultTitle)}`;
+            document.title = `${DOCUMENT_APP_NAME} - ${this.props.intl.formatMessage(messages.defaultTitle)}`;
         } else {
-            document.title = `${title} - ${APP_NAME}`;
+            document.title = `${title} - ${DOCUMENT_APP_NAME}`;
         }
     }
     handleClickAddonSettings (addonId) {
@@ -377,7 +378,8 @@ Interface.propTypes = {
     isLoading: PropTypes.bool,
     isPlayerOnly: PropTypes.bool,
     isRtl: PropTypes.bool,
-    projectId: PropTypes.string
+    projectId: PropTypes.string,
+    readOnly: PropTypes.bool
 };
 
 const mapStateToProps = state => ({

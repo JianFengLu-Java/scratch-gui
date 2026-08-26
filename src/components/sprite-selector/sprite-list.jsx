@@ -28,6 +28,7 @@ const SpriteList = function (props) {
         onAddSortable,
         onRemoveSortable,
         ordering,
+        readOnly,
         raised,
         selectedId,
         items
@@ -89,6 +90,7 @@ const SpriteList = function (props) {
                                 index={index}
                                 key={sprite.id}
                                 name={sprite.name}
+                                readOnly={readOnly}
                                 selected={sprite.id === selectedId}
                                 onClick={onSelectSprite}
                                 onDeleteButtonClick={onDeleteSprite}
@@ -132,6 +134,7 @@ SpriteList.propTypes = {
     onSelectSprite: PropTypes.func,
     ordering: PropTypes.arrayOf(PropTypes.number),
     raised: PropTypes.bool,
+    readOnly: PropTypes.bool,
     selectedId: PropTypes.string
 };
 

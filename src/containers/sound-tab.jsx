@@ -181,7 +181,8 @@ class SoundTab extends React.Component {
             isRtl,
             vm,
             onNewSoundFromLibraryClick,
-            onNewSoundFromRecordingClick
+            onNewSoundFromRecordingClick,
+            readOnly
         } = this.props;
 
         if (!vm.editingTarget) {
@@ -226,7 +227,7 @@ class SoundTab extends React.Component {
 
         return (
             <AssetPanel
-                buttons={isSupported ? [{
+                buttons={isSupported && !readOnly ? [{
                     title: intl.formatMessage(messages.addSound),
                     img: addSoundFromLibraryIcon,
                     onClick: onNewSoundFromLibraryClick
@@ -254,11 +255,12 @@ class SoundTab extends React.Component {
                 dragType={DragConstants.SOUND}
                 isRtl={isRtl}
                 items={sounds}
+                readOnly={readOnly}
                 selectedItemIndex={this.state.selectedSoundIndex}
-                onDeleteClick={this.handleDeleteSound}
-                onDrop={this.handleDrop}
-                onDuplicateClick={this.handleDuplicateSound}
-                onExportClick={this.handleExportSound}
+                onDeleteClick={readOnly ? null : this.handleDeleteSound}
+                onDrop={readOnly ? null : this.handleDrop}
+                onDuplicateClick={readOnly ? null : this.handleDuplicateSound}
+                onExportClick={readOnly ? null : this.handleExportSound}
                 onItemClick={this.handleSelectSound}
             >
                 {sprite.sounds && sprite.sounds[this.state.selectedSoundIndex] ? (
@@ -296,6 +298,7 @@ SoundTab.propTypes = {
     onNewSoundFromRecordingClick: PropTypes.func.isRequired,
     onRequestCloseSoundLibrary: PropTypes.func.isRequired,
     onShowImporting: PropTypes.func.isRequired,
+    readOnly: PropTypes.bool,
     soundLibraryVisible: PropTypes.bool,
     soundRecorderVisible: PropTypes.bool,
     sprites: PropTypes.shape({

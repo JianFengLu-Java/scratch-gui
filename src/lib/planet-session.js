@@ -17,6 +17,14 @@ export const readPlanetEnvelope = async response => {
     return payload.data;
 };
 
+export const resolvePlanetAssetUrl = value => {
+    if (!value || typeof value !== 'string') return '';
+    if (value.startsWith('/api/v1/')) {
+        return `/backend-api/${value.slice('/api/v1/'.length)}`;
+    }
+    return value;
+};
+
 const hasUsableSession = () => cachedSession && cachedSessionExpiresAt > Date.now() + EXPIRY_SKEW_MS;
 
 const rememberSession = session => {

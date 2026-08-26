@@ -119,6 +119,9 @@ const findProjectWork = async (session, projectId) => {
     return authorizedRequest(session, `/works/${page.items[0].id}`);
 };
 
+const loadWorkReleases = (session, workId) => authorizedRequest(session,
+    `/works/${workId}/versions`);
+
 const uploadVersionFiles = async (session, projectFile, coverFile, onProgress) => {
     onProgress('正在生成发布版本', 30);
     const projectUpload = await uploadFile(session, projectFile, 'PROJECT_FILE');
@@ -195,14 +198,27 @@ const saveWorkDraft = (session, existingWork, projectId, version, form) => {
     });
 };
 
-const submissionKey = workId => {
-    const storageKey = `pp:work-submit-key:${workId}`;
+const saveWorkRelease = (session, workId, version, form) => authorizedRequest(session,
+    `/works/${workId}/versions`, {
+        method: 'POST',
+        body: JSON.stringify({
+            versionId: version.versionId,
+            coverObjectId: version.coverObjectId,
+            versionType: form.versionType,
+            changeLog: '从 TurboWarp 编辑器提交',
+            stageWidth: form.stageWidth,
+            stageHeight: form.stageHeight
+        })
+    });
+
+const submissionKey = (targetType, targetId) => {
+    const storageKey = `pp:${targetType}-submit-key:${targetId}`;
     let value = localStorage.getItem(storageKey);
     if (!value) {
         const random = window.crypto && window.crypto.randomUUID ?
             window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16)
                 .slice(2)}`;
-        value = `work-${workId}-${random}`.slice(0, 128);
+        value = `${targetType}-${targetId}-${random}`.slice(0, 128);
         localStorage.setItem(storageKey, value);
     }
     return {storageKey, value};
@@ -230,11 +246,13 @@ export const saveCurrentProjectDraft = async ({
     onProgress('正在检查项目状态', 8);
     let projectId = currentProjectId(candidateProjectId);
     let existingWork = projectId ? await findProjectWork(session, projectId) : null;
-    if (existingWork && !['DRAFT', 'REJECTED', 'OFFLINE'].includes(existingWork.status)) {
-        const message = existingWork.status === 'PENDING' ?
-            '这个项目已有作品正在审核，请等待审核结果。' :
-            '这个项目已有已发布作品，请先在后台下线后再提交新版本。';
-        throw new Error(message);
+    let existingReleases = existingWork && ['PUBLISHED', 'OFFLINE'].includes(existingWork.status) ?
+        await loadWorkReleases(session, existingWork.id) : [];
+    if (existingWork && existingWork.status === 'PENDING') {
+        throw new Error('这个项目的首次发布正在审核，请等待审核结果。');
+    }
+    if (existingReleases.some(release => release.status === 'PENDING' || release.pending)) {
+        throw new Error('这个项目已有更新版本正在审核，旧版本仍可正常运行，请等待审核结果。');
     }
     onProgress('正在打包当前 SB3', 16);
     const content = await serializeProject();
@@ -249,12 +267,18 @@ export const saveCurrentProjectDraft = async ({
         projectId = await createOrUpdateProject(session, projectId, form.name.trim());
         createdProject = !hadProject;
         existingWork = existingWork || await findProjectWork(session, projectId);
+        existingReleases = existingWork && ['PUBLISHED', 'OFFLINE'].includes(existingWork.status) ?
+            await loadWorkReleases(session, existingWork.id) : [];
         const version = await saveVersion(session, projectId, uploads, form, onProgress);
         versionSaved = true;
-        onProgress('正在保存作品资料', 76);
-        const work = await saveWorkDraft(session, existingWork, projectId, version, form);
+        const usesReleaseFlow = Boolean(existingWork && existingReleases.length > 0);
+        onProgress(usesReleaseFlow ? '正在保存发布版本' : '正在保存作品资料', 76);
+        const release = usesReleaseFlow ?
+            await saveWorkRelease(session, existingWork.id, version, form) : null;
+        const work = usesReleaseFlow ? existingWork :
+            await saveWorkDraft(session, existingWork, projectId, version, form);
         onProgress('草稿已保存', 100);
-        return {projectId, work};
+        return {projectId, release, work};
     } catch (error) {
         if (!versionSaved && createdProject) {
             try {
@@ -296,8 +320,13 @@ export const publishCurrentProject = async ({
         session
     });
     onProgress('正在提交审核', 90);
-    const key = submissionKey(saved.work.id);
-    const submission = await authorizedRequest(session, `/works/${saved.work.id}/submit`, {
+    const targetType = saved.release ? 'work-release' : 'work';
+    const targetId = saved.release ? saved.release.id : saved.work.id;
+    const key = submissionKey(targetType, targetId);
+    const submitPath = saved.release ?
+        `/works/${saved.work.id}/versions/${saved.release.id}/submit` :
+        `/works/${saved.work.id}/submit`;
+    const submission = await authorizedRequest(session, submitPath, {
         method: 'POST',
         headers: {'Idempotency-Key': key.value},
         body: JSON.stringify({

@@ -113,6 +113,7 @@ const GUIComponent = props => {
         loading,
         logo,
         renderLogin,
+        readOnly,
         onClickAbout,
         onClickAccountNav,
         onCloseAccountNav,
@@ -300,6 +301,7 @@ const GUIComponent = props => {
                     canRemix={canRemix}
                     canSave={canSave}
                     canShare={canShare}
+                    readOnly={readOnly}
                     className={styles.menuBarPosition}
                     enableCommunity={enableCommunity}
                     isShared={isShared}
@@ -395,6 +397,7 @@ const GUIComponent = props => {
                                             options={{
                                                 media: `${basePath}static/${theme.getBlocksMediaFolder()}/`
                                             }}
+                                            readOnly={readOnly}
                                             stageSize={stageSize}
                                             onOpenCustomExtensionModal={onOpenCustomExtensionModal}
                                             theme={theme}
@@ -407,16 +410,29 @@ const GUIComponent = props => {
                                 </TabPanel>
                                 <TabPanel className={tabClassNames.tabPanel}>
                                     {costumesTabVisible ? <CostumeTab
+                                        readOnly={readOnly}
                                         vm={vm}
                                     /> : null}
                                 </TabPanel>
                                 <TabPanel className={tabClassNames.tabPanel}>
-                                    {soundsTabVisible ? <SoundTab vm={vm} /> : null}
+                                    {soundsTabVisible ? <SoundTab
+                                        readOnly={readOnly}
+                                        vm={vm}
+                                    /> : null}
                                 </TabPanel>
                             </Tabs>
                             {backpackVisible ? (
                                 <Backpack host={backpackHost} />
                             ) : null}
+                            {!isPlayerOnly && !readOnly && (
+                                <EditorDock
+                                    hasBackpack={backpackVisible && Boolean(backpackHost)}
+                                    key={intl.locale}
+                                    onOpenBackdropLibrary={onOpenBackdropLibrary}
+                                    onOpenExtensionLibrary={onOpenExtensionLibrary}
+                                    onOpenSpriteLibrary={onOpenSpriteLibrary}
+                                />
+                            )}
                         </Box>
 
                         <Box className={classNames(styles.stageAndTargetWrapper, styles[stageSize])}>
@@ -424,11 +440,13 @@ const GUIComponent = props => {
                                 isFullScreen={isFullScreen}
                                 isRendererSupported={isRendererSupported()}
                                 isRtl={isRtl}
+                                readOnly={readOnly}
                                 stageSize={stageSize}
                                 vm={vm}
                             />
                             <Box className={styles.targetWrapper}>
                                 <TargetPane
+                                    readOnly={readOnly}
                                     stageSize={stageSize}
                                     vm={vm}
                                 />
@@ -437,19 +455,10 @@ const GUIComponent = props => {
                     </Box>
                 </Box>
                 <DragLayer />
-                <PlanetAiAssistant vm={vm} />
-                {!isPlayerOnly && <PlanetProjectChat />}
-                {!isPlayerOnly && <PlanetCollaborationInvite />}
-                {!isPlayerOnly && <PlanetCollaborationPermissions />}
-                {!isPlayerOnly && (
-                    <EditorDock
-                        hasBackpack={backpackVisible && Boolean(backpackHost)}
-                        key={intl.locale}
-                        onOpenBackdropLibrary={onOpenBackdropLibrary}
-                        onOpenExtensionLibrary={onOpenExtensionLibrary}
-                        onOpenSpriteLibrary={onOpenSpriteLibrary}
-                    />
-                )}
+                {!readOnly && <PlanetAiAssistant vm={vm} />}
+                {!isPlayerOnly && !readOnly && <PlanetProjectChat />}
+                {!isPlayerOnly && !readOnly && <PlanetCollaborationInvite />}
+                {!isPlayerOnly && !readOnly && <PlanetCollaborationPermissions />}
             </Box>
         );
     }}</MediaQuery>);
@@ -526,6 +535,7 @@ GUIComponent.propTypes = {
     onTelemetryModalOptOut: PropTypes.func,
     onToggleLoginOpen: PropTypes.func,
     renderLogin: PropTypes.func,
+    readOnly: PropTypes.bool,
     securityManager: PropTypes.shape({}),
     showComingSoon: PropTypes.bool,
     showOpenFilePicker: PropTypes.func,
@@ -564,6 +574,7 @@ GUIComponent.defaultProps = {
     isShared: false,
     isTotallyNormal: false,
     loading: false,
+    readOnly: false,
     showComingSoon: false,
     stageSizeMode: STAGE_SIZE_MODES.large
 };

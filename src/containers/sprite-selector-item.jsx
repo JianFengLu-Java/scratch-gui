@@ -128,6 +128,7 @@ class SpriteSelectorItem extends React.PureComponent {
             onExportButtonClick,
             onRenameButtonClick,
             dragPayload,
+            readOnly,
             receivedBlocks,
             costumeURL,
             vm,
@@ -138,13 +139,13 @@ class SpriteSelectorItem extends React.PureComponent {
             <SpriteSelectorItemComponent
                 componentRef={this.setRef}
                 costumeURL={this.getCostumeData()}
-                preventContextMenu={this.dragRecognizer.gestureInProgress()}
+                preventContextMenu={this.props.readOnly || this.dragRecognizer.gestureInProgress()}
                 onClick={this.handleClick}
                 onDeleteButtonClick={onDeleteButtonClick ? this.handleDelete : null}
                 onDuplicateButtonClick={onDuplicateButtonClick ? this.handleDuplicate : null}
                 onExportButtonClick={onExportButtonClick ? this.handleExport : null}
                 onRenameButtonClick={onRenameButtonClick ? this.handleRename : null}
-                onMouseDown={this.handleMouseDown}
+                onMouseDown={this.props.readOnly ? null : this.handleMouseDown}
                 onMouseEnter={this.handleMouseEnter}
                 onMouseLeave={this.handleMouseLeave}
                 {...props}
@@ -174,6 +175,7 @@ SpriteSelectorItem.propTypes = {
     onDuplicateButtonClick: PropTypes.func,
     onExportButtonClick: PropTypes.func,
     receivedBlocks: PropTypes.bool.isRequired,
+    readOnly: PropTypes.bool,
     selected: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired
 };

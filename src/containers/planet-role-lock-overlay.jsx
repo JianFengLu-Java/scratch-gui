@@ -7,7 +7,9 @@ import {
     collaborationEnabled,
     PLANET_ROLE_LOCK_STATUS_EVENT
 } from '../lib/planet-collaboration';
+import {getSelectedTarget} from '../lib/planet-collaboration-targets';
 import {isPlanetProjectRoute} from '../lib/planet-project-loader';
+import {COSTUMES_TAB_INDEX} from '../reducers/editor-tab';
 
 import styles from './planet-role-lock-overlay.css';
 
@@ -127,7 +129,7 @@ class PlanetRoleLockOverlay extends React.Component {
                 `${current.nickname || '一位协作者'} 正在编辑 ${this.props.editingTargetName}` :
                 `正在获取 ${this.props.editingTargetName} 编辑权`;
         const hint = this.state.inactive ? '此窗口已停止协作编辑' : denied ?
-            '可切换到房主已分配的角色' : '可先切换到其他角色';
+            '可切换到已分配的内容' : '可先切换到其他内容';
         return ReactDOM.createPortal(
             <div
                 aria-live="polite"
@@ -154,13 +156,13 @@ PlanetRoleLockOverlay.propTypes = {
 
 const mapStateToProps = state => {
     const targets = state.scratchGui.targets;
-    const editingTargetId = targets.editingTarget;
-    const selected = targets.stage && targets.stage.id === editingTargetId ?
-        targets.stage : targets.sprites[editingTargetId];
-    const targetName = selected && (selected.name || (selected.isStage ? '舞台' : '角色'));
+    const selected = getSelectedTarget(
+        targets,
+        state.scratchGui.editorTab.activeTabIndex === COSTUMES_TAB_INDEX
+    );
     return {
-        editingTargetKey: selected ? (selected.isStage ? 'stage' : `sprite:${targetName}`) : null,
-        editingTargetName: targetName
+        editingTargetKey: selected && selected.targetId,
+        editingTargetName: selected && selected.targetName
     };
 };
 

@@ -12,7 +12,7 @@ const postcssVars = require('postcss-simple-vars');
 const postcssImport = require('postcss-import');
 
 const STATIC_PATH = process.env.STATIC_PATH || '/static';
-const {APP_NAME} = require('./src/lib/brand');
+const {APP_NAME, DOCUMENT_APP_NAME} = require('./src/lib/brand');
 
 const root = process.env.ROOT || '';
 if (root.length > 0 && !root.endsWith('/')) {
@@ -158,6 +158,7 @@ module.exports = [
     defaultsDeep({}, base, {
         entry: {
             'editor': './src/playground/editor.jsx',
+            'review-editor': './src/playground/review-editor.jsx',
             'player': './src/playground/player.jsx',
             'fullscreen': './src/playground/fullscreen.jsx',
             'embed': './src/playground/embed.jsx',
@@ -201,7 +202,15 @@ module.exports = [
                 chunks: ['editor'],
                 template: 'src/playground/index.ejs',
                 filename: 'editor.html',
-                title: `${APP_NAME} - Run Scratch projects faster`,
+                title: `${DOCUMENT_APP_NAME} - Run Scratch projects faster`,
+                isEditor: true,
+                ...htmlWebpackPluginCommon
+            }),
+            new HtmlWebpackPlugin({
+                chunks: ['review-editor'],
+                template: 'src/playground/index.ejs',
+                filename: 'review-editor.html',
+                title: `${DOCUMENT_APP_NAME} - 审核模式`,
                 isEditor: true,
                 ...htmlWebpackPluginCommon
             }),
@@ -209,35 +218,35 @@ module.exports = [
                 chunks: ['player'],
                 template: 'src/playground/index.ejs',
                 filename: 'index.html',
-                title: `${APP_NAME} - Run Scratch projects faster`,
+                title: `${DOCUMENT_APP_NAME} - Run Scratch projects faster`,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
                 chunks: ['fullscreen'],
                 template: 'src/playground/index.ejs',
                 filename: 'fullscreen.html',
-                title: `${APP_NAME} - Run Scratch projects faster`,
+                title: `${DOCUMENT_APP_NAME} - Run Scratch projects faster`,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
                 chunks: ['embed'],
                 template: 'src/playground/embed.ejs',
                 filename: 'embed.html',
-                title: `Embedded Project - ${APP_NAME}`,
+                title: `Embedded Project - ${DOCUMENT_APP_NAME}`,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
                 chunks: ['addon-settings'],
                 template: 'src/playground/simple.ejs',
                 filename: 'addons.html',
-                title: `Addon Settings - ${APP_NAME}`,
+                title: `Addon Settings - ${DOCUMENT_APP_NAME}`,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
                 chunks: ['credits'],
                 template: 'src/playground/simple.ejs',
                 filename: 'credits.html',
-                title: `${APP_NAME} Credits`,
+                title: `${DOCUMENT_APP_NAME} Credits`,
                 ...htmlWebpackPluginCommon
             }),
             new CopyWebpackPlugin({
@@ -245,6 +254,14 @@ module.exports = [
                     {
                         from: 'static',
                         to: ''
+                    }
+                ]
+            }),
+            new CopyWebpackPlugin({
+                patterns: [
+                    {
+                        from: path.resolve(__dirname, '../../../logo/Frame 2.svg'),
+                        to: 'brand-favicon.svg'
                     }
                 ]
             }),

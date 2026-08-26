@@ -8,12 +8,14 @@ const BlocksComponent = props => {
     const {
         containerRef,
         dragOver,
+        readOnly,
         ...componentProps
     } = props;
     return (
         <Box
             className={classNames(styles.blocks, {
-                [styles.dragOver]: dragOver
+                [styles.dragOver]: dragOver,
+                [styles.readOnly]: readOnly
             })}
             {...componentProps}
             componentRef={containerRef}
@@ -22,6 +24,10 @@ const BlocksComponent = props => {
 };
 BlocksComponent.propTypes = {
     containerRef: PropTypes.func,
-    dragOver: PropTypes.bool
+    dragOver: PropTypes.bool,
+    readOnly: PropTypes.bool
+};
+BlocksComponent.defaultProps = {
+    readOnly: false
 };
 export default BlocksComponent;

@@ -44,6 +44,7 @@ import AddonHooks from '../addons/hooks.js';
 import LoadScratchBlocksHOC from '../lib/tw-load-scratch-blocks-hoc.jsx';
 import {findTopBlock} from '../lib/backpack/code-payload.js';
 import {gentlyRequestPersistentStorage} from '../lib/tw-persistent-storage.js';
+import lockReadOnlyBlockDrag from '../lib/lock-read-only-block-drag.js';
 
 // TW: Strings we add to scratch-blocks are localized here
 const messages = defineMessages({
@@ -136,6 +137,7 @@ class Blocks extends React.Component {
     }
     componentDidMount () {
         this.ScratchBlocks = VMScratchBlocks(this.props.vm, this.props.useCatBlocks);
+        if (this.props.readOnly) lockReadOnlyBlockDrag(this.ScratchBlocks);
         this.ScratchBlocks.prompt = this.handlePromptStart;
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
         this.ScratchBlocks.recordSoundCallback = this.handleOpenSoundRecorder;
@@ -172,26 +174,37 @@ class Blocks extends React.Component {
 
         const toolboxWorkspace = this.workspace.getFlyout().getWorkspace();
 
+        // A Blockly workspace created with readOnly=true does not create a toolbox/flyout,
+        // while this container needs both in order to initialize and browse project blocks.
+        // Build the normal browsing UI, then freeze both workspaces before project blocks load.
+        if (this.props.readOnly) {
+            this.workspace.options.readOnly = true;
+            toolboxWorkspace.options.readOnly = true;
+        }
+
         const varListButtonCallback = type =>
             (() => this.ScratchBlocks.Variables.createVariable(this.workspace, null, type));
         const procButtonCallback = () => {
             this.ScratchBlocks.Procedures.createProcedureDefCallback_(this.workspace);
         };
+        const registerButtonCallback = (key, callback) => {
+            toolboxWorkspace.registerButtonCallback(key, this.props.readOnly ? () => {} : callback);
+        };
 
-        toolboxWorkspace.registerButtonCallback('MAKE_A_VARIABLE', varListButtonCallback(''));
-        toolboxWorkspace.registerButtonCallback('MAKE_A_LIST', varListButtonCallback('list'));
-        toolboxWorkspace.registerButtonCallback('MAKE_A_PROCEDURE', procButtonCallback);
-        toolboxWorkspace.registerButtonCallback('EXTENSION_CALLBACK', block => {
+        registerButtonCallback('MAKE_A_VARIABLE', varListButtonCallback(''));
+        registerButtonCallback('MAKE_A_LIST', varListButtonCallback('list'));
+        registerButtonCallback('MAKE_A_PROCEDURE', procButtonCallback);
+        registerButtonCallback('EXTENSION_CALLBACK', block => {
             this.props.vm.handleExtensionButtonPress(block.callbackData_);
         });
-        toolboxWorkspace.registerButtonCallback('OPEN_EXTENSION_DOCS', block => {
+        registerButtonCallback('OPEN_EXTENSION_DOCS', block => {
             const docsURI = block.callbackData_;
             const url = new URL(docsURI);
             if (url.protocol === 'http:' || url.protocol === 'https:') {
                 window.open(docsURI, '_blank');
             }
         });
-        toolboxWorkspace.registerButtonCallback('OPEN_RETURN_DOCS', () => {
+        registerButtonCallback('OPEN_RETURN_DOCS', () => {
             window.open('https://docs.turbowarp.org/return', '_blank');
         });
 
@@ -679,6 +692,7 @@ class Blocks extends React.Component {
             onOpenConnectionModal,
             onOpenSoundRecorder,
             onOpenCustomExtensionModal,
+            readOnly,
             reduxOnOpenCustomExtensionModal,
             updateToolboxState,
             onActivateCustomProcedures,
@@ -695,7 +709,8 @@ class Blocks extends React.Component {
             <React.Fragment>
                 <DroppableBlocks
                     componentRef={this.setBlocks}
-                    onDrop={this.handleDrop}
+                    onDrop={readOnly ? null : this.handleDrop}
+                    readOnly={readOnly}
                     {...props}
                 />
                 {this.state.prompt ? (
@@ -766,6 +781,7 @@ Blocks.propTypes = {
         comments: PropTypes.bool,
         collapse: PropTypes.bool
     }),
+    readOnly: PropTypes.bool,
     stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)).isRequired,
     theme: PropTypes.instanceOf(Theme),
     toolboxXML: PropTypes.string,
@@ -797,6 +813,7 @@ Blocks.defaultOptions = {
 Blocks.defaultProps = {
     isVisible: true,
     options: Blocks.defaultOptions,
+    readOnly: false,
     theme: Theme.light
 };
 

@@ -1,4 +1,5 @@
 /* eslint-disable react/jsx-no-bind, react/jsx-max-props-per-line */
+import classNames from 'classnames';
 import {
     CheckIcon,
     CopyIcon,
@@ -299,7 +300,9 @@ const PlanetCollaborationInvite = ({projectId}) => {
                                     <div className={styles.personRow} key={friendId}>
                                         <PersonAvatar person={friend} />
                                         <span className={styles.personCopy}>
-                                            <strong>{friend.nickname || '好友'}</strong>
+                                            <strong className={classNames({[styles.memberName]: friend.member})}>
+                                                {friend.nickname || '好友'}
+                                            </strong>
                                             <small>{friend.uid ? `@${friend.uid}` : '好友'}</small>
                                         </span>
                                         <button
@@ -352,7 +355,9 @@ const PlanetCollaborationInvite = ({projectId}) => {
                                             />
                                         </span>
                                         <span className={styles.personCopy}>
-                                            <strong>{member.nickname || '用户'}</strong>
+                                            <strong className={classNames({[styles.memberName]: member.member})}>
+                                                {member.nickname || '用户'}
+                                            </strong>
                                             <small>{owner ? '房主' : (member.online ? '在线' : '离线')}</small>
                                         </span>
                                         {data.canManage && !owner ? (

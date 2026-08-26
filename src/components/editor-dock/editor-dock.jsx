@@ -71,6 +71,97 @@ const EditorDock = ({
     const reducedMotion = typeof window !== 'undefined' &&
         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    React.useEffect(() => {
+        const dock = dockRef.current;
+        const container = dock.parentElement;
+
+        let animationFrame = null;
+        let resizeObserver = null;
+        const observedElements = new Set();
+        const getVisibleRect = selector => {
+            const element = document.querySelector(selector);
+            if (!element) return null;
+            const computedStyle = window.getComputedStyle(element);
+            const rect = element.getBoundingClientRect();
+            if (
+                computedStyle.display === 'none' ||
+                computedStyle.visibility === 'hidden' ||
+                rect.width <= 0 ||
+                rect.height <= 0
+            ) return null;
+            return {element, rect};
+        };
+        const observeElement = element => {
+            if (!resizeObserver || !element || observedElements.has(element)) return;
+            observedElements.add(element);
+            resizeObserver.observe(element);
+        };
+        const updatePosition = () => {
+            animationFrame = null;
+            const containerRect = container.getBoundingClientRect();
+            const workspace = getVisibleRect('.blocklySvg');
+
+            if (!workspace) {
+                dock.style.removeProperty('--editor-dock-center-x');
+                dock.style.removeProperty('--editor-dock-max-width');
+                return;
+            }
+
+            const toolbox = getVisibleRect('.blocklyToolboxDiv');
+            const flyout = getVisibleRect('.blocklyFlyoutBackground') || getVisibleRect('.blocklyFlyout');
+            observeElement(workspace.element);
+            observeElement(toolbox && toolbox.element);
+            observeElement(flyout && flyout.element);
+
+            let workspaceLeft = Math.max(containerRect.left, workspace.rect.left);
+            let workspaceRight = Math.min(containerRect.right, workspace.rect.right);
+            const isRtl = window.getComputedStyle(container).direction === 'rtl';
+
+            if (isRtl) {
+                if (toolbox) workspaceRight = Math.min(workspaceRight, toolbox.rect.left);
+                if (flyout) workspaceRight = Math.min(workspaceRight, flyout.rect.left);
+            } else {
+                if (toolbox) workspaceLeft = Math.max(workspaceLeft, toolbox.rect.right);
+                if (flyout) workspaceLeft = Math.max(workspaceLeft, flyout.rect.right);
+            }
+
+            const workspaceWidth = workspaceRight - workspaceLeft;
+            if (workspaceWidth <= 0) {
+                dock.style.removeProperty('--editor-dock-center-x');
+                dock.style.removeProperty('--editor-dock-max-width');
+                return;
+            }
+
+            const center = workspaceLeft + (workspaceWidth / 2) - containerRect.left;
+            dock.style.setProperty('--editor-dock-center-x', `${center}px`);
+            dock.style.setProperty('--editor-dock-max-width', `${Math.max(workspaceWidth - 16, 0)}px`);
+        };
+        const schedulePositionUpdate = () => {
+            if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+            animationFrame = requestAnimationFrame(updatePosition);
+        };
+        const mutationContainsWorkspace = mutation => [...mutation.addedNodes, ...mutation.removedNodes]
+            .some(node => node.nodeType === Node.ELEMENT_NODE && (
+                node.matches('.blocklySvg') || node.querySelector('.blocklySvg')
+            ));
+        const mutationObserver = new MutationObserver(mutations => {
+            if (mutations.some(mutationContainsWorkspace)) schedulePositionUpdate();
+        });
+
+        resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedulePositionUpdate);
+        observeElement(container);
+        mutationObserver.observe(container, {childList: true, subtree: true});
+        schedulePositionUpdate();
+        window.addEventListener('resize', schedulePositionUpdate);
+
+        return () => {
+            if (animationFrame !== null) cancelAnimationFrame(animationFrame);
+            if (resizeObserver) resizeObserver.disconnect();
+            mutationObserver.disconnect();
+            window.removeEventListener('resize', schedulePositionUpdate);
+        };
+    }, []);
+
     const {contextSafe} = useGSAP(() => {
         const matchMedia = gsap.matchMedia();
         matchMedia.add('(prefers-reduced-motion: no-preference)', () => {
