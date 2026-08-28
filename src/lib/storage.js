@@ -55,7 +55,9 @@ class Storage extends ScratchStorage {
         this.assetHost = assetHost;
     }
     getAssetGetConfig (asset) {
-        return `${this.assetHost}/internalapi/asset/${asset.assetId}.${asset.dataFormat}/get/`;
+        // Next.js normalizes trailing slashes before applying the backend rewrite. Avoid an extra
+        // 308 round trip for every editor asset, which is particularly noticeable for previews.
+        return `${this.assetHost}/internalapi/asset/${asset.assetId}.${asset.dataFormat}/get`;
     }
     getAssetCreateConfig (asset) {
         return {

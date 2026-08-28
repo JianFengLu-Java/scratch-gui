@@ -4,11 +4,6 @@
 @import "../../css/z-index.css";
 
 /* from scratch-www */
-$active-gray: hsla(0, 0%, 0%, .1);
-$ui-blue-10percent: hsla(215, 100%, 65%, .1);
-$ui-blue-25percent:  hsla(215, 100%, 65%, .25);
-$ui-gray: hsla(0, 0%, 95%, 1);
-
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -16,19 +11,20 @@ $ui-gray: hsla(0, 0%, 95%, 1);
     right: 0;
     bottom: 0;
     z-index: $z-index-modal;
-    background-color: $ui-modal-overlay;
+    background: var(--tw-dialog-overlay);
+    backdrop-filter: blur(4px);
 }
 
 .modal-content {
     margin: 100px auto;
     outline: none;
-    border: .25rem solid $ui-white-transparent;
+    border: 1px solid var(--tw-dialog-border);
     padding: 0;
-    border-radius: $space;
+    border-radius: 0.75rem;
     user-select: none;
     width: 640px;
 
-    color: $text-primary;
+    color: var(--tw-dialog-foreground);
     overflow: hidden;
 }
 
@@ -41,13 +37,14 @@ $ui-gray: hsla(0, 0%, 95%, 1);
 }
 
 .body {
-    background: $ui-white;
+    background: var(--tw-dialog-background);
     padding: 1.5rem 2.25rem;
 }
 
 .privacy-policy-link {
-    color: $looks-secondary;
-    text-decoration: none;
+    color: var(--tw-dialog-foreground);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
 }
 
 /* stack the radio buttons vertically, not horizontally */
@@ -55,8 +52,9 @@ $ui-gray: hsla(0, 0%, 95%, 1);
     display: block;
     margin: 0.5rem;
     transition: all .125s ease;
-    background-color: $ui-gray;
-    border-radius: .5rem;
+    background-color: var(--tw-dialog-muted);
+    border: 1px solid var(--tw-dialog-border);
+    border-radius: 0.5rem;
     margin: 0 auto 0.375rem;
     align-items: center;
     padding: 1rem 0;
@@ -64,42 +62,43 @@ $ui-gray: hsla(0, 0%, 95%, 1);
 }
 
 .radio-buttons label:hover {
-    background-color: $ui-blue-10percent;
+    background-color: var(--tw-dialog-accent);
 }
 
 .radio-buttons label.label-selected,
 .radio-buttons label.label-selected:hover {
-    background-color: $ui-blue-25percent;
+    border-color: var(--tw-dialog-ring);
+    background-color: var(--tw-dialog-accent);
 }
 
 .radio-buttons input[type="radio"] {
     margin: -1px 0.75rem 1px;
-    border: 1px solid $active-gray;
+    border: 1px solid var(--tw-dialog-border);
     border-radius: 50%;
     width: 1rem;
     height: 1rem;
     appearance: none;
-    background-color: $ui-white;
+    background-color: var(--tw-dialog-input);
     vertical-align: middle;
 }
 
 .radio-buttons input[type="radio"]:checked,
 .radio-buttons input[type="radio"]:focus {
-    box-shadow: 0 0 0 2px $ui-blue-25percent;
+    box-shadow: 0 0 0 2px var(--tw-dialog-ring);
     outline: none;
 }
 
 .radio-buttons input[type="radio"]:checked {
     transition: all .25s ease;
-    background-color: $ui-white;
-    border: 1px solid $looks-secondary;
+    background-color: var(--tw-dialog-input);
+    border: 1px solid var(--tw-dialog-primary);
 }
 
 .radio-buttons input[type="radio"]:checked::after {
     display: block;
     margin: 0.125rem;
     border-radius: 50%;
-    background-color: $looks-secondary;
+    background-color: var(--tw-dialog-primary);
     width: .625rem;
     height: .625rem;
     content: "";
@@ -123,30 +122,31 @@ $ui-gray: hsla(0, 0%, 95%, 1);
 
 .setting-was-updated {
     animation: fade-out 3s ease-out;
-    color: $extensions-primary;
+    color: var(--tw-status-success);
 }
 
 .button-row button {
-    border: 1px solid $looks-secondary;
-    border-radius: 0.25rem;
+    border: 1px solid var(--tw-dialog-primary);
+    border-radius: 0.375rem;
     padding: 0.5rem 1.5rem;
-    color: white;
-    background: $looks-secondary;
-    font-weight: bold;
+    color: var(--tw-dialog-primary-foreground);
+    background: var(--tw-dialog-primary);
+    font-weight: 500;
     font-size: .875rem;
     cursor: pointer;
 }
 
 .button-row button:hover {
-    background: $extensions-primary;
-    box-shadow: 0 0 0 6px $looks-transparent;
+    border-color: var(--tw-dialog-primary-hover);
+    background: var(--tw-dialog-primary-hover);
 }
 
 .button-row button:disabled {
-    background: $text-primary;
-    border-color: $ui-black-transparent;
+    background: var(--tw-dialog-muted);
+    border-color: var(--tw-dialog-border);
     box-shadow: none;
-    opacity: 0.25;
+    color: var(--tw-dialog-muted-foreground);
+    opacity: 0.6;
 }
 
 @media screen and (max-height: 660px) {

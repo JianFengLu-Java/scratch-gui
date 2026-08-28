@@ -1,0 +1,160 @@
+@import "../../css/colors.css";
+@import "../../css/z-index.css";
+
+.toast {
+    position: fixed;
+    z-index: $z-index-toast;
+    top: 4.25rem;
+    left: 50%;
+    width: min(25rem, calc(100vw - 2rem));
+    overflow: hidden;
+    color: $text-primary;
+    background: $ui-modal-background;
+    border: 1px solid $ui-black-transparent;
+    border-radius: .5rem;
+    box-shadow: 0 .25rem 1rem $shadow;
+    transform: translateX(-50%);
+    pointer-events: none;
+    animation: toast-enter 180ms ease-out;
+}
+
+.content {
+    display: flex;
+    min-height: 3rem;
+    padding: .625rem .75rem;
+    align-items: center;
+    gap: .625rem;
+    box-sizing: border-box;
+}
+
+.icon-slot {
+    display: inline-flex;
+    width: 1.25rem;
+    height: 1.25rem;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+}
+
+.icon-slot img {
+    display: block;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.loading-icon {
+    display: block;
+    width: 1.125rem;
+    height: 1.125rem;
+    border: .1875rem solid $looks-transparent;
+    border-top-color: $looks-secondary;
+    border-radius: 50%;
+    box-sizing: border-box;
+    transform-origin: 50% 50%;
+    animation: loading-icon-spin .9s linear infinite;
+}
+
+.error-icon {
+    padding: .125rem;
+    background: $error-primary;
+    border-radius: 50%;
+    box-sizing: border-box;
+}
+
+.error-icon img {
+    width: 1rem;
+    height: 1rem;
+}
+
+.message {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    font-size: .875rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.percent {
+    flex: none;
+    color: $text-primary-transparent;
+    font-size: .75rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.progress-track {
+    position: relative;
+    width: 100%;
+    height: .25rem;
+    overflow: hidden;
+    background: $ui-tertiary;
+}
+
+.progress-value {
+    width: 0;
+    height: 100%;
+    background: $looks-secondary;
+    transition: width 180ms ease-out;
+}
+
+.success .progress-value {
+    background: $extensions-primary;
+}
+
+.error .progress-value {
+    background: $error-primary;
+}
+
+.indeterminate {
+    width: 42%;
+    animation: progress-indeterminate 1.1s ease-in-out infinite;
+}
+
+@keyframes toast-enter {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -.5rem);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
+@keyframes progress-indeterminate {
+    from {transform: translateX(-110%);}
+    to {transform: translateX(240%);}
+}
+
+@keyframes loading-icon-spin {
+    to {transform: rotate(360deg);}
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast {
+        animation: none;
+    }
+    .progress-value {
+        transition: none;
+    }
+    .loading-icon {
+        animation: loading-icon-pulse 1.2s ease-in-out infinite alternate;
+    }
+    .indeterminate {
+        width: 70%;
+        animation: progress-pulse 1.2s ease-in-out infinite alternate;
+    }
+}
+
+@keyframes loading-icon-pulse {
+    from {opacity: .45;}
+    to {opacity: 1;}
+}
+
+@keyframes progress-pulse {
+    from {opacity: .45;}
+    to {opacity: 1;}
+}

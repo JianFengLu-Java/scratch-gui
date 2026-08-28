@@ -20,6 +20,10 @@ import DropAreaHOC from '../lib/drop-area-hoc.jsx';
 import {connect} from 'react-redux';
 import storage from '../lib/storage';
 import VM from 'scratch-vm';
+import {
+    PLANET_BACKPACK_STATE_EVENT,
+    PLANET_BACKPACK_TOGGLE_EVENT
+} from '../lib/editor-dock-events';
 
 const dragTypes = [DragConstants.COSTUME, DragConstants.SOUND, DragConstants.SPRITE];
 const DroppableBackpack = DropAreaHOC(dragTypes)(BackpackComponent);
@@ -46,7 +50,9 @@ class Backpack extends React.Component {
             'handleMouseLeave',
             'handleBlockDragEnd',
             'handleBlockDragUpdate',
-            'handleMore'
+            'handleMore',
+            'handleDockToggle',
+            'publishDockState'
         ]);
         this.state = {
             // While the DroppableHOC manages drop interactions for asset tiles,
@@ -75,10 +81,16 @@ class Backpack extends React.Component {
     componentDidMount () {
         this.props.vm.addListener('BLOCK_DRAG_END', this.handleBlockDragEnd);
         this.props.vm.addListener('BLOCK_DRAG_UPDATE', this.handleBlockDragUpdate);
+        window.addEventListener(PLANET_BACKPACK_TOGGLE_EVENT, this.handleDockToggle);
+        this.publishDockState();
+    }
+    componentDidUpdate (previousProps, previousState) {
+        if (previousState.expanded !== this.state.expanded) this.publishDockState();
     }
     componentWillUnmount () {
         this.props.vm.removeListener('BLOCK_DRAG_END', this.handleBlockDragEnd);
         this.props.vm.removeListener('BLOCK_DRAG_UPDATE', this.handleBlockDragUpdate);
+        window.removeEventListener(PLANET_BACKPACK_TOGGLE_EVENT, this.handleDockToggle);
     }
     getBackpackAssetURL (asset) {
         return `${this.props.host}/${asset.assetId}.${asset.dataFormat}`;
@@ -92,6 +104,14 @@ class Backpack extends React.Component {
         if (newState) {
             this.getContents();
         }
+    }
+    handleDockToggle () {
+        if (this.props.host) this.handleToggle();
+    }
+    publishDockState () {
+        window.dispatchEvent(new CustomEvent(PLANET_BACKPACK_STATE_EVENT, {
+            detail: {open: this.state.expanded}
+        }));
     }
     handleError (error) {
         this.setState({
@@ -269,13 +289,13 @@ class Backpack extends React.Component {
                 expanded={this.state.expanded}
                 loading={this.state.loading}
                 showMore={this.state.moreToLoad}
+                onClose={this.handleToggle}
                 onDelete={this.handleDelete}
                 onRename={this.handleRename}
                 onDrop={this.handleDrop}
                 onMore={this.handleMore}
                 onMouseEnter={this.handleMouseEnter}
                 onMouseLeave={this.handleMouseLeave}
-                onToggle={this.props.host ? this.handleToggle : null}
             />
         );
     }

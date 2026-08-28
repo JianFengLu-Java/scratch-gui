@@ -13,12 +13,13 @@
     margin: $space;
     padding: 1rem 1rem 0 1rem;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    color: $text-primary;
-    background: $ui-white;
-    border-width: 2px;
+    color: var(--tw-dialog-foreground);
+    background: var(--tw-dialog-background);
+    border-width: 1px;
     border-style: solid;
-    border-color: $ui-black-transparent;
-    border-radius: $space;
+    border-color: var(--tw-dialog-border);
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px var(--tw-dialog-shadow);
     text-align: center;
     cursor: pointer;
 }
@@ -28,8 +29,9 @@
 }
 
 .library-item:hover {
-    border-width: 2px;
-    border-color: $looks-secondary;
+    border-width: 1px;
+    border-color: var(--tw-dialog-ring);
+    box-shadow: 0 0 0 1px var(--tw-dialog-ring), 0 0.25rem 0.75rem var(--tw-dialog-shadow);
 }
 
 .hidden {
@@ -42,7 +44,8 @@
 }
 
 .disabled:hover {
-    border-color: $ui-black-transparent;
+    border-color: var(--tw-dialog-border);
+    box-shadow: 0 1px 2px var(--tw-dialog-shadow);
 }
 
 .library-item-image-container-wrapper {
@@ -68,7 +71,7 @@
     width: 3.5rem;
     height: 3.5rem;
     border-radius: 0.5rem;
-    border: 0.25rem solid $ui-white;
+    border: 0.25rem solid var(--tw-dialog-background);
 }
 
 [dir="ltr"] .library-item-inset-image-container {
@@ -153,7 +156,7 @@
     flex-direction: row;
     align-items: flex-start;
     font-size: 12px;
-    color: $text-primary;
+    color: var(--tw-dialog-muted-foreground);
     opacity: 0.75;
 }
 

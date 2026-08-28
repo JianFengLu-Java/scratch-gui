@@ -10,6 +10,11 @@ import playIcon from './icon--play.svg';
 import stopIcon from './icon--stop.svg';
 
 const messages = defineMessages({
+    loading: {
+        id: 'tw.soundPreview.loading',
+        description: 'Title of the button while a sound preview is loading',
+        defaultMessage: 'Loading preview'
+    },
     play: {
         id: 'gui.playButton.play',
         description: 'Title of the button to start playing the sound',
@@ -25,6 +30,7 @@ const messages = defineMessages({
 const PlayButtonComponent = ({
     className,
     intl,
+    isLoading,
     isPlaying,
     onClick,
     onMouseDown,
@@ -33,15 +39,17 @@ const PlayButtonComponent = ({
     setButtonRef,
     ...props
 }) => {
-    const label = isPlaying ?
+    const label = isLoading ? intl.formatMessage(messages.loading) : isPlaying ?
         intl.formatMessage(messages.stop) :
         intl.formatMessage(messages.play);
 
     return (
         <div
+            aria-busy={isLoading}
             aria-label={label}
             className={classNames(styles.playButton, className, {
-                [styles.playing]: isPlaying
+                [styles.playing]: isPlaying,
+                [styles.loading]: isLoading
             })}
             onClick={onClick}
             onMouseDown={onMouseDown}
@@ -50,11 +58,18 @@ const PlayButtonComponent = ({
             ref={setButtonRef}
             {...props}
         >
-            <img
-                className={styles.playIcon}
-                draggable={false}
-                src={isPlaying ? stopIcon : playIcon}
-            />
+            {isLoading ? (
+                <span
+                    aria-hidden="true"
+                    className={styles.loadingIcon}
+                />
+            ) : (
+                <img
+                    className={styles.playIcon}
+                    draggable={false}
+                    src={isPlaying ? stopIcon : playIcon}
+                />
+            )}
         </div>
     );
 };
@@ -62,6 +77,7 @@ const PlayButtonComponent = ({
 PlayButtonComponent.propTypes = {
     className: PropTypes.string,
     intl: intlShape,
+    isLoading: PropTypes.bool,
     isPlaying: PropTypes.bool.isRequired,
     onClick: PropTypes.func.isRequired,
     onMouseDown: PropTypes.func.isRequired,

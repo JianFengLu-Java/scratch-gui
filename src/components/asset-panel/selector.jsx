@@ -21,6 +21,7 @@ const Selector = props => {
         draggingIndex,
         draggingType,
         ordering,
+        readOnly,
         onAddSortable,
         onRemoveSortable,
         onDeleteClick,
@@ -76,6 +77,7 @@ const Selector = props => {
                             index={index}
                             name={item.name}
                             number={index + 1 /* 1-indexed */}
+                            readOnly={readOnly}
                             selected={index === selectedItemIndex}
                             onClick={onItemClick}
                             onDeleteButtonClick={onDeleteClick}
@@ -112,6 +114,7 @@ Selector.propTypes = {
     onItemClick: PropTypes.func.isRequired,
     onRemoveSortable: PropTypes.func,
     ordering: PropTypes.arrayOf(PropTypes.number),
+    readOnly: PropTypes.bool,
     selectedItemIndex: PropTypes.number.isRequired
 };
 

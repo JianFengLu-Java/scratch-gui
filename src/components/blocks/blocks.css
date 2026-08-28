@@ -44,7 +44,8 @@
     border-right: 1px solid $ui-black-transparent;
     border-bottom: 1px solid $ui-black-transparent;
     box-sizing: content-box;
-    height: calc(100% - 3.25rem) !important;
+    /* Extension access now lives in the floating dock, so the toolbox can use the full editor height. */
+    height: 100% !important;
 
     /*
         For now, the layout cannot support scrollbars in the category menu.
@@ -96,4 +97,20 @@
 .blocks :global(.blocklyMinimalBody) {
     min-width: auto;
     min-height: auto;
+}
+
+/*
+    The review editor keeps the normal toolbox so reviewers can browse every
+    category. Blockly's readOnly option is not sufficient for already-bound
+    gesture handlers, so block nodes must never become pointer targets.
+    Events fall through to the workspace canvas, preserving pan and zoom.
+*/
+.read-only :global(.blocklyDraggable),
+.read-only :global(.blocklyDraggable *),
+.read-only :global(.blocklyFlyoutButton),
+.read-only :global(.blocklyFlyoutButton *),
+.read-only :global(.blocklyWorkspaceComment),
+.read-only :global(.blocklyWorkspaceComment *) {
+    cursor: default !important;
+    pointer-events: none !important;
 }

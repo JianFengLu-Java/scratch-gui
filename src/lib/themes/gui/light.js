@@ -1,15 +1,15 @@
 const guiColors = {
     'color-scheme': 'light',
 
-    'ui-primary': 'hsla(215, 100%, 95%, 1)', /* #E5F0FF */
-    'ui-secondary': 'hsla(215, 75%, 95%, 1)', /* #E9F1FC */
-    'ui-tertiary': 'hsla(215, 50%, 90%, 1)', /* #D9E3F2 */
+    'ui-primary': '#ffffff',
+    'ui-secondary': '#ffffff',
+    'ui-tertiary': '#e5e5e5',
 
-    'ui-modal-overlay': 'var(--motion-primary-transparent)',
-    'ui-modal-background': 'hsla(0, 100%, 100%, 1)', /* #FFFFFF */
-    'ui-modal-foreground': 'hsla(225, 15%, 40%, 1)', /* #575E75 */
-    'ui-modal-header-background': 'var(--looks-secondary)',
-    'ui-modal-header-foreground': 'hsla(0, 100%, 100%, 1)', /* #FFFFFF */
+    'ui-modal-overlay': 'var(--tw-dialog-overlay)',
+    'ui-modal-background': 'var(--tw-dialog-background)',
+    'ui-modal-foreground': 'var(--tw-dialog-foreground)',
+    'ui-modal-header-background': 'var(--tw-dialog-background)',
+    'ui-modal-header-foreground': 'var(--tw-dialog-foreground)',
 
     'ui-white': 'hsla(0, 100%, 100%, 1)', /* #FFFFFF */
     'ui-white-dim': 'hsla(0, 100%, 100%, 0.75)', /* 25% transparent version of ui-white */
@@ -55,9 +55,48 @@ const guiColors = {
 
     'drop-highlight': 'hsla(215, 100%, 77%, 1)', /* lighter than motion-primary */
 
-    'menu-bar-background': 'var(--looks-secondary)',
+    'menu-bar-background': 'var(--tw-topbar-background)',
     'menu-bar-background-image': 'none',
-    'menu-bar-foreground': '#ffffff',
+    'menu-bar-foreground': 'var(--tw-topbar-foreground)',
+
+    'tw-topbar-background': '#ffffff',
+    'tw-topbar-foreground': '#171717',
+    'tw-topbar-muted': '#fafafa',
+    'tw-topbar-muted-foreground': '#737373',
+    'tw-topbar-border': '#e5e5e5',
+    'tw-topbar-accent': '#f5f5f5',
+    'tw-topbar-accent-foreground': '#171717',
+    'tw-topbar-primary': '#171717',
+    'tw-topbar-primary-hover': '#262626',
+    'tw-topbar-primary-foreground': '#fafafa',
+    'tw-topbar-ring': '#a3a3a3',
+    'tw-topbar-shadow': 'rgba(23, 23, 23, 0.08)',
+    'tw-menu-background': '#ffffff',
+    'tw-menu-foreground': '#171717',
+    'tw-menu-muted-foreground': '#737373',
+    'tw-menu-border': '#e5e5e5',
+    'tw-menu-accent': '#f5f5f5',
+    'tw-menu-accent-foreground': '#171717',
+    'tw-dialog-overlay': 'rgba(10, 10, 10, 0.48)',
+    'tw-dialog-background': '#ffffff',
+    'tw-dialog-foreground': '#171717',
+    'tw-dialog-muted': '#fafafa',
+    'tw-dialog-muted-foreground': '#737373',
+    'tw-dialog-border': '#e5e5e5',
+    'tw-dialog-accent': '#f5f5f5',
+    'tw-dialog-accent-foreground': '#171717',
+    'tw-dialog-primary': '#171717',
+    'tw-dialog-primary-hover': '#262626',
+    'tw-dialog-primary-foreground': '#fafafa',
+    'tw-dialog-input': '#ffffff',
+    'tw-dialog-ring': '#a3a3a3',
+    'tw-dialog-shadow': 'rgba(23, 23, 23, 0.18)',
+    'tw-dialog-destructive': '#dc2626',
+    'tw-dialog-destructive-foreground': '#ffffff',
+    'tw-status-neutral': '#a3a3a3',
+    'tw-status-success': '#16a34a',
+    'tw-status-warning': '#d97706',
+    'tw-status-danger': '#dc2626',
 
     'assets-background': '#ffffff',
 

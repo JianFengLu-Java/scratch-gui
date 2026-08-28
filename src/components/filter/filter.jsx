@@ -1,10 +1,8 @@
 import classNames from 'classnames';
+import {SearchIcon, XIcon} from 'lucide-react';
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import TWRenderRecoloredImage from '../../lib/tw-recolor/render.jsx';
-import filterIcon from '!../../lib/tw-recolor/build!./icon--filter.svg';
-import xIcon from '!../../lib/tw-recolor/build!./icon--x.svg';
 import styles from './filter.css';
 
 const FilterComponent = props => {
@@ -22,10 +20,7 @@ const FilterComponent = props => {
                 [styles.isActive]: filterQuery.length > 0
             })}
         >
-            <TWRenderRecoloredImage
-                className={styles.filterIcon}
-                src={filterIcon}
-            />
+            <SearchIcon className={styles.filterIcon} />
             <input
                 className={classNames(styles.filterInput, inputClassName)}
                 placeholder={placeholderText}
@@ -33,15 +28,14 @@ const FilterComponent = props => {
                 value={filterQuery}
                 onChange={onChange}
             />
-            <div
+            <button
+                aria-label="Clear search"
                 className={styles.xIconWrapper}
+                type="button"
                 onClick={onClear}
             >
-                <TWRenderRecoloredImage
-                    className={styles.xIcon}
-                    src={xIcon}
-                />
-            </div>
+                <XIcon className={styles.xIcon} />
+            </button>
         </div>
     );
 };

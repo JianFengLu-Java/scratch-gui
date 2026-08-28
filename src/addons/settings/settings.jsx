@@ -17,6 +17,21 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
+import {
+    ChevronDownIcon,
+    DownloadIcon,
+    InfoIcon,
+    MessageSquareTextIcon,
+    PaintbrushIcon,
+    PuzzleIcon,
+    RefreshCwIcon,
+    RotateCcwIcon,
+    SearchIcon,
+    SearchXIcon,
+    TriangleAlertIcon,
+    UploadIcon,
+    XIcon
+} from 'lucide-react';
 
 import Search from './search';
 import importedAddons from '../generated/addon-manifests';
@@ -27,12 +42,6 @@ import upstreamMeta from '../generated/upstream-meta.json';
 import {detectLocale} from '../../lib/detect-locale';
 import SettingsStore from '../settings-store-singleton';
 import Channels from '../channels';
-import extensionImage from './icons/extension.svg';
-import brushImage from './icons/brush.svg';
-import undoImage from './icons/undo.svg';
-import expandImageBlack from './icons/expand.svg';
-import infoImage from './icons/info.svg';
-import TWFancyCheckbox from '../../components/tw-fancy-checkbox/checkbox.jsx';
 import styles from './settings.css';
 import {detectTheme} from '../../lib/themes/themePersistance.js';
 import {applyGuiColors} from '../../lib/themes/guiHelpers.js';
@@ -182,14 +191,16 @@ CreditList.propTypes = {
 
 const Switch = ({onChange, value, ...props}) => (
     <button
+        type="button"
         className={styles.switch}
-        state={value ? 'on' : 'off'}
-        role="checkbox"
-        aria-checked={value ? 'true' : 'false'}
-        tabIndex="0"
+        data-state={value ? 'checked' : 'unchecked'}
+        role="switch"
+        aria-checked={value}
         onClick={() => onChange(!value)}
         {...props}
-    />
+    >
+        <span className={styles.switchThumb} />
+    </button>
 );
 Switch.propTypes = {
     onChange: PropTypes.func,
@@ -197,19 +208,28 @@ Switch.propTypes = {
 };
 
 const Select = ({
+    labelledBy,
     onChange,
     value,
     values
 }) => (
-    <div className={styles.select}>
+    <div
+        className={styles.toggleGroup}
+        role="radiogroup"
+        aria-labelledby={labelledBy}
+    >
         {values.map(potentialValue => {
             const id = potentialValue.id;
             const selected = id === value;
             return (
                 <button
+                    type="button"
                     key={id}
                     onClick={() => onChange(id)}
-                    className={classNames(styles.selectOption, {[styles.selected]: selected})}
+                    className={styles.toggleGroupItem}
+                    data-state={selected ? 'on' : 'off'}
+                    role="radio"
+                    aria-checked={selected}
                 >
                     {potentialValue.name}
                 </button>
@@ -218,6 +238,7 @@ const Select = ({
     </div>
 );
 Select.propTypes = {
+    labelledBy: PropTypes.string,
     onChange: PropTypes.func,
     value: PropTypes.string,
     values: PropTypes.arrayOf(PropTypes.shape({
@@ -227,29 +248,29 @@ Select.propTypes = {
 };
 
 const Tags = ({manifest}) => (
-    <span className={styles.tagContainer}>
+    <span className={styles.badgeGroup}>
         {manifest.tags.includes('recommended') && (
-            <span className={classNames(styles.tag, styles.tagRecommended)}>
+            <span className={styles.badge}>
                 {settingsTranslations.tagRecommended}
             </span>
         )}
         {manifest.tags.includes('theme') && (
-            <span className={classNames(styles.tag, styles.tagTheme)}>
+            <span className={styles.badge}>
                 {settingsTranslations.tagTheme}
             </span>
         )}
         {manifest.tags.includes('beta') && (
-            <span className={classNames(styles.tag, styles.tagBeta)}>
+            <span className={styles.badge}>
                 {settingsTranslations.tagBeta}
             </span>
         )}
         {manifest.tags.includes('new') && (
-            <span className={classNames(styles.tag, styles.tagNew)}>
+            <span className={styles.badge}>
                 {settingsTranslations.tagNew}
             </span>
         )}
         {manifest.tags.includes('danger') && (
-            <span className={classNames(styles.tag, styles.tagDanger)}>
+            <span className={classNames(styles.badge, styles.badgeDestructive)}>
                 {settingsTranslations.tagDanger}
             </span>
         )}
@@ -337,38 +358,35 @@ const ColorInput = props => (
     <input
         type="color"
         id={props.id}
+        aria-labelledby={props.labelledBy}
         value={props.value}
         onChange={props.onChange}
     />
 );
 ColorInput.propTypes = {
     id: PropTypes.string.isRequired,
+    labelledBy: PropTypes.string,
     onChange: PropTypes.func.isRequired,
     value: PropTypes.string.isRequired
 };
 
 const ResetButton = ({
     addonId,
-    settingId,
-    forTextInput
+    settingId
 }) => (
     <button
-        className={classNames(styles.button, styles.resetSettingButton)}
+        type="button"
+        className={styles.iconButton}
         onClick={() => SettingsStore.setAddonSetting(addonId, settingId, null)}
         title={settingsTranslations.reset}
-        data-for-text-input={forTextInput}
+        aria-label={settingsTranslations.reset}
     >
-        <img
-            src={undoImage}
-            alt={settingsTranslations.reset}
-            draggable={false}
-        />
+        <RotateCcwIcon aria-hidden="true" />
     </button>
 );
 ResetButton.propTypes = {
     addonId: PropTypes.string,
-    settingId: PropTypes.string,
-    forTextInput: PropTypes.bool
+    settingId: PropTypes.string
 };
 
 const Setting = ({
@@ -382,33 +400,48 @@ const Setting = ({
     const settingId = setting.id;
     const settingName = addonTranslations[`${addonId}/@settings-name-${settingId}`] || setting.name;
     const uniqueId = `setting/${addonId}/${settingId}`;
-    const label = (
-        <label
-            htmlFor={uniqueId}
-            className={styles.settingLabel}
-        >
-            {settingName}
-        </label>
+    const labelId = `${uniqueId}/label`;
+    const resetButton = (
+        <ResetButton
+            addonId={addonId}
+            settingId={settingId}
+        />
     );
+
+    if (setting.type === 'boolean') {
+        return (
+            <div className={classNames(styles.field, styles.fieldHorizontal)}>
+                <div className={styles.fieldContent}>
+                    <label
+                        htmlFor={uniqueId}
+                        className={styles.fieldLabel}
+                    >
+                        {settingName}
+                    </label>
+                </div>
+                <Switch
+                    id={uniqueId}
+                    value={value}
+                    onChange={newValue => SettingsStore.setAddonSetting(addonId, settingId, newValue)}
+                />
+            </div>
+        );
+    }
+
     return (
-        <div
-            className={styles.setting}
-        >
-            {setting.type === 'boolean' && (
-                <React.Fragment>
-                    {label}
-                    <TWFancyCheckbox
-                        id={uniqueId}
-                        checked={value}
-                        onChange={e => SettingsStore.setAddonSetting(addonId, settingId, e.target.checked)}
-                    />
-                </React.Fragment>
-            )}
+        <div className={styles.field}>
+            <div
+                id={labelId}
+                className={styles.fieldLabel}
+            >
+                {settingName}
+            </div>
             {(setting.type === 'integer' || setting.type === 'positive_integer') && (
-                <React.Fragment>
-                    {label}
+                <div className={styles.inputGroup}>
                     <TextInput
                         id={uniqueId}
+                        aria-labelledby={labelId}
+                        className={styles.input}
                         type="number"
                         min={setting.type === 'positive_integer' ? '0' : setting.min}
                         max={setting.max}
@@ -416,56 +449,49 @@ const Setting = ({
                         value={value}
                         onChange={newValue => SettingsStore.setAddonSetting(addonId, settingId, newValue)}
                     />
-                    <ResetButton
-                        addonId={addonId}
-                        settingId={settingId}
-                        forTextInput
-                    />
-                </React.Fragment>
+                    {resetButton}
+                </div>
             )}
             {(setting.type === 'string' || setting.type === 'untranslated') && (
-                <React.Fragment>
-                    {label}
+                <div className={styles.inputGroup}>
                     <TextInput
                         id={uniqueId}
+                        aria-labelledby={labelId}
+                        className={styles.input}
                         type="text"
                         value={value}
                         onChange={newValue => SettingsStore.setAddonSetting(addonId, settingId, newValue)}
                     />
-                    <ResetButton
-                        addonId={addonId}
-                        settingId={settingId}
-                        forTextInput
-                    />
-                </React.Fragment>
+                    {resetButton}
+                </div>
             )}
             {setting.type === 'color' && (
-                <React.Fragment>
-                    {label}
+                <div className={styles.inputGroup}>
                     <ColorInput
                         id={uniqueId}
+                        labelledBy={labelId}
                         value={value}
                         onChange={e => SettingsStore.setAddonSetting(addonId, settingId, e.target.value)}
                     />
-                    <ResetButton
-                        addonId={addonId}
-                        settingId={settingId}
-                    />
-                </React.Fragment>
+                    <output
+                        className={styles.colorValue}
+                        htmlFor={uniqueId}
+                    >
+                        {value}
+                    </output>
+                    {resetButton}
+                </div>
             )}
             {setting.type === 'select' && (
-                <React.Fragment>
-                    {label}
-                    <Select
-                        value={value}
-                        values={setting.potentialValues.map(({id, name}) => ({
-                            id,
-                            name: addonTranslations[`${addonId}/@settings-select-${settingId}-${id}`] || name
-                        }))}
-                        onChange={v => SettingsStore.setAddonSetting(addonId, settingId, v)}
-                        setting={setting}
-                    />
-                </React.Fragment>
+                <Select
+                    labelledBy={labelId}
+                    value={value}
+                    values={setting.potentialValues.map(({id, name}) => ({
+                        id,
+                        name: addonTranslations[`${addonId}/@settings-select-${settingId}-${id}`] || name
+                    }))}
+                    onChange={v => SettingsStore.setAddonSetting(addonId, settingId, v)}
+                />
             )}
         </div>
     );
@@ -495,22 +521,21 @@ Setting.propTypes = {
 const Notice = ({
     type,
     text
-}) => (
-    <div
-        className={styles.notice}
-        type={type}
-    >
-        <img
-            className={styles.noticeIcon}
-            src={infoImage}
-            alt=""
-            draggable={false}
-        />
-        <div>
-            {text}
+}) => {
+    const NoticeIcon = type === 'warning' ? TriangleAlertIcon : InfoIcon;
+    return (
+        <div
+            className={styles.alert}
+            data-variant={type === 'warning' ? 'destructive' : 'default'}
+            role={type === 'warning' ? 'alert' : 'note'}
+        >
+            <NoticeIcon aria-hidden="true" />
+            <div className={styles.alertDescription}>
+                {text}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 Notice.propTypes = {
     type: PropTypes.string,
     text: PropTypes.string
@@ -520,25 +545,30 @@ const Presets = ({
     addonId,
     presets
 }) => (
-    <div className={classNames(styles.setting, styles.presets)}>
-        <div className={styles.settingLabel}>
+    <div className={classNames(styles.field, styles.presets)}>
+        <div className={styles.fieldLabel}>
             {settingsTranslations.presets}
         </div>
-        {presets.map(preset => {
-            const presetId = preset.id;
-            const name = addonTranslations[`${addonId}/@preset-name-${presetId}`] || preset.name;
-            const description = addonTranslations[`${addonId}/@preset-description-${presetId}`] || preset.description;
-            return (
-                <button
-                    key={presetId}
-                    title={description}
-                    className={classNames(styles.button, styles.presetButton)}
-                    onClick={() => SettingsStore.applyAddonPreset(addonId, presetId)}
-                >
-                    {name}
-                </button>
-            );
-        })}
+        <div className={styles.presetList}>
+            {presets.map(preset => {
+                const presetId = preset.id;
+                const name = addonTranslations[`${addonId}/@preset-name-${presetId}`] || preset.name;
+                const description = addonTranslations[
+                    `${addonId}/@preset-description-${presetId}`
+                ] || preset.description;
+                return (
+                    <button
+                        type="button"
+                        key={presetId}
+                        title={description}
+                        className={classNames(styles.button, styles.buttonOutline, styles.presetButton)}
+                        onClick={() => SettingsStore.applyAddonPreset(addonId, presetId)}
+                    >
+                        {name}
+                    </button>
+                );
+            })}
+        </div>
     </div>
 );
 Presets.propTypes = {
@@ -556,121 +586,121 @@ const Addon = ({
     settings,
     manifest,
     extended
-}) => (
-    <div className={classNames(styles.addon, {[styles.addonDirty]: settings.dirty})}>
-        <div className={styles.addonHeader}>
-            <label className={styles.addonTitle}>
-                <div className={styles.addonSwitch}>
+}) => {
+    const name = addonTranslations[`${id}/@name`] || manifest.name;
+    const description = addonTranslations[`${id}/@description`] || manifest.description;
+    const titleId = `addon/${id}/title`;
+    const descriptionId = `addon/${id}/description`;
+    const AddonIcon = manifest.tags.includes('theme') ? PaintbrushIcon : PuzzleIcon;
+    const setEnabled = value => {
+        if (
+            !value ||
+            !manifest.tags.includes('danger') ||
+            confirm(settingsTranslations.enableDangerous)
+        ) {
+            SettingsStore.setAddonEnabled(id, value);
+        }
+    };
+
+    return (
+        <article
+            className={classNames(styles.addon, {[styles.addonDirty]: settings.dirty})}
+            data-enabled={settings.enabled}
+        >
+            <div className={styles.addonHeader}>
+                <div className={styles.addonMedia}>
+                    <AddonIcon aria-hidden="true" />
+                </div>
+                <div className={styles.addonContent}>
+                    <div className={styles.addonTitleRow}>
+                        <h3
+                            className={styles.addonTitle}
+                            id={titleId}
+                        >
+                            {name}
+                        </h3>
+                        <Tags manifest={manifest} />
+                    </div>
+                    <p
+                        className={styles.addonDescription}
+                        id={descriptionId}
+                    >
+                        {description}
+                    </p>
+                    {extended && (
+                        <code className={styles.addonId}>
+                            {id}
+                        </code>
+                    )}
+                </div>
+                <div className={styles.addonActions}>
+                    {settings.enabled && manifest.settings && (
+                        <button
+                            type="button"
+                            className={styles.iconButton}
+                            onClick={() => SettingsStore.resetAddon(id)}
+                            title={settingsTranslations.reset}
+                            aria-label={`${settingsTranslations.reset}: ${name}`}
+                        >
+                            <RotateCcwIcon aria-hidden="true" />
+                        </button>
+                    )}
                     <Switch
                         value={settings.enabled}
-                        onChange={value => {
-                            if (
-                                !value ||
-                                !manifest.tags.includes('danger') ||
-                                confirm(settingsTranslations.enableDangerous)
-                            ) {
-                                SettingsStore.setAddonEnabled(id, value);
-                            }
-                        }}
+                        onChange={setEnabled}
+                        aria-labelledby={titleId}
+                        aria-describedby={descriptionId}
                     />
                 </div>
-                {manifest.tags.includes('theme') ? (
-                    <img
-                        className={styles.extensionImage}
-                        src={brushImage}
-                        draggable={false}
-                        alt=""
-                    />
-                ) : (
-                    <img
-                        className={styles.extensionImage}
-                        src={extensionImage}
-                        draggable={false}
-                        alt=""
-                    />
-                )}
-                <div className={styles.addonTitleText}>
-                    {addonTranslations[`${id}/@name`] || manifest.name}
-                </div>
-                {extended && (
-                    <div className={styles.addonId}>
-                        {`(${id})`}
-                    </div>
-                )}
-            </label>
-            <Tags manifest={manifest} />
-            {!settings.enabled && (
-                <div className={styles.inlineDescription}>
-                    {addonTranslations[`${id}/@description`] || manifest.description}
+            </div>
+            {settings.enabled && (
+                <div className={styles.addonDetails}>
+                    {manifest.credits && (
+                        <div className={styles.creditContainer}>
+                            <span className={styles.creditTitle}>
+                                {settingsTranslations.credits}
+                            </span>
+                            <CreditList credits={manifest.credits} />
+                        </div>
+                    )}
+                    {manifest.info && (
+                        manifest.info.map(info => (
+                            <Notice
+                                key={info.id}
+                                type={info.type}
+                                text={addonTranslations[`${id}/@info-${info.id}`] || info.text}
+                            />
+                        ))
+                    )}
+                    {manifest.noCompiler && (
+                        <Notice
+                            type="warning"
+                            text={settingsTranslations.noCompiler}
+                        />
+                    )}
+                    {manifest.settings && (
+                        <div className={styles.fieldGroup}>
+                            {manifest.settings.map(setting => (
+                                <Setting
+                                    key={setting.id}
+                                    addonId={id}
+                                    setting={setting}
+                                    value={settings[setting.id]}
+                                />
+                            ))}
+                            {manifest.presets && (
+                                <Presets
+                                    addonId={id}
+                                    presets={manifest.presets}
+                                />
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
-            <div className={styles.addonOperations}>
-                {settings.enabled && manifest.settings && (
-                    <button
-                        className={styles.resetButton}
-                        onClick={() => SettingsStore.resetAddon(id)}
-                        title={settingsTranslations.reset}
-                    >
-                        <img
-                            src={undoImage}
-                            className={styles.resetButtonImage}
-                            alt={settingsTranslations.reset}
-                            draggable={false}
-                        />
-                    </button>
-                )}
-            </div>
-        </div>
-        {settings.enabled && (
-            <div className={styles.addonDetails}>
-                <div className={styles.description}>
-                    {addonTranslations[`${id}/@description`] || manifest.description}
-                </div>
-                {manifest.credits && (
-                    <div className={styles.creditContainer}>
-                        <span className={styles.creditTitle}>
-                            {settingsTranslations.credits}
-                        </span>
-                        <CreditList credits={manifest.credits} />
-                    </div>
-                )}
-                {manifest.info && (
-                    manifest.info.map(info => (
-                        <Notice
-                            key={info.id}
-                            type={info.type}
-                            text={addonTranslations[`${id}/@info-${info.id}`] || info.text}
-                        />
-                    ))
-                )}
-                {manifest.noCompiler && (
-                    <Notice
-                        type="warning"
-                        text={settingsTranslations.noCompiler}
-                    />
-                )}
-                {manifest.settings && (
-                    <div className={styles.settingContainer}>
-                        {manifest.settings.map(setting => (
-                            <Setting
-                                key={setting.id}
-                                addonId={id}
-                                setting={setting}
-                                value={settings[setting.id]}
-                            />
-                        ))}
-                        {manifest.presets && (
-                            <Presets
-                                addonId={id}
-                                presets={manifest.presets}
-                            />
-                        )}
-                    </div>
-                )}
-            </div>
-        )}
-    </div>
-);
+        </article>
+    );
+};
 Addon.propTypes = {
     id: PropTypes.string,
     settings: PropTypes.shape({
@@ -695,18 +725,24 @@ Addon.propTypes = {
 };
 
 const Dirty = props => (
-    <div className={styles.dirtyOuter}>
-        <div className={styles.dirtyInner}>
+    <div
+        className={styles.reloadAlert}
+        role="status"
+    >
+        <RefreshCwIcon aria-hidden="true" />
+        <div className={styles.reloadAlertContent}>
             {settingsTranslations.dirty}
-            {props.onReloadNow && (
-                <button
-                    className={classNames(styles.button, styles.dirtyButton)}
-                    onClick={props.onReloadNow}
-                >
-                    {settingsTranslations.dirtyButton}
-                </button>
-            )}
         </div>
+        {props.onReloadNow && (
+            <button
+                type="button"
+                className={classNames(styles.button, styles.buttonOutline)}
+                onClick={props.onReloadNow}
+            >
+                <RefreshCwIcon aria-hidden="true" />
+                {settingsTranslations.dirtyButton}
+            </button>
+        )}
     </div>
 );
 Dirty.propTypes = {
@@ -714,21 +750,21 @@ Dirty.propTypes = {
 };
 
 const UnsupportedAddons = ({addons: addonList}) => (
-    <div className={styles.unsupportedContainer}>
-        <span className={styles.unsupportedText}>
-            {settingsTranslations.unsupported}
-        </span>
-        {addonList.map(({id, manifest}, index) => (
-            <span
-                key={id}
-                className={styles.unsupportedAddon}
-            >
-                {addonTranslations[`${id}/@name`] || manifest.name}
-                {index !== addonList.length - 1 && (
-                    ', '
-                )}
-            </span>
-        ))}
+    <div
+        className={styles.alert}
+        role="note"
+    >
+        <InfoIcon aria-hidden="true" />
+        <div className={styles.alertDescription}>
+            <span>{settingsTranslations.unsupported}</span>
+            {' '}
+            {addonList.map(({id, manifest}, index) => (
+                <span key={id}>
+                    {addonTranslations[`${id}/@name`] || manifest.name}
+                    {index !== addonList.length - 1 && ', '}
+                </span>
+            ))}
+        </div>
     </div>
 );
 UnsupportedAddons.propTypes = {
@@ -741,16 +777,26 @@ UnsupportedAddons.propTypes = {
 };
 
 const InternalAddonList = ({addons, extended}) => (
-    addons.map(({id, manifest, state}) => (
-        <Addon
-            key={id}
-            id={id}
-            settings={state}
-            manifest={manifest}
-            extended={extended}
-        />
-    ))
+    <div className={styles.itemGroup}>
+        {addons.map(({id, manifest, state}) => (
+            <Addon
+                key={id}
+                id={id}
+                settings={state}
+                manifest={manifest}
+                extended={extended}
+            />
+        ))}
+    </div>
 );
+InternalAddonList.propTypes = {
+    addons: PropTypes.arrayOf(PropTypes.shape({
+        id: PropTypes.string.isRequired,
+        state: PropTypes.shape({}).isRequired,
+        manifest: PropTypes.shape({}).isRequired
+    })).isRequired,
+    extended: PropTypes.bool.isRequired
+};
 
 class AddonGroup extends React.Component {
     constructor (props) {
@@ -766,23 +812,19 @@ class AddonGroup extends React.Component {
         return (
             <div className={styles.addonGroup}>
                 <button
+                    type="button"
                     className={styles.addonGroupName}
+                    aria-expanded={this.state.open}
                     onClick={() => {
                         this.setState({
                             open: !this.state.open
                         });
                     }}
                 >
-                    <div
-                        className={styles.addonGroupExpandContainer}
-                    >
-                        <img
-                            className={styles.addonGroupExpandIcon}
-                            src={expandImageBlack}
-                            data-open={this.state.open}
-                            alt=""
-                        />
-                    </div>
+                    <ChevronDownIcon
+                        aria-hidden="true"
+                        data-open={this.state.open}
+                    />
                     {this.props.label.replace('{number}', this.props.addons.length)}
                 </button>
                 {this.state.open && (
@@ -864,12 +906,13 @@ class AddonList extends React.Component {
             if (addons.length === 0) {
                 return (
                     <div className={styles.noResults}>
-                        {settingsTranslations.noResults}
+                        <SearchXIcon aria-hidden="true" />
+                        <p>{settingsTranslations.noResults}</p>
                     </div>
                 );
             }
             return (
-                <div>
+                <div className={styles.searchResults}>
                     <InternalAddonList
                         addons={addons}
                         extended={this.props.extended}
@@ -878,7 +921,7 @@ class AddonList extends React.Component {
             );
         }
         return (
-            <div>
+            <div className={styles.addonGroups}>
                 {Object.entries(groupedAddons).map(([id, {label, addons, open}]) => (
                     <AddonGroup
                         key={id}
@@ -1089,6 +1132,10 @@ class AddonSettingsComponent extends React.Component {
                 <div className={styles.header}>
                     <div className={styles.section}>
                         <div className={styles.searchContainer}>
+                            <SearchIcon
+                                className={styles.searchLeadingIcon}
+                                aria-hidden="true"
+                            />
                             <input
                                 className={styles.searchInput}
                                 value={this.state.search}
@@ -1098,10 +1145,16 @@ class AddonSettingsComponent extends React.Component {
                                 ref={this.searchRef}
                                 spellCheck="false"
                             />
-                            <div
-                                className={styles.searchButton}
-                                onClick={this.handleClickSearchButton}
-                            />
+                            {this.state.search && (
+                                <button
+                                    type="button"
+                                    className={styles.searchButton}
+                                    onClick={this.handleClickSearchButton}
+                                    aria-label={settingsTranslations.reset}
+                                >
+                                    <XIcon aria-hidden="true" />
+                                </button>
+                            )}
                         </div>
                         <a
                             href="https://scratch.mit.edu/users/GarboMuffin/#comments"
@@ -1109,9 +1162,8 @@ class AddonSettingsComponent extends React.Component {
                             rel="noreferrer"
                             className={styles.feedbackButtonOuter}
                         >
-                            <span className={styles.feedbackButtonInner}>
-                                {settingsTranslations.addonFeedback}
-                            </span>
+                            <MessageSquareTextIcon aria-hidden="true" />
+                            {settingsTranslations.addonFeedback}
                         </a>
                     </div>
                     {this.state.dirty && (
@@ -1130,21 +1182,27 @@ class AddonSettingsComponent extends React.Component {
                             />
                             <div className={styles.footerButtons}>
                                 <button
-                                    className={classNames(styles.button, styles.resetAllButton)}
+                                    type="button"
+                                    className={classNames(styles.button, styles.buttonOutline, styles.resetAllButton)}
                                     onClick={this.handleResetAll}
                                 >
+                                    <RotateCcwIcon aria-hidden="true" />
                                     {settingsTranslations.resetAll}
                                 </button>
                                 <button
-                                    className={classNames(styles.button, styles.exportButton)}
+                                    type="button"
+                                    className={classNames(styles.button, styles.buttonOutline, styles.exportButton)}
                                     onClick={this.handleExport}
                                 >
+                                    <DownloadIcon aria-hidden="true" />
                                     {settingsTranslations.export}
                                 </button>
                                 <button
-                                    className={classNames(styles.button, styles.importButton)}
+                                    type="button"
+                                    className={classNames(styles.button, styles.buttonOutline, styles.importButton)}
                                     onClick={this.handleImport}
                                 >
+                                    <UploadIcon aria-hidden="true" />
                                     {settingsTranslations.import}
                                 </button>
                             </div>
@@ -1154,7 +1212,8 @@ class AddonSettingsComponent extends React.Component {
                                         addons={unsupported}
                                     />
                                 ) : null}
-                                <span
+                                <button
+                                    type="button"
                                     className={styles.version}
                                     onClick={this.handleClickVersion}
                                 >
@@ -1163,7 +1222,7 @@ class AddonSettingsComponent extends React.Component {
                                         // eslint-disable-next-line max-len
                                         `You have enabled debug mode. (Addons version ${upstreamMeta.commit})` :
                                         `Addons version ${upstreamMeta.commit}`}
-                                </span>
+                                </button>
                             </footer>
                         </div>
                     )}

@@ -1,0 +1,209 @@
+@import "../../css/z-index.css";
+
+.root {
+    bottom: .75rem;
+    display: flex;
+    justify-content: center;
+    left: var(--editor-dock-center-x, 50%);
+    max-width: var(--editor-dock-max-width, calc(100% - 1rem));
+    pointer-events: none;
+    position: absolute;
+    transform: translateX(-50%);
+    z-index: $z-index-menu-bar;
+}
+
+.surface {
+    align-items: center;
+    backdrop-filter: blur(16px);
+    background: color-mix(in srgb, var(--tw-dialog-background, #fff) 94%, transparent);
+    border: 1px solid var(--tw-dialog-border, #e5e5e5);
+    border-radius: .875rem;
+    box-shadow: 0 .5rem 1.4rem -.7rem var(--tw-dialog-shadow, rgba(23, 23, 23, .18)),
+        0 1px 2px var(--tw-dialog-shadow, rgba(23, 23, 23, .08));
+    display: flex;
+    gap: .2rem;
+    padding: .34rem;
+    pointer-events: auto;
+}
+
+.resource {
+    position: relative;
+}
+
+.item {
+    align-items: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: .625rem;
+    color: var(--tw-dialog-muted-foreground, #737373);
+    cursor: pointer;
+    display: inline-flex;
+    height: 2.8rem;
+    justify-content: center;
+    padding: 0;
+    position: relative;
+    transform-origin: 50% 100%;
+    width: 2.8rem;
+    will-change: transform;
+}
+
+.item svg {
+    height: 1.18rem;
+    stroke-width: 1.8;
+    width: 1.18rem;
+}
+
+.item:hover,
+.item:focus-visible,
+.active {
+    background: var(--tw-dialog-accent, #f5f5f5);
+    border-color: var(--tw-dialog-border, #e5e5e5);
+    color: var(--tw-dialog-foreground, #171717);
+    outline: none;
+}
+
+.item:focus-visible {
+    box-shadow: 0 0 0 2px var(--tw-dialog-ring, #a3a3a3);
+}
+
+.item:disabled {
+    cursor: not-allowed;
+    opacity: .42;
+}
+
+.tooltip {
+    background: var(--tw-dialog-foreground, #171717);
+    border: 1px solid var(--tw-dialog-border, #e5e5e5);
+    border-radius: .375rem;
+    bottom: calc(100% + .62rem);
+    box-shadow: 0 .25rem .75rem var(--tw-dialog-shadow, rgba(23, 23, 23, .12));
+    color: var(--tw-dialog-background, #fff);
+    font-size: .7rem;
+    font-weight: 600;
+    left: 50%;
+    line-height: 1;
+    opacity: 0;
+    padding: .38rem .48rem;
+    pointer-events: none;
+    position: absolute;
+    transform: translate(-50%, .2rem);
+    transition: opacity .14s ease, transform .14s ease;
+    visibility: hidden;
+    white-space: nowrap;
+}
+
+.item:hover .tooltip,
+.item:focus-visible .tooltip {
+    opacity: 1;
+    transform: translate(-50%, 0);
+    visibility: visible;
+}
+
+.badge {
+    align-items: center;
+    background: var(--tw-status-danger, #dc2626);
+    border: 2px solid var(--tw-dialog-background, #fff);
+    border-radius: 999px;
+    color: #fff;
+    display: flex;
+    font-size: .58rem;
+    font-weight: 700;
+    height: 1rem;
+    justify-content: center;
+    min-width: 1rem;
+    padding: 0 .16rem;
+    position: absolute;
+    right: -.12rem;
+    top: -.12rem;
+}
+
+.separator {
+    align-self: center;
+    background: var(--tw-dialog-border, #e5e5e5);
+    height: 1.65rem;
+    margin: 0 .12rem;
+    width: 1px;
+}
+
+.resource-menu {
+    background: var(--tw-dialog-background, #fff);
+    border: 1px solid var(--tw-dialog-border, #e5e5e5);
+    border-radius: .625rem;
+    bottom: calc(100% + .72rem);
+    box-shadow: 0 .75rem 2rem -.75rem var(--tw-dialog-shadow, rgba(23, 23, 23, .18));
+    color: var(--tw-dialog-foreground, #171717);
+    display: flex;
+    flex-direction: column;
+    gap: .15rem;
+    inset-inline-start: 0;
+    min-width: 11.5rem;
+    padding: .3rem;
+    position: absolute;
+}
+
+.resource-menu-label {
+    color: var(--tw-dialog-muted-foreground, #737373);
+    font-size: .67rem;
+    font-weight: 650;
+    padding: .35rem .45rem .25rem;
+}
+
+.resource-menu-item {
+    align-items: center;
+    background: transparent;
+    border: 0;
+    border-radius: .42rem;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    font-size: .75rem;
+    gap: .55rem;
+    min-height: 2rem;
+    padding: .4rem .48rem;
+    text-align: start;
+    width: 100%;
+}
+
+.resource-menu-item svg {
+    color: var(--tw-dialog-muted-foreground, #737373);
+    height: .95rem;
+    stroke-width: 1.8;
+    width: .95rem;
+}
+
+.resource-menu-item:hover,
+.resource-menu-item:focus-visible {
+    background: var(--tw-dialog-accent, #f5f5f5);
+    outline: none;
+}
+
+@media (max-width: 640px) {
+    .root {
+        bottom: .5rem;
+    }
+
+    .surface {
+        gap: .08rem;
+        padding: .28rem;
+    }
+
+    .item {
+        height: 2.45rem;
+        width: 2.45rem;
+    }
+
+    .separator {
+        margin: 0 .04rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .item {
+        will-change: auto;
+    }
+
+    .tooltip {
+        transition: none;
+    }
+}

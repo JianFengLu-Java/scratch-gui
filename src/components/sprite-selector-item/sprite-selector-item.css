@@ -10,11 +10,10 @@
 
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 0.8rem;
-    color: $text-primary;
-    border-width: 2px;
-    border-style: solid;
-    border-color: $ui-black-transparent;
-    border-radius: $space;
+    color: var(--tw-dialog-foreground);
+    background: var(--tw-dialog-background);
+    border: 1px solid var(--tw-dialog-border);
+    border-radius: .5rem;
 
     text-align: center;
     cursor: pointer;
@@ -23,14 +22,14 @@
 }
 
 .sprite-selector-item.is-selected {
-    box-shadow: 0px 0px 0px 4px $looks-transparent;
-    border: 2px solid $looks-secondary;
-    background: $ui-white;
+    box-shadow: 0 0 0 2px var(--tw-dialog-accent);
+    border-color: var(--tw-dialog-ring);
+    background: var(--tw-dialog-background);
 }
 
 .sprite-selector-item:hover {
-    border: 2px solid $looks-secondary;
-    background: $ui-white;
+    border-color: var(--tw-dialog-ring);
+    background: var(--tw-dialog-accent);
 }
 
 .sprite-selector-item:hover .sprite-image, .is-selected .sprite-image {
@@ -62,12 +61,12 @@
 }
 
 .sprite-info {
-    padding: 0.25rem;
-    border-bottom-left-radius: 0.25rem;
-    border-bottom-right-radius: 0.25rem;
+    padding: .3rem .375rem;
+    border-bottom-left-radius: .45rem;
+    border-bottom-right-radius: .45rem;
 
     font-size: 0.625rem;
-    color: $text-primary;
+    color: var(--tw-dialog-foreground);
     user-select: none;
 }
 
@@ -85,11 +84,12 @@
 .sprite-details {
     margin-top: 0.125rem;
     font-size: 0.5rem;
+    color: var(--tw-dialog-muted-foreground);
 }
 
 .is-selected .sprite-info {
-    background: $looks-secondary;
-    color: #ffffff;
+    background: var(--tw-dialog-accent);
+    color: var(--tw-dialog-accent-foreground);
 }
 
 .delete-button {

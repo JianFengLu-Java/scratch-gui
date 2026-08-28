@@ -1,39 +1,17 @@
 @import "../../css/units.css";
 @import "../../css/colors.css";
-
-.backpack-container {
-    flex-shrink: 1;
-    position: relative;
-}
-
-.backpack-header {
-    margin-top: 0.5rem;
-    border: 1px solid $ui-black-transparent;
-    background: $ui-white;
-    padding: 0.25rem;
-    text-align: center;
-    font-size: 0.85rem;
-    color: $text-primary;
-    transition: 0.2s;
-    cursor: pointer;
-    user-select: none;
-}
-
-[dir="ltr"] .backpack-header {
-    border-top-right-radius: $space;
-}
-
-[dir="rtl"] .backpack-header {
-    border-top-left-radius: $space;
+.backpack-panel {
+    max-width: calc(100vw - 1rem);
+    width: min(42rem, calc(100vw - 1rem));
 }
 
 .backpack-list {
-    position: relative;
+    align-items: center;
+    background: var(--tw-dialog-background, #fff);
     display: flex;
     flex-direction: row;
-    align-items: center;
-    border-right: 1px solid $ui-black-transparent;
-    min-height: 5.5rem;
+    min-height: 6.25rem;
+    position: relative;
 }
 
 /* Absolute position the inner list to allow scrolling inside flex sized container */
@@ -62,10 +40,10 @@
 }
 
 .status-message {
-    width: 100%;
+    color: var(--tw-dialog-muted-foreground, #737373);
+    font-size: .8rem;
     text-align: center;
-    font-size: 0.85rem;
-    color: $text-primary;
+    width: 100%;
 }
 
 .error-message {
@@ -88,14 +66,18 @@
 }
 
 .more {
-    background: $looks-secondary;
-    color: $ui-white;
-    border: none;
-    outline: none;
-    font-weight: bold;
-    border-radius: 0.5rem;
-    font-size: 0.85rem;
-    padding: 0.5rem;
+    background: var(--tw-dialog-foreground, #171717);
+    border: 1px solid var(--tw-dialog-foreground, #171717);
+    border-radius: .45rem;
+    color: var(--tw-dialog-background, #fff);
     margin: 0.5rem;
+    font-size: .75rem;
+    font-weight: 650;
+    outline: none;
+    padding: .45rem .65rem;
     cursor: pointer;
+}
+
+.more:focus-visible {
+    box-shadow: 0 0 0 2px var(--tw-dialog-ring, #a3a3a3);
 }

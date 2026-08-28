@@ -157,9 +157,9 @@ class ExtensionLibrary extends React.PureComponent {
         }
     }
     render () {
-        let library = null;
+        // 内置扩展不依赖在线扩展库。先渲染它们，避免网络请求被拦截或较慢时出现空白入口。
+        const library = extensionLibraryContent.map(toLibraryItem);
         if (this.state.gallery || this.state.galleryError || this.state.galleryTimedOut) {
-            library = extensionLibraryContent.map(toLibraryItem);
             library.push('---');
             if (this.state.gallery) {
                 library.push(toLibraryItem(galleryMore));

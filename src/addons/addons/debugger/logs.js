@@ -89,6 +89,7 @@ export default async function createLogsTab({ debug, addon, console, msg }) {
     icon: addon.self.getResource("/icons/download-white.svg") /* rewritten by pull.js */,
     description: msg("export-desc"),
   });
+  exportButton.element.classList.add("sa-debugger-export");
   const downloadText = (filename, text) => {
     downloadBlob(filename, new Blob([text], { type: "text/plain" }));
   };
@@ -120,6 +121,7 @@ export default async function createLogsTab({ debug, addon, console, msg }) {
     text: msg("clear"),
     icon: addon.self.getResource("/icons/delete.svg") /* rewritten by pull.js */,
   });
+  trashButton.element.classList.add("sa-debugger-clear");
   trashButton.element.addEventListener("click", () => {
     clearLogs();
   });

@@ -24,6 +24,7 @@ import randomizeSpritePosition from '../lib/randomize-sprite-position';
 import downloadBlob from '../lib/download-blob';
 import log from '../lib/log';
 import {placeInViewport} from '../lib/backpack/code-payload.js';
+import {subscribeAssetLoadFeedback} from '../lib/asset-load-feedback';
 
 class TargetPane extends React.Component {
     constructor (props) {
@@ -48,14 +49,22 @@ class TargetPane extends React.Component {
             'handlePaintSpriteClick',
             'handleFileUploadClick',
             'handleSpriteUpload',
+            'handleAssetLoadFeedback',
             'setFileInput'
         ]);
+        this.state = {
+            assetLoadNotice: null
+        };
+        this.assetLoadNoticeTimeout = null;
     }
     componentDidMount () {
         this.props.vm.addListener('BLOCK_DRAG_END', this.handleBlockDragEnd);
+        this.unsubscribeAssetLoadFeedback = subscribeAssetLoadFeedback(this.handleAssetLoadFeedback);
     }
     componentWillUnmount () {
         this.props.vm.removeListener('BLOCK_DRAG_END', this.handleBlockDragEnd);
+        this.unsubscribeAssetLoadFeedback();
+        clearTimeout(this.assetLoadNoticeTimeout);
     }
     handleChangeSpriteDirection (direction) {
         this.props.vm.postSpriteInfo({direction});
@@ -138,6 +147,49 @@ class TargetPane extends React.Component {
             .catch(err => {
                 log.error(err);
             });
+    }
+    handleAssetLoadFeedback (event) {
+        if (event.type === 'start') {
+            clearTimeout(this.assetLoadNoticeTimeout);
+            this.setState({
+                assetLoadNotice: {
+                    assetType: event.assetType,
+                    finished: 0,
+                    loadId: event.loadId,
+                    name: event.name,
+                    status: 'loading',
+                    total: 0
+                }
+            });
+            return;
+        }
+        if (event.type === 'progress') {
+            this.setState(state => (state.assetLoadNotice && state.assetLoadNotice.loadId === event.loadId ? {
+                assetLoadNotice: Object.assign({}, state.assetLoadNotice, {
+                    finished: event.finished,
+                    total: event.total
+                })
+            } : null));
+            return;
+        }
+        if (event.type === 'finish') {
+            if (!this.state.assetLoadNotice || this.state.assetLoadNotice.loadId !== event.loadId) return;
+            const timeout = event.status === 'success' ? 2000 : 5000;
+            this.setState(state => ({
+                assetLoadNotice: Object.assign({}, state.assetLoadNotice, {
+                    finished: event.status === 'success' ? 1 : 0,
+                    name: event.name,
+                    status: event.status,
+                    total: 1
+                })
+            }));
+            clearTimeout(this.assetLoadNoticeTimeout);
+            this.assetLoadNoticeTimeout = setTimeout(() => {
+                this.setState(state => (state.assetLoadNotice && state.assetLoadNotice.loadId === event.loadId ? {
+                    assetLoadNotice: null
+                } : null));
+            }, timeout);
+        }
     }
     handleFileUploadClick () {
         this.fileInput.click();
@@ -230,22 +282,23 @@ class TargetPane extends React.Component {
                 {...componentProps}
                 fileInputRef={this.setFileInput}
                 onActivateBlocksTab={this.handleActivateBlocksTab}
-                onChangeSpriteDirection={this.handleChangeSpriteDirection}
-                onChangeSpriteName={this.handleChangeSpriteName}
-                onChangeSpriteRotationStyle={this.handleChangeSpriteRotationStyle}
-                onChangeSpriteSize={this.handleChangeSpriteSize}
-                onChangeSpriteVisibility={this.handleChangeSpriteVisibility}
-                onChangeSpriteX={this.handleChangeSpriteX}
-                onChangeSpriteY={this.handleChangeSpriteY}
-                onDeleteSprite={this.handleDeleteSprite}
-                onDrop={this.handleDrop}
-                onDuplicateSprite={this.handleDuplicateSprite}
-                onExportSprite={this.handleExportSprite}
-                onFileUploadClick={this.handleFileUploadClick}
-                onPaintSpriteClick={this.handlePaintSpriteClick}
+                onChangeSpriteDirection={this.props.readOnly ? null : this.handleChangeSpriteDirection}
+                onChangeSpriteName={this.props.readOnly ? null : this.handleChangeSpriteName}
+                onChangeSpriteRotationStyle={this.props.readOnly ? null : this.handleChangeSpriteRotationStyle}
+                onChangeSpriteSize={this.props.readOnly ? null : this.handleChangeSpriteSize}
+                onChangeSpriteVisibility={this.props.readOnly ? null : this.handleChangeSpriteVisibility}
+                onChangeSpriteX={this.props.readOnly ? null : this.handleChangeSpriteX}
+                onChangeSpriteY={this.props.readOnly ? null : this.handleChangeSpriteY}
+                onDeleteSprite={this.props.readOnly ? null : this.handleDeleteSprite}
+                onDrop={this.props.readOnly ? null : this.handleDrop}
+                onDuplicateSprite={this.props.readOnly ? null : this.handleDuplicateSprite}
+                onExportSprite={this.props.readOnly ? null : this.handleExportSprite}
+                onFileUploadClick={this.props.readOnly ? null : this.handleFileUploadClick}
+                onPaintSpriteClick={this.props.readOnly ? null : this.handlePaintSpriteClick}
                 onSelectSprite={this.handleSelectSprite}
-                onSpriteUpload={this.handleSpriteUpload}
-                onSurpriseSpriteClick={this.handleSurpriseSpriteClick}
+                onSpriteUpload={this.props.readOnly ? null : this.handleSpriteUpload}
+                onSurpriseSpriteClick={this.props.readOnly ? null : this.handleSurpriseSpriteClick}
+                assetLoadNotice={this.state.assetLoadNotice}
             />
         );
     }
@@ -261,6 +314,7 @@ TargetPane.propTypes = {
     intl: intlShape.isRequired,
     onCloseImporting: PropTypes.func,
     onShowImporting: PropTypes.func,
+    readOnly: PropTypes.bool,
     ...targetPaneProps
 };
 

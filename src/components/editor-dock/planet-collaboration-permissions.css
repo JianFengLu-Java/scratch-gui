@@ -1,0 +1,473 @@
+@import "../../css/colors.css";
+
+.panel {
+    max-height: min(75vh, 40rem, calc(100vh - 8rem));
+    max-height: min(75dvh, 40rem, calc(100dvh - 8rem));
+    width: min(29rem, calc(100vw - 1rem));
+}
+
+.body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: .45rem;
+    min-height: 0;
+    overflow: hidden;
+    padding: .5rem;
+}
+
+.loading,
+.alert,
+.freeState,
+.readOnlyHint {
+    border-radius: .625rem;
+    font-size: .72rem;
+}
+
+.loading {
+    align-items: center;
+    color: var(--tw-dialog-muted-foreground, #737373);
+    display: flex;
+    gap: .45rem;
+    justify-content: center;
+    min-height: 8rem;
+}
+
+.loading svg,
+.saveButton:disabled svg {
+    animation: permission-spin .8s linear infinite;
+}
+
+.alert {
+    background: color-mix(in srgb, var(--tw-status-danger, #dc2626) 8%, transparent);
+    border: 1px solid color-mix(in srgb, var(--tw-status-danger, #dc2626) 24%, transparent);
+    color: var(--tw-status-danger, #dc2626);
+    padding: .58rem .65rem;
+}
+
+.modeSetting {
+    align-items: center;
+    background: var(--tw-dialog-accent, #f5f5f5);
+    border: 1px solid var(--tw-dialog-border, #e5e5e5);
+    border-radius: .72rem;
+    display: flex;
+    flex: 0 0 auto;
+    gap: .65rem;
+    justify-content: space-between;
+    min-height: 2.65rem;
+    padding: .42rem .58rem;
+}
+
+.modeCopy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.modeCopy strong {
+    color: var(--tw-dialog-foreground, #171717);
+    font-size: .7rem;
+    font-weight: 650;
+}
+
+.modeCopy small {
+    color: var(--tw-dialog-muted-foreground, #737373);
+    font-size: .6rem;
+    margin-top: .08rem;
+}
+
+.modeSwitch,
+.switch {
+    background: var(--tw-dialog-border, #d4d4d4);
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    flex: 0 0 auto;
+    padding: .14rem;
+    transition: background .16s ease;
+}
+
+.modeSwitch {
+    height: 1.2rem;
+    width: 2.05rem;
+}
+
+.modeSwitch span,
+.switch span {
+    background: var(--tw-dialog-background, #fff);
+    border-radius: 50%;
+    box-shadow: 0 1px 2px var(--tw-dialog-shadow, rgba(23, 23, 23, .2));
+    display: block;
+    transform: translateX(0);
+    transition: transform .16s ease;
+}
+
+.modeSwitch span {
+    height: .92rem;
+    width: .92rem;
+}
+
+.modeSwitch[aria-checked="true"],
+.switch[aria-checked="true"] {
+    background: var(--tw-status-success, #34c759);
+}
+
+.modeSwitch[aria-checked="true"] span {
+    transform: translateX(.85rem);
+}
+
+.modeSwitch:disabled,
+.switch:disabled {
+    cursor: default;
+    opacity: .72;
+}
+
+.freeState span,
+.memberCopy,
+.targetCopy,
+.targetHeader > span {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.freeState strong,
+.memberCopy strong,
+.targetCopy strong,
+.targetHeader strong {
+    font-size: .72rem;
+    font-weight: 650;
+}
+
+.memberCopy .member-name,
+.targetHeader .member-name {
+    color: $error-primary;
+    font-weight: 800;
+}
+
+.freeState small,
+.memberCopy small,
+.targetCopy small,
+.targetHeader small {
+    color: var(--tw-dialog-muted-foreground, #737373);
+    font-size: .62rem;
+    margin-top: .1rem;
+}
+
+.readOnlyHint {
+    color: var(--tw-dialog-muted-foreground, #737373);
+    margin: 0;
+    padding: 0 .15rem;
+}
+
+.freeState {
+    align-items: center;
+    background: var(--tw-dialog-accent, #f5f5f5);
+    border: 1px solid var(--tw-dialog-border, #e5e5e5);
+    display: flex;
+    gap: .65rem;
+    min-height: 3.8rem;
+    padding: .65rem;
+}
+
+.freeState > svg {
+    height: 1.15rem;
+    width: 1.15rem;
+}
+
+.permissionLayout {
+    background: var(--tw-dialog-background, #fff);
+    border: 1px solid var(--tw-dialog-border, #e5e5e5);
+    border-radius: .75rem;
+    display: grid;
+    flex: 1;
+    grid-template-columns: minmax(7.5rem, 8.25rem) minmax(0, 1fr);
+    min-height: 17rem;
+    overflow: hidden;
+}
+
+.userPane,
+.targetPane {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.userPane {
+    background: color-mix(in srgb, var(--tw-dialog-accent, #f5f5f5) 55%, transparent);
+    border-right: 1px solid var(--tw-dialog-border, #e5e5e5);
+}
+
+.paneTitle,
+.targetHeader {
+    align-items: center;
+    border-bottom: 1px solid var(--tw-dialog-border, #e5e5e5);
+    display: flex;
+    flex: 0 0 auto;
+    justify-content: space-between;
+    min-height: 2.65rem;
+    padding: .45rem .58rem;
+}
+
+.paneTitle strong {
+    font-size: .68rem;
+    font-weight: 650;
+}
+
+.paneTitle > span,
+.userCount,
+.resourceGroup > header span {
+    color: var(--tw-dialog-muted-foreground, #737373);
+    font-size: .6rem;
+}
+
+.paneTitle > span {
+    background: var(--tw-dialog-background, #fff);
+    border: 1px solid var(--tw-dialog-border, #e5e5e5);
+    border-radius: 999px;
+    min-width: 1.25rem;
+    padding: .12rem .35rem;
+    text-align: center;
+}
+
+.userList,
+.resourceList {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.userList {
+    padding: .28rem;
+}
+
+.userList > button {
+    align-items: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: .58rem;
+    color: var(--tw-dialog-foreground, #171717);
+    cursor: pointer;
+    display: flex;
+    font: inherit;
+    gap: .38rem;
+    min-height: 2.65rem;
+    padding: .34rem .35rem;
+    text-align: start;
+    width: 100%;
+}
+
+.userList > button + button {
+    margin-top: .14rem;
+}
+
+.userList > button:hover {
+    background: color-mix(in srgb, var(--tw-dialog-background, #fff) 68%, transparent);
+}
+
+.userList > .userActive {
+    background: var(--tw-dialog-background, #fff);
+    border-color: var(--tw-dialog-border, #e5e5e5);
+    box-shadow: 0 1px 2px var(--tw-dialog-shadow, rgba(23, 23, 23, .07));
+}
+
+.avatar {
+    align-items: center;
+    background: var(--tw-dialog-background, #fff);
+    border: 1px solid var(--tw-dialog-border, #e5e5e5);
+    border-radius: 50%;
+    color: var(--tw-dialog-muted-foreground, #737373);
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: .65rem;
+    font-weight: 700;
+    height: 1.65rem;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    width: 1.65rem;
+}
+
+.avatar img {
+    height: 100%;
+    inset: 0;
+    object-fit: cover;
+    position: absolute;
+    width: 100%;
+}
+
+.memberCopy,
+.targetCopy {
+    flex: 1;
+}
+
+.memberCopy strong,
+.targetCopy strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.userCount {
+    flex: 0 0 auto;
+    padding-left: .25rem;
+}
+
+.targetHeader {
+    background: var(--tw-dialog-background, #fff);
+}
+
+.resourceList {
+    padding: .25rem .38rem .42rem;
+}
+
+.resourceGroup > header {
+    align-items: center;
+    color: var(--tw-dialog-muted-foreground, #737373);
+    display: flex;
+    justify-content: space-between;
+    min-height: 1.95rem;
+    padding: .3rem .08rem .18rem;
+}
+
+.resourceGroup > header strong {
+    font-size: .64rem;
+    font-weight: 650;
+}
+
+.resourceGroup > div {
+    border: 1px solid var(--tw-dialog-border, #e5e5e5);
+    border-radius: .65rem;
+    overflow: hidden;
+}
+
+.targetRow {
+    align-items: center;
+    background: var(--tw-dialog-background, #fff);
+    display: flex;
+    gap: .42rem;
+    min-height: 2.65rem;
+    padding: .36rem .42rem;
+}
+
+.targetRow + .targetRow {
+    border-top: 1px solid var(--tw-dialog-border, #e5e5e5);
+}
+
+.targetIcon {
+    align-items: center;
+    background: var(--tw-dialog-accent, #f5f5f5);
+    border: 1px solid var(--tw-dialog-border, #e5e5e5);
+    border-radius: .55rem;
+    display: inline-flex;
+    flex: 0 0 auto;
+    height: 1.7rem;
+    justify-content: center;
+    width: 1.7rem;
+}
+
+.targetIcon svg {
+    height: .92rem;
+    width: .92rem;
+}
+
+.switch {
+    height: 1.25rem;
+    width: 2.15rem;
+}
+
+.switch span {
+    height: .97rem;
+    width: .97rem;
+}
+
+.switch[aria-checked="true"] span {
+    transform: translateX(.9rem);
+}
+
+.empty {
+    color: var(--tw-dialog-muted-foreground, #737373);
+    font-size: .68rem;
+    padding: 1rem;
+    text-align: center;
+}
+
+.footer {
+    align-items: center;
+    border-top: 1px solid var(--tw-dialog-border, #e5e5e5);
+    display: flex;
+    gap: .75rem;
+    justify-content: flex-end;
+    min-height: 3.15rem;
+    padding: .5rem .65rem;
+}
+
+.saveButton {
+    align-items: center;
+    background: var(--tw-dialog-foreground, #171717);
+    border: 1px solid var(--tw-dialog-foreground, #171717);
+    border-radius: .5rem;
+    color: var(--tw-dialog-background, #fff);
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font: inherit;
+    font-size: .7rem;
+    font-weight: 650;
+    gap: .38rem;
+    min-height: 2rem;
+    padding: .4rem .65rem;
+}
+
+.saveButton:disabled {
+    cursor: wait;
+    opacity: .65;
+}
+
+.saveButton svg,
+.loading svg {
+    height: .9rem;
+    width: .9rem;
+}
+
+@keyframes permission-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 640px) {
+    .panel {
+        max-height: calc(100vh - 7rem);
+        max-height: calc(100dvh - 7rem);
+        width: calc(100vw - 1rem);
+    }
+
+    .permissionLayout {
+        grid-template-columns: 1fr;
+    }
+
+    .userPane {
+        border-bottom: 1px solid var(--tw-dialog-border, #e5e5e5);
+        border-right: 0;
+        max-height: 10rem;
+    }
+
+    .footer > span {
+        display: none;
+    }
+
+    .footer {
+        justify-content: flex-end;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modeSwitch,
+    .modeSwitch span,
+    .switch,
+    .switch span {
+        transition: none;
+    }
+}

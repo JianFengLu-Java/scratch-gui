@@ -6,6 +6,7 @@ import VM from 'scratch-vm';
 import SpriteLibrary from '../../containers/sprite-library.jsx';
 import SpriteSelectorComponent from '../sprite-selector/sprite-selector.jsx';
 import StageSelector from '../../containers/stage-selector.jsx';
+import AssetLoadingToast from './asset-loading-toast.jsx';
 import {STAGE_DISPLAY_SIZES} from '../../lib/layout-constants';
 
 import styles from './target-pane.css';
@@ -21,6 +22,7 @@ const TargetPane = ({
     fileInputRef,
     hoveredTarget,
     spriteLibraryVisible,
+    assetLoadNotice,
     onActivateBlocksTab,
     onChangeSpriteDirection,
     onChangeSpriteName,
@@ -41,6 +43,7 @@ const TargetPane = ({
     onSpriteUpload,
     onSurpriseSpriteClick,
     raiseSprites,
+    readOnly,
     stage,
     stageSize,
     sprites,
@@ -51,12 +54,14 @@ const TargetPane = ({
         className={styles.targetPane}
         {...componentProps}
     >
+        <AssetLoadingToast notice={assetLoadNotice} />
 
         <SpriteSelectorComponent
             editingTarget={editingTarget}
             hoveredTarget={hoveredTarget}
             raised={raiseSprites}
             selectedId={editingTarget}
+            readOnly={readOnly}
             spriteFileInput={fileInputRef}
             sprites={sprites}
             stageSize={stageSize}
@@ -86,11 +91,12 @@ const TargetPane = ({
                 }
                 backdropCount={stage.costumeCount}
                 id={stage.id}
+                readOnly={readOnly}
                 selected={stage.id === editingTarget}
                 onSelect={onSelectSprite}
             />}
             <div>
-                {spriteLibraryVisible ? (
+                {spriteLibraryVisible && !readOnly ? (
                     <SpriteLibrary
                         vm={vm}
                         onActivateBlocksTab={onActivateBlocksTab}
@@ -126,6 +132,13 @@ const spriteShape = PropTypes.shape({
 });
 
 TargetPane.propTypes = {
+    assetLoadNotice: PropTypes.shape({
+        assetType: PropTypes.oneOf(['backdrop', 'sprite']).isRequired,
+        finished: PropTypes.number.isRequired,
+        name: PropTypes.string.isRequired,
+        status: PropTypes.oneOf(['loading', 'success', 'error']).isRequired,
+        total: PropTypes.number.isRequired
+    }),
     editingTarget: PropTypes.string,
     extensionLibraryVisible: PropTypes.bool,
     fileInputRef: PropTypes.func,
@@ -154,6 +167,7 @@ TargetPane.propTypes = {
     onSpriteUpload: PropTypes.func,
     onSurpriseSpriteClick: PropTypes.func,
     raiseSprites: PropTypes.bool,
+    readOnly: PropTypes.bool,
     spriteLibraryVisible: PropTypes.bool,
     sprites: PropTypes.objectOf(spriteShape),
     stage: spriteShape,

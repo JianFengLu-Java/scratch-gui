@@ -1,0 +1,417 @@
+.root {
+    --ai-surface: var(--tw-dialog-background);
+    --ai-surface-muted: var(--tw-dialog-muted);
+    --ai-surface-hover: var(--tw-dialog-accent);
+    --ai-foreground: var(--tw-dialog-foreground);
+    --ai-muted: var(--tw-dialog-muted-foreground);
+    --ai-border: var(--tw-dialog-border);
+    --ai-accent: var(--tw-dialog-foreground);
+    --ai-accent-foreground: var(--tw-dialog-background);
+    color: var(--ai-foreground);
+    font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.panel button:focus-visible,
+.panel textarea:focus-visible,
+.panel-with-history button:focus-visible,
+.panel-with-history textarea:focus-visible {
+    outline: 2px solid var(--tw-dialog-ring);
+    outline-offset: 2px;
+}
+
+.panel,
+.panel-with-history {
+    width: min(28rem, calc(100vw - 2rem));
+    height: min(36rem, calc(100vh - 9rem));
+    height: min(36rem, calc(100dvh - 9rem));
+}
+
+.panel-with-history {
+    width: min(42rem, calc(100vw - 2rem));
+}
+
+.tool-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.icon-button,
+.icon-button-active {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--ai-muted);
+    cursor: pointer;
+}
+
+.icon-button svg,
+.icon-button-active svg {
+    width: 1rem;
+    height: 1rem;
+    stroke-width: 1.75;
+}
+
+.icon-button:hover,
+.icon-button-active {
+    border-color: var(--ai-border);
+    background: var(--ai-surface-muted);
+    color: var(--ai-foreground);
+}
+
+.memory-bar {
+    display: flex;
+    align-items: center;
+    padding: 7px 18px;
+    gap: 7px;
+    border-bottom: 1px solid var(--ai-border);
+    background: var(--ai-surface-muted);
+    color: var(--ai-muted);
+    font-size: 11px;
+}
+
+.memory-bar span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--tw-status-success);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tw-status-success) 18%, transparent);
+}
+
+.messages {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    flex-direction: column;
+    padding: 18px;
+    gap: 16px;
+}
+
+.assistant-message,
+.user-message {
+    display: flex;
+    max-width: 88%;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.assistant-message {
+    align-self: flex-start;
+}
+
+.user-message {
+    align-self: flex-end;
+}
+
+.message-label {
+    padding: 0 3px;
+    color: var(--ai-muted);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.user-message .message-label {
+    align-self: flex-end;
+}
+
+.message-body {
+    padding: 10px 12px;
+    border: 1px solid var(--ai-border);
+    border-radius: .5rem;
+    background: var(--ai-surface-muted);
+    color: var(--ai-foreground);
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+}
+
+.user-message .message-body {
+    border-color: var(--ai-accent);
+    background: var(--ai-accent);
+    color: var(--ai-accent-foreground);
+}
+
+.tool-card {
+    display: flex;
+    margin-top: 5px;
+    flex-direction: column;
+    padding: 12px;
+    gap: 7px;
+    border: 1px solid var(--ai-border);
+    border-radius: .625rem;
+    background: var(--ai-surface);
+    box-shadow: 0 1px 2px var(--tw-dialog-shadow);
+}
+
+.tool-card strong {
+    font-size: 13px;
+}
+
+.tool-card p {
+    margin: 0;
+    color: var(--ai-muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.tool-eyebrow {
+    color: var(--ai-accent);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.tool-actions {
+    justify-content: flex-end;
+    margin-top: 3px;
+}
+
+.primary-button,
+.secondary-button {
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: .375rem;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.primary-button {
+    border: 1px solid var(--ai-accent);
+    background: var(--ai-accent);
+    color: var(--ai-accent-foreground);
+}
+
+.secondary-button {
+    border: 1px solid var(--ai-border);
+    background: var(--ai-surface);
+    color: var(--ai-foreground);
+}
+
+.primary-button:disabled,
+.secondary-button:disabled,
+.send-button:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.tool-status {
+    color: var(--ai-muted);
+    font-size: 11px;
+}
+
+.composer {
+    display: flex;
+    margin: 0 14px;
+    padding: 7px 7px 7px 12px;
+    gap: 8px;
+    border: 1px solid var(--ai-border);
+    border-radius: .5rem;
+    background: var(--ai-surface-muted);
+}
+
+.composer:focus-within {
+    border-color: var(--tw-dialog-ring);
+    box-shadow: 0 0 0 3px var(--tw-dialog-accent);
+}
+
+.composer textarea {
+    min-height: 38px;
+    flex: 1;
+    resize: none;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--ai-foreground);
+    font: inherit;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.send-button {
+    align-self: flex-end;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--ai-accent);
+    border-radius: .375rem;
+    background: var(--ai-accent);
+    color: var(--ai-accent-foreground);
+    cursor: pointer;
+}
+
+.send-button svg {
+    width: .875rem;
+    height: .875rem;
+    stroke-width: 2;
+}
+
+.disclaimer {
+    padding: 7px 14px 10px;
+    color: var(--ai-muted);
+    font-size: 10px;
+    text-align: center;
+}
+
+.error {
+    margin: 0 14px 9px;
+    padding: 8px 10px;
+    border: 1px solid color-mix(in srgb, var(--tw-status-danger) 35%, transparent);
+    border-radius: 9px;
+    background: color-mix(in srgb, var(--tw-status-danger) 9%, var(--ai-surface));
+    color: var(--tw-status-danger);
+    font-size: 11px;
+}
+
+.thinking {
+    align-self: flex-start;
+    color: var(--ai-muted);
+    font-size: 12px;
+}
+
+.empty-state {
+    display: flex;
+    margin: auto;
+    max-width: 270px;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    color: var(--ai-muted);
+    text-align: center;
+}
+
+.empty-state > svg {
+    color: var(--ai-accent);
+    width: 1.5rem;
+    height: 1.5rem;
+    stroke-width: 1.5;
+}
+
+.empty-state strong {
+    color: var(--ai-foreground);
+    font-size: 14px;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.history {
+    display: flex;
+    width: 210px;
+    flex: 0 0 210px;
+    flex-direction: column;
+    border-right: 1px solid var(--ai-border);
+    background: var(--ai-surface-muted);
+}
+
+.history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 12px 10px;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.history-header button {
+    display: inline-flex;
+    align-items: center;
+    gap: .25rem;
+    padding: 5px 7px;
+    border: 1px solid var(--ai-border);
+    border-radius: 8px;
+    background: var(--ai-surface);
+    color: var(--ai-foreground);
+    font-size: 10px;
+    cursor: pointer;
+}
+
+.history-header button svg {
+    width: .75rem;
+    height: .75rem;
+    stroke-width: 2;
+}
+
+.history-list {
+    display: flex;
+    min-height: 0;
+    overflow-y: auto;
+    flex: 1;
+    flex-direction: column;
+    padding: 3px 8px 10px;
+    gap: 4px;
+}
+
+.history-list > button {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    padding: 9px;
+    gap: 4px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ai-foreground);
+    text-align: left;
+    cursor: pointer;
+}
+
+.history-list > button:hover,
+.history-list > .history-active {
+    border-color: var(--ai-border);
+    background: var(--ai-surface);
+}
+
+.history-list span {
+    overflow: hidden;
+    font-size: 11px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.history-list small {
+    color: var(--ai-muted);
+    font-size: 9px;
+}
+
+.empty-history {
+    padding: 18px 8px;
+    color: var(--ai-muted);
+    font-size: 11px;
+    text-align: center;
+}
+
+@media (max-width: 760px) {
+    .panel,
+    .panel-with-history {
+        width: calc(100vw - 16px);
+        height: calc(100vh - 8.25rem);
+        height: calc(100dvh - 8.25rem);
+    }
+
+    .history {
+        position: absolute;
+        z-index: 1;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: min(78vw, 260px);
+        box-shadow: 12px 0 30px rgba(0, 0, 0, 0.2);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .panel,
+    .panel-with-history {
+        transition: none;
+    }
+}

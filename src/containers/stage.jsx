@@ -375,6 +375,7 @@ class Stage extends React.Component {
         this.dragCanvas.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
     }
     onStartDrag (x, y) {
+        if (this.props.readOnly) return;
         if (this.state.dragId) return;
         const drawableId = this.renderer.pick(x, y);
         if (drawableId === -1) return;
@@ -481,12 +482,14 @@ Stage.propTypes = {
     micIndicator: PropTypes.bool,
     onActivateColorPicker: PropTypes.func,
     onDeactivateColorPicker: PropTypes.func,
+    readOnly: PropTypes.bool,
     stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)).isRequired,
     useEditorDragStyle: PropTypes.bool,
     vm: PropTypes.instanceOf(VM).isRequired
 };
 
 Stage.defaultProps = {
+    readOnly: false,
     useEditorDragStyle: true
 };
 

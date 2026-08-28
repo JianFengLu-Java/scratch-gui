@@ -20,7 +20,13 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {compose} from 'redux';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
-import {getIsLoading} from '../reducers/project-state.js';
+import {
+    LoadingState,
+    getIsError,
+    getIsFetchingWithId,
+    getIsLoading,
+    getIsLoadingWithId
+} from '../reducers/project-state.js';
 import AppStateHOC from '../lib/app-state-hoc.jsx';
 import ErrorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
 import TWProjectMetaFetcherHOC from '../lib/tw-project-meta-fetcher-hoc.jsx';
@@ -42,18 +48,14 @@ import AddonChannels from '../addons/channels';
 import {loadServiceWorker} from './load-service-worker';
 import runAddons from '../addons/entry';
 import InvalidEmbed from '../components/tw-invalid-embed/invalid-embed.jsx';
-import {APP_NAME} from '../lib/brand.js';
+import CrashMessage from '../components/crash-message/crash-message.jsx';
+import AddonSettingsModal from '../components/tw-addon-settings-modal/addon-settings-modal.jsx';
+import {APP_NAME, DOCUMENT_APP_NAME} from '../lib/brand.js';
 
 import styles from './interface.css';
 
-const isInvalidEmbed = window.parent !== window;
-
-const handleClickAddonSettings = addonId => {
-    // addonId might be a string of the addon to focus on, undefined, or an event (treat like undefined)
-    const path = process.env.ROUTING_STYLE === 'wildcard' ? 'addons' : 'addons.html';
-    const url = `${process.env.ROOT}${path}${typeof addonId === 'string' ? `#${addonId}` : ''}`;
-    window.open(url);
-};
+const sourceReviewEntry = /(?:^|\/)review-editor(?:\/|\.html|$)/.test(location.pathname);
+const isInvalidEmbed = window.parent !== window && !sourceReviewEntry;
 
 const messages = defineMessages({
     defaultTitle: {
@@ -80,7 +82,7 @@ if (AddonChannels.changeChannel) {
     });
 }
 
-runAddons();
+if (!sourceReviewEntry) runAddons();
 
 const Footer = () => (
     <footer className={styles.footer}>
@@ -189,19 +191,35 @@ const Footer = () => (
 class Interface extends React.Component {
     constructor (props) {
         super(props);
+        this.state = {addonSettingsOpen: false, selectedAddonId: null};
         this.handleUpdateProjectTitle = this.handleUpdateProjectTitle.bind(this);
+        this.handleClickAddonSettings = this.handleClickAddonSettings.bind(this);
+        this.handleReload = this.handleReload.bind(this);
+        this.handleCloseAddonSettings = this.handleCloseAddonSettings.bind(this);
     }
     componentDidUpdate (prevProps) {
         if (prevProps.isLoading && !this.props.isLoading) {
-            loadServiceWorker();
+            if (!this.props.readOnly) loadServiceWorker();
         }
     }
     handleUpdateProjectTitle (title, isDefault) {
         if (isDefault || !title) {
-            document.title = `${APP_NAME} - ${this.props.intl.formatMessage(messages.defaultTitle)}`;
+            document.title = `${DOCUMENT_APP_NAME} - ${this.props.intl.formatMessage(messages.defaultTitle)}`;
         } else {
-            document.title = `${title} - ${APP_NAME}`;
+            document.title = `${title} - ${DOCUMENT_APP_NAME}`;
         }
+    }
+    handleClickAddonSettings (addonId) {
+        this.setState({
+            addonSettingsOpen: true,
+            selectedAddonId: typeof addonId === 'string' ? addonId : null
+        });
+    }
+    handleReload () {
+        window.location.reload();
+    }
+    handleCloseAddonSettings () {
+        this.setState({addonSettingsOpen: false});
     }
     render () {
         if (isInvalidEmbed) {
@@ -211,16 +229,33 @@ class Interface extends React.Component {
         const {
             /* eslint-disable no-unused-vars */
             intl,
+            error,
             hasCloudVariables,
             description,
             isFullScreen,
             isLoading,
+            isProjectPending,
+            isError,
             isPlayerOnly,
             isRtl,
             projectId,
             /* eslint-enable no-unused-vars */
             ...props
         } = this.props;
+        if (isError) {
+            let errorMessage;
+            if (error && typeof error === 'object' && error.message) {
+                errorMessage = error.message;
+            } else if (error) {
+                errorMessage = String(error);
+            }
+            return (
+                <CrashMessage
+                    errorMessage={errorMessage}
+                    onReload={this.handleReload}
+                />
+            );
+        }
         const isHomepage = isPlayerOnly && !isFullScreen;
         const isEditor = !isPlayerOnly;
         return (
@@ -231,6 +266,12 @@ class Interface extends React.Component {
                 })}
                 dir={isRtl ? 'rtl' : 'ltr'}
             >
+                {isProjectPending && (
+                    <CrashMessage
+                        loading
+                        onReload={this.handleReload}
+                    />
+                )}
                 <TWWindchimeSubmitter />
                 {isHomepage ? (
                     <div className={styles.menu}>
@@ -239,7 +280,7 @@ class Interface extends React.Component {
                             canManageFiles
                             canChangeTheme
                             enableSeeInside
-                            onClickAddonSettings={handleClickAddonSettings}
+                            onClickAddonSettings={this.handleClickAddonSettings}
                         />
                     </div>
                 ) : null}
@@ -251,12 +292,16 @@ class Interface extends React.Component {
                     }) : null}
                 >
                     <GUI
-                        onClickAddonSettings={handleClickAddonSettings}
+                        onClickAddonSettings={this.handleClickAddonSettings}
                         onUpdateProjectTitle={this.handleUpdateProjectTitle}
                         backpackVisible
                         backpackHost="_local_"
                         {...props}
                     />
+                    {this.state.addonSettingsOpen && <AddonSettingsModal
+                        addonId={this.state.selectedAddonId}
+                        onClose={this.handleCloseAddonSettings}
+                    />}
                     {isHomepage ? (
                         <React.Fragment>
                             {isBrowserSupported() ? null : (
@@ -363,23 +408,34 @@ Interface.propTypes = {
         credits: PropTypes.string,
         instructions: PropTypes.string
     }),
+    error: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
     isFullScreen: PropTypes.bool,
     isLoading: PropTypes.bool,
+    isProjectPending: PropTypes.bool,
+    isError: PropTypes.bool,
     isPlayerOnly: PropTypes.bool,
     isRtl: PropTypes.bool,
-    projectId: PropTypes.string
+    projectId: PropTypes.string,
+    readOnly: PropTypes.bool
 };
 
-const mapStateToProps = state => ({
-    hasCloudVariables: state.scratchGui.tw.hasCloudVariables,
-    customStageSize: state.scratchGui.customStageSize,
-    description: state.scratchGui.tw.description,
-    isFullScreen: state.scratchGui.mode.isFullScreen,
-    isLoading: getIsLoading(state.scratchGui.projectState.loadingState),
-    isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
-    isRtl: state.locales.isRtl,
-    projectId: state.scratchGui.projectState.projectId
-});
+const mapStateToProps = state => {
+    const loadingState = state.scratchGui.projectState.loadingState;
+    return {
+        hasCloudVariables: state.scratchGui.tw.hasCloudVariables,
+        customStageSize: state.scratchGui.customStageSize,
+        description: state.scratchGui.tw.description,
+        error: state.scratchGui.projectState.error,
+        isFullScreen: state.scratchGui.mode.isFullScreen,
+        isLoading: getIsLoading(loadingState),
+        isProjectPending: loadingState === LoadingState.NOT_LOADED ||
+            getIsFetchingWithId(loadingState) || getIsLoadingWithId(loadingState),
+        isError: getIsError(loadingState),
+        isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
+        isRtl: state.locales.isRtl,
+        projectId: state.scratchGui.projectState.projectId
+    };
+};
 
 const mapDispatchToProps = () => ({});
 

@@ -1,9 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
+import {BriefcaseIcon} from 'lucide-react';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
+import DockPanel from '../editor-dock/dock-panel.jsx';
 import DragConstants from '../../lib/drag-constants';
-import {ComingSoonTooltip} from '../coming-soon/coming-soon.jsx';
 import SpriteSelectorItem from '../../containers/sprite-selector-item.jsx';
 import styles from './backpack.css';
 
@@ -50,113 +51,96 @@ const Backpack = ({
     intl,
     loading,
     showMore,
-    onToggle,
+    onClose,
     onDelete,
     onRename,
     onMouseEnter,
     onMouseLeave,
     onMore
-}) => (
-    <div className={styles.backpackContainer}>
+}) => (expanded ? (
+    <DockPanel
+        className={styles.backpackPanel}
+        description="保存并复用角色、造型、声音与积木"
+        dragLabel="拖动书包窗口"
+        icon={BriefcaseIcon}
+        onClose={onClose}
+        panelId="backpack"
+        title="书包"
+    >
         <div
-            className={styles.backpackHeader}
-            onClick={onToggle}
+            className={classNames(styles.backpackList, {
+                [styles.dragOver]: dragOver || blockDragOver
+            })}
+            ref={containerRef}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
         >
-            {onToggle ? (
-                <FormattedMessage
-                    defaultMessage="Backpack"
-                    description="Button to open the backpack"
-                    id="gui.backpack.header"
-                />
-            ) : (
-                <ComingSoonTooltip
-                    place="top"
-                    tooltipId="backpack-tooltip"
-                >
+            {/* eslint-disable-next-line no-negated-condition */}
+            {error !== false ? (
+                <div className={styles.statusMessage}>
                     <FormattedMessage
-                        defaultMessage="Backpack"
-                        description="Button to open the backpack"
-                        id="gui.backpack.header"
+                        defaultMessage="Error loading backpack"
+                        description="Error backpack message"
+                        id="gui.backpack.errorBackpack"
                     />
-                </ComingSoonTooltip>
-            )}
-        </div>
-        {expanded ? (
-            <div
-                className={classNames(styles.backpackList, {
-                    [styles.dragOver]: dragOver || blockDragOver
-                })}
-                ref={containerRef}
-                onMouseEnter={onMouseEnter}
-                onMouseLeave={onMouseLeave}
-            >
-                {/* eslint-disable-next-line no-negated-condition */}
-                {error !== false ? (
+                    <div className={styles.errorMessage}>{error}</div>
+                </div>
+            ) : (
+                loading ? (
                     <div className={styles.statusMessage}>
                         <FormattedMessage
-                            defaultMessage="Error loading backpack"
-                            description="Error backpack message"
-                            id="gui.backpack.errorBackpack"
+                            defaultMessage="Loading..."
+                            description="Loading backpack message"
+                            id="gui.backpack.loadingBackpack"
                         />
-                        <div className={styles.errorMessage}>{error}</div>
                     </div>
                 ) : (
-                    loading ? (
-                        <div className={styles.statusMessage}>
-                            <FormattedMessage
-                                defaultMessage="Loading..."
-                                description="Loading backpack message"
-                                id="gui.backpack.loadingBackpack"
-                            />
+                    contents.length > 0 ? (
+                        <div className={styles.backpackListInner}>
+                            {contents.map(item => (
+                                <SpriteSelectorItem
+                                    className={styles.backpackItem}
+                                    costumeURL={item.thumbnailUrl}
+                                    details={item.name}
+                                    dragPayload={item}
+                                    dragType={dragTypeMap[item.type]}
+                                    id={item.id}
+                                    key={item.id}
+                                    name={intl.formatMessage(labelMap[item.type])}
+                                    selected={false}
+                                    onClick={noop}
+                                    onDeleteButtonClick={onDelete}
+                                    // Currently, renaming sprites is not supported.
+                                    onRenameButtonClick={item.type === 'sprite' ? null : onRename}
+                                />
+                            ))}
+                            {showMore && (
+                                <button
+                                    className={styles.more}
+                                    onClick={onMore}
+                                >
+                                    <FormattedMessage
+                                        defaultMessage="More"
+                                        description="Load more from backpack"
+                                        id="gui.backpack.more"
+                                    />
+                                </button>
+                            )}
                         </div>
                     ) : (
-                        contents.length > 0 ? (
-                            <div className={styles.backpackListInner}>
-                                {contents.map(item => (
-                                    <SpriteSelectorItem
-                                        className={styles.backpackItem}
-                                        costumeURL={item.thumbnailUrl}
-                                        details={item.name}
-                                        dragPayload={item}
-                                        dragType={dragTypeMap[item.type]}
-                                        id={item.id}
-                                        key={item.id}
-                                        name={intl.formatMessage(labelMap[item.type])}
-                                        selected={false}
-                                        onClick={noop}
-                                        onDeleteButtonClick={onDelete}
-                                        // Currently, renaming sprites is not supported.
-                                        onRenameButtonClick={item.type === 'sprite' ? null : onRename}
-                                    />
-                                ))}
-                                {showMore && (
-                                    <button
-                                        className={styles.more}
-                                        onClick={onMore}
-                                    >
-                                        <FormattedMessage
-                                            defaultMessage="More"
-                                            description="Load more from backpack"
-                                            id="gui.backpack.more"
-                                        />
-                                    </button>
-                                )}
-                            </div>
-                        ) : (
-                            <div className={styles.statusMessage}>
-                                <FormattedMessage
-                                    defaultMessage="Backpack is empty"
-                                    description="Empty backpack message"
-                                    id="gui.backpack.emptyBackpack"
-                                />
-                            </div>
-                        )
+                        <div className={styles.statusMessage}>
+                            <FormattedMessage
+                                defaultMessage="Backpack is empty"
+                                description="Empty backpack message"
+                                id="gui.backpack.emptyBackpack"
+                            />
+                        </div>
                     )
-                )}
-            </div>
-        ) : null}
-    </div>
-);
+                )
+            )}
+        </div>
+    </DockPanel>
+) : null);
 
 Backpack.propTypes = {
     blockDragOver: PropTypes.bool,
@@ -172,12 +156,12 @@ Backpack.propTypes = {
     expanded: PropTypes.bool,
     intl: intlShape,
     loading: PropTypes.bool,
+    onClose: PropTypes.func.isRequired,
     onDelete: PropTypes.func,
     onRename: PropTypes.func,
     onMore: PropTypes.func,
     onMouseEnter: PropTypes.func,
     onMouseLeave: PropTypes.func,
-    onToggle: PropTypes.func,
     showMore: PropTypes.bool
 };
 
@@ -188,8 +172,7 @@ Backpack.defaultProps = {
     expanded: false,
     loading: false,
     showMore: false,
-    onMore: null,
-    onToggle: null
+    onMore: null
 };
 
 export default injectIntl(Backpack);

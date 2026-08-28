@@ -35,6 +35,13 @@ let vm;
 
 const onVmInit = _vm => {
     vm = _vm;
+    const exposeStageSize = () => {
+        document.documentElement.dataset.twStageWidth = String(_vm.runtime.stageWidth);
+        document.documentElement.dataset.twStageHeight = String(_vm.runtime.stageHeight);
+        window.dispatchEvent(new CustomEvent('turbowarp-stage-size-changed'));
+    };
+    exposeStageSize();
+    _vm.on('STAGE_SIZE_CHANGED', exposeStageSize);
 };
 
 const onProjectLoaded = () => {

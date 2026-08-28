@@ -9,6 +9,12 @@ import randomizeSpritePosition from '../lib/randomize-sprite-position';
 import spriteTags from '../lib/libraries/sprite-tags';
 
 import LibraryComponent from '../components/library/library.jsx';
+import log from '../lib/log';
+import {
+    finishAssetLoad,
+    startAssetLoad,
+    updateAssetLoad
+} from '../lib/asset-load-feedback';
 
 const messages = defineMessages({
     libraryTitle: {
@@ -38,9 +44,26 @@ class SpriteLibrary extends React.PureComponent {
     handleItemSelect (item) {
         // Randomize position of library sprite
         randomizeSpritePosition(item);
-        this.props.vm.addSprite(JSON.stringify(item)).then(() => {
+        const vm = this.props.vm;
+        const loadId = startAssetLoad('sprite', item.name);
+        const baselineFinished = vm.runtime.finishedAssetRequests;
+        const baselineTotal = vm.runtime.totalAssetRequests;
+        const handleProgress = (finished, total) => updateAssetLoad(
+            loadId,
+            Math.max(0, finished - baselineFinished),
+            Math.max(0, total - baselineTotal)
+        );
+        vm.on('ASSET_PROGRESS', handleProgress);
+        vm.addSprite(JSON.stringify(item)).then(() => {
+            vm.off('ASSET_PROGRESS', handleProgress);
             this.props.onActivateBlocksTab();
-        });
+            finishAssetLoad(loadId, item.name, 'success');
+        })
+            .catch(error => {
+                vm.off('ASSET_PROGRESS', handleProgress);
+                log.error(error);
+                finishAssetLoad(loadId, item.name, 'error');
+            });
     }
     render () {
         return (

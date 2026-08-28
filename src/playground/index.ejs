@@ -6,91 +6,239 @@
     <meta name="google" value="notranslate">
     <meta name="description" content="<%= htmlWebpackPlugin.options.APP_NAME %> is a Scratch mod with a compiler to run projects faster, dark mode for your eyes, a bunch of addons to improve the editor, and more." />
     <title><%= htmlWebpackPlugin.options.title %></title>
+    <link rel="icon" type="image/svg+xml" href="<%= htmlWebpackPlugin.options.root %>brand-favicon.svg">
     <link rel="apple-touch-icon" href="<%= htmlWebpackPlugin.options.root %>images/apple-touch-icon.png">
     <% if (htmlWebpackPlugin.options.root === "/" || htmlWebpackPlugin.options.root === "") { %>
       <link rel="manifest" href="<%= htmlWebpackPlugin.options.root %>manifest.webmanifest">
     <% } %>
     <style>
-      .splash-screen {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      .editor-boot-splash {
+        --boot-background: #ffffff;
+        --boot-foreground: #171717;
+        --boot-muted: #fafafa;
+        --boot-muted-foreground: #737373;
+        --boot-border: #e5e5e5;
+        --boot-primary: #171717;
+        --boot-primary-foreground: #fafafa;
+        --boot-destructive: #dc2626;
+        position: fixed;
+        z-index: 2147483647;
+        inset: 0;
+        display: grid;
+        min-width: 20rem;
+        min-height: 100vh;
+        box-sizing: border-box;
+        padding: 1.5rem;
+        background: var(--boot-background);
+        color: var(--boot-foreground);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        place-items: center;
       }
-      .splash-screen[hidden] {
+      .editor-boot-splash[data-theme="dark"] {
+        --boot-background: #111111;
+        --boot-foreground: #eeeeee;
+        --boot-muted: #1f1f1f;
+        --boot-muted-foreground: #a3a3a3;
+        --boot-border: #333333;
+        --boot-primary: #eeeeee;
+        --boot-primary-foreground: #171717;
+        --boot-destructive: #f87171;
+      }
+      .editor-boot-splash[hidden] {
         display: none;
       }
-      .splash-screen[data-theme="dark"] {
-        background-color: #333;
-        color: white;
+      .editor-boot-card {
+        display: flex;
+        width: 100%;
+        max-width: 27rem;
+        overflow: hidden;
+        box-sizing: border-box;
+        border: 1px solid var(--boot-border);
+        border-radius: .75rem;
+        background: var(--boot-background);
+        flex-direction: column;
       }
-      .splash-screen > * {
-        max-width: 80%;
+      .editor-boot-brand {
+        display: flex;
+        min-height: 3.5rem;
+        align-items: center;
+        padding: .75rem 1rem;
       }
-      .splash-spinner:after {
-        content: " ";
+      .editor-boot-brand img {
         display: block;
-        width: 64px;
-        height: 64px;
-        border-radius: 50%;
-        border: 6px solid;
-        border-color: currentColor transparent currentColor transparent;
-        animation: splash-spinner 1.2s linear infinite;
+        width: 8rem;
+        height: auto;
       }
-      @keyframes splash-spinner {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+      .editor-boot-separator {
+        width: 100%;
+        height: 1px;
+        background: var(--boot-border);
       }
-      .splash-error-title {
-        font-weight: bold;
+      .editor-boot-content {
+        display: flex;
+        align-items: center;
+        padding: 2rem 1.5rem;
+        text-align: center;
+        flex-direction: column;
+        gap: 1rem;
       }
-      .splash-error-title a {
-        color: inherit;
+      .editor-boot-icon {
+        display: grid;
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: .625rem;
+        background: var(--boot-muted);
+        color: var(--boot-muted-foreground);
+        place-items: center;
       }
-      .splash-errors {
-        font-family: monospace;
+      .editor-boot-spinner {
+        width: 1rem;
+        height: 1rem;
+        box-sizing: border-box;
+        border: 2px solid currentColor;
+        border-right-color: transparent;
+        border-radius: 999px;
+        animation: editor-boot-spin 900ms linear infinite;
       }
-      .splash-error-list {
-        white-space: pre-wrap;
+      .editor-boot-alert {
+        display: none;
+        font-size: 1.125rem;
+        font-weight: 500;
+        line-height: 1;
       }
-      .splash-reset {
-        color: inherit;
-        background: none;
-        padding: 0;
+      .editor-boot-copy {
+        display: flex;
+        max-width: 23rem;
+        align-items: center;
+        flex-direction: column;
+        gap: .375rem;
+      }
+      .editor-boot-copy h1,
+      .editor-boot-copy p {
         margin: 0;
-        border: none;
-        text-decoration: underline;
-        cursor: pointer;
       }
-      .splash-reset:disabled {
-        opacity: 0.8;
+      .editor-boot-copy h1 {
+        font-size: 1rem;
+        font-weight: 600;
+        line-height: 1.5;
+      }
+      .editor-boot-copy p {
+        color: var(--boot-muted-foreground);
+        font-size: .875rem;
+        line-height: 1.5;
+      }
+      .editor-boot-actions {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: .5rem;
+        margin-top: .25rem;
+      }
+      .editor-boot-actions button,
+      .editor-boot-actions a {
+        display: inline-flex;
+        height: 2rem;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        gap: .375rem;
+        padding: 0 .625rem;
+        border: 1px solid transparent;
+        border-radius: .5rem;
+        font: inherit;
+        font-size: .875rem;
+        font-weight: 500;
+        line-height: 1;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      .editor-boot-actions button {
+        background: var(--boot-primary);
+        color: var(--boot-primary-foreground);
+      }
+      .editor-boot-actions a {
+        border-color: var(--boot-border);
+        background: var(--boot-background);
+        color: var(--boot-foreground);
+      }
+      .editor-boot-splash[data-state="error"] .editor-boot-icon {
+        background: color-mix(in srgb, var(--boot-destructive) 10%, transparent);
+        color: var(--boot-destructive);
+      }
+      .editor-boot-splash[data-state="error"] .editor-boot-spinner {
+        display: none;
+      }
+      .editor-boot-splash[data-state="error"] .editor-boot-alert,
+      .editor-boot-splash[data-state="error"] .editor-boot-actions {
+        display: flex;
+      }
+      @keyframes editor-boot-spin {
+        to { transform: rotate(360deg); }
+      }
+      @media (max-width: 30rem) {
+        .editor-boot-splash { padding: 1rem; }
+        .editor-boot-content { padding: 1.5rem 1rem; }
+        .editor-boot-actions { width: 100%; flex-direction: column; }
+        .editor-boot-actions button,
+        .editor-boot-actions a { width: 100%; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .editor-boot-spinner { animation: none; }
       }
     </style>
   </head>
   <body>
     <noscript>
-      <div class="splash-screen">
-        <div>
-          <h1><%= htmlWebpackPlugin.options.APP_NAME %> requires JavaScript</h1>
-          <p>Consider using <a href="https://desktop.turbowarp.org/">TurboWarp Desktop</a> if you are afraid of remote JavaScript.</p>
+      <style>#editor-boot-splash { display: none !important; }</style>
+      <div class="editor-boot-splash" data-state="error">
+        <div class="editor-boot-card">
+          <div class="editor-boot-brand">
+            <img src="<%= htmlWebpackPlugin.options.root %>brand-lockup.svg" alt="编程宇宙">
+          </div>
+          <div class="editor-boot-separator"></div>
+          <div class="editor-boot-content">
+            <div class="editor-boot-icon"><span class="editor-boot-alert">!</span></div>
+            <div class="editor-boot-copy">
+              <h1>编辑器需要启用 JavaScript</h1>
+              <p>启用浏览器 JavaScript 后重新载入。</p>
+            </div>
+            <div class="editor-boot-actions" style="display:flex">
+              <a href="/create">返回创作中心</a>
+            </div>
+          </div>
         </div>
       </div>
     </noscript>
 
-    <div class="splash-screen spash-waiting-for-js" hidden>
-      <div class="splash-spinner"></div>
-
-      <div class="splash-error-title" hidden>Something went wrong. <a href="https://scratch.mit.edu/users/GarboMuffin/#comments" target="_blank" rel="noreferrer">Please report</a> with the information below.</div>
-      <div class="splash-errors" hidden></div>
-      <button class="splash-reset" hidden>Click here to reset caches (can fix some errors)</button>
+    <div
+      aria-labelledby="editor-boot-title"
+      aria-live="polite"
+      class="editor-boot-splash"
+      data-state="loading"
+      id="editor-boot-splash"
+      role="status"
+    >
+      <div class="editor-boot-card">
+        <div class="editor-boot-brand">
+          <img src="<%= htmlWebpackPlugin.options.root %>brand-lockup.svg" alt="编程宇宙">
+        </div>
+        <div class="editor-boot-separator"></div>
+        <div class="editor-boot-content">
+          <div class="editor-boot-icon" aria-hidden="true">
+            <span class="editor-boot-spinner"></span>
+            <span class="editor-boot-alert">!</span>
+          </div>
+          <div class="editor-boot-copy">
+            <h1 id="editor-boot-title">正在载入编辑器</h1>
+            <p id="editor-boot-description">正在准备创作环境，请稍候。</p>
+          </div>
+          <div class="editor-boot-actions">
+            <button class="splash-reset" type="button">清理缓存并重新载入</button>
+            <a href="/create" target="_top">返回创作中心</a>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -98,7 +246,6 @@
         'use strict';
 
         var theme = '';
-        var accent = '#ff4c4c';
 
         try {
           var themeSetting = localStorage.getItem('tw:theme');
@@ -112,11 +259,6 @@
         } else if (themeSetting) {
           try {
             var parsed = JSON.parse(themeSetting);
-            if (parsed.accent === 'purple') {
-              accent = '#855cd6';
-            } else if (parsed.accent === 'blue') {
-              accent = '#4c97ff';
-            }
             if (parsed.gui === 'dark' || parsed.gui === 'light') {
               theme = parsed.gui;
             }
@@ -129,29 +271,19 @@
           theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         }
 
-        var splash = document.querySelector('.spash-waiting-for-js');
+        var splash = document.getElementById('editor-boot-splash');
         splash.setAttribute('data-theme', theme);
-        if (theme !== 'dark') {
-          <% if (htmlWebpackPlugin.options.isEditor) { %>
-            splash.style.backgroundColor = accent;
-            splash.style.color = 'white';
-          <% } else { %>
-            splash.style.color = accent;
-          <% } %>
-        }
-        splash.hidden = false;
 
-        var splashErrorTitle = document.querySelector('.splash-error-title');
-        var splashError = document.querySelector('.splash-errors');
         var splashReset = document.querySelector('.splash-reset');
+        var splashTitle = document.getElementById('editor-boot-title');
+        var splashDescription = document.getElementById('editor-boot-description');
 
-        var totalErrors = 0;
-        window.onerror = function (event, source, line, col, err) {
-          if (++totalErrors > 5) return; // dont bother logging more
-          splashErrorTitle.hidden = splashError.hidden = splashReset.hidden = false;
-          var el = document.createElement('div');
-          el.textContent = 'Error (splash) in ' + source + ' (' + line + ':' + col + '): ' + err;
-          splashError.appendChild(el);
+        window.onerror = function () {
+          splash.setAttribute('data-state', 'error');
+          splash.setAttribute('role', 'alert');
+          splash.setAttribute('aria-live', 'assertive');
+          splashTitle.textContent = '编辑器启动失败';
+          splashDescription.textContent = '请清理缓存后重新载入，或返回创作中心。';
         };
 
         splashReset.onclick = function () {

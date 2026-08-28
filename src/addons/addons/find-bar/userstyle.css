@@ -2,12 +2,15 @@
 
 .sa-find-bar {
   display: flex;
+  flex: 1;
   align-items: center;
+  min-width: 0;
   white-space: nowrap;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  width: 100%;
+  width: auto;
   height: 100%;
-  margin-left: 1em;
+  margin: 0;
+  padding-inline: 0.25rem 0.5rem;
 }
 .sa-find-bar[hidden] {
   /* !important to override displayNoneWhileDisabled */
@@ -19,28 +22,35 @@
   position: relative;
   height: 2rem;
   width: 100%;
-  max-width: 16em;
+  max-width: 16rem;
 }
 
 .sa-find-dropdown-out {
-  display: block;
-  top: -6px;
+  display: flex;
+  align-items: center;
+  top: auto;
   z-index: 100;
   width: 100%;
-  max-width: 16em;
+  height: 2rem;
+  max-width: 16rem;
   position: relative;
-  padding: 4px;
-  border: none;
-  border-radius: 4px;
-  margin-top: 6px;
+  padding: 0;
+  border: 1px solid var(--tw-dialog-border);
+  border-radius: 0.375rem;
+  margin: 0;
+  background: var(--tw-dialog-input);
+  color: var(--tw-dialog-muted-foreground);
+  transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 
 .sa-find-dropdown-out.visible {
-  position: absolute;
-  width: 16em;
-  box-shadow: 0px 0px 8px 1px rgba(0, 0, 0, 0.3);
-  background-color: var(--ui-modal-background);
-  outline: 1px solid var(--ui-black-transparent);
+  border-color: var(--tw-dialog-ring);
+  box-shadow: 0 0 0 3px var(--tw-dialog-accent);
+}
+
+.sa-find-dropdown-out:focus-within {
+  border-color: var(--tw-dialog-ring);
+  box-shadow: 0 0 0 3px var(--tw-dialog-accent);
 }
 
 /* We need to modify Scratch styles so that the place where the find bar is injected */
@@ -56,32 +66,85 @@
   width: 100%;
   box-sizing: border-box !important;
   /* !important required for extension, because CSS injection method (and hence order) differs from addon */
-  height: 1.5rem;
+  height: 100%;
 
   /* Change Scratch default styles */
-  border-radius: 0.25rem;
+  padding: 0;
+  padding-inline-start: 2rem;
+  padding-inline-end: 4rem;
+  border: 0 !important;
+  border-radius: inherit;
+  background: transparent;
+  color: var(--tw-dialog-foreground);
   font-size: 0.75rem;
-  padding-left: 0.4em;
+  font-weight: 400;
 }
 
 .sa-find-input:focus {
   /* Change Scratch default styles */
+  border: 0 !important;
+  outline: 0;
   box-shadow: none;
+}
+
+.sa-find-input::placeholder {
+  color: var(--tw-dialog-muted-foreground);
+  opacity: 1;
+}
+
+.sa-find-search-icon {
+  position: absolute;
+  inset-inline-start: 0.625rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  pointer-events: none;
+}
+
+.sa-find-shortcut {
+  position: absolute;
+  inset-inline-end: 0.375rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.75rem;
+  height: 1.25rem;
+  padding: 0 0.25rem;
+  border: 1px solid var(--tw-dialog-border);
+  border-radius: 0.25rem;
+  background: var(--tw-dialog-muted);
+  color: var(--tw-dialog-muted-foreground);
+  font-family: inherit;
+  font-size: 0.625rem;
+  font-weight: 500;
+  line-height: 1;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+.sa-find-shortcut[hidden],
+.sa-find-dropdown-out:focus-within .sa-find-shortcut {
+  display: none;
 }
 
 .sa-find-dropdown {
   display: none;
-  position: relative;
-  padding: 0.2em 0;
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 0.375rem);
+  width: 100%;
+  padding: 0.25rem;
+  border: 1px solid var(--tw-dialog-border);
+  border-radius: 0.5rem;
+  background: var(--tw-dialog-background);
+  color: var(--tw-dialog-foreground);
+  box-shadow: 0 0.75rem 1.75rem -0.75rem var(--tw-dialog-shadow);
   font-size: 0.75rem;
-  line-height: 1;
+  line-height: 1.25;
   overflow-y: auto;
   min-height: 128px;
   max-height: 65vh;
   user-select: none;
-  max-width: 100%;
-  margin-top: 6px;
-  border: none;
+  margin: 0;
 }
 
 .sa-find-dropdown-out.visible > .sa-find-dropdown {
@@ -90,10 +153,11 @@
 
 .sa-find-dropdown > li {
   display: block;
-  padding: 0.5em 0.3em;
+  padding: 0.5rem 0.625rem;
+  border-radius: 0.375rem;
   white-space: nowrap;
   margin: 0;
-  font-weight: bold;
+  font-weight: 500;
   text-overflow: ellipsis;
   overflow: hidden;
 }

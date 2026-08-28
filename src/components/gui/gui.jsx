@@ -2,7 +2,12 @@ import classNames from 'classnames';
 import omit from 'lodash.omit';
 import PropTypes from 'prop-types';
 import React from 'react';
-import {defineMessages, FormattedMessage, injectIntl, intlShape} from 'react-intl';
+import {
+    BrushIcon,
+    Code2Icon,
+    Volume2Icon
+} from 'lucide-react';
+import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {connect} from 'react-redux';
 import MediaQuery from 'react-responsive';
 import {Tab, Tabs, TabList, TabPanel} from 'react-tabs';
@@ -37,6 +42,11 @@ import TWRestorePointManager from '../../containers/tw-restore-point-manager.jsx
 import TWFontsModal from '../../containers/tw-fonts-modal.jsx';
 import TWUnknownPlatformModal from '../../containers/tw-unknown-platform-modal.jsx';
 import TWInvalidProjectModal from '../../containers/tw-invalid-project-modal.jsx';
+import PlanetAiAssistant from '../planet-ai-assistant/planet-ai-assistant.jsx';
+import PlanetProjectChat from '../menu-bar/planet-project-chat.jsx';
+import EditorDock from '../editor-dock/editor-dock.jsx';
+import PlanetCollaborationInvite from '../editor-dock/planet-collaboration-invite.jsx';
+import PlanetCollaborationPermissions from '../editor-dock/planet-collaboration-permissions.jsx';
 
 import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/layout-constants';
 import {resolveStageSize} from '../../lib/screen-utils';
@@ -45,18 +55,6 @@ import {Theme} from '../../lib/themes';
 import {isRendererSupported, isBrowserSupported} from '../../lib/tw-environment-support-prober';
 
 import styles from './gui.css';
-import addExtensionIcon from './icon--extensions.svg';
-import codeIcon from '!../../lib/tw-recolor/build!./icon--code.svg';
-import costumesIcon from '!../../lib/tw-recolor/build!./icon--costumes.svg';
-import soundsIcon from '!../../lib/tw-recolor/build!./icon--sounds.svg';
-
-const messages = defineMessages({
-    addExtension: {
-        id: 'gui.gui.addExtension',
-        description: 'Button to add an extension in the target pane',
-        defaultMessage: 'Add Extension'
-    }
-});
 
 const getFullscreenBackgroundColor = () => {
     const params = new URLSearchParams(location.search);
@@ -115,6 +113,7 @@ const GUIComponent = props => {
         loading,
         logo,
         renderLogin,
+        readOnly,
         onClickAbout,
         onClickAccountNav,
         onCloseAccountNav,
@@ -129,8 +128,10 @@ const GUIComponent = props => {
         onActivateSoundsTab,
         onActivateTab,
         onClickLogo,
-        onExtensionButtonClick,
+        onOpenBackdropLibrary,
         onOpenCustomExtensionModal,
+        onOpenExtensionLibrary,
+        onOpenSpriteLibrary,
         onProjectTelemetryEvent,
         onRequestCloseBackdropLibrary,
         onRequestCloseCostumeLibrary,
@@ -300,6 +301,7 @@ const GUIComponent = props => {
                     canRemix={canRemix}
                     canSave={canSave}
                     canShare={canShare}
+                    readOnly={readOnly}
                     className={styles.menuBarPosition}
                     enableCommunity={enableCommunity}
                     isShared={isShared}
@@ -338,9 +340,9 @@ const GUIComponent = props => {
                             >
                                 <TabList className={tabClassNames.tabList}>
                                     <Tab className={tabClassNames.tab}>
-                                        <img
-                                            draggable={false}
-                                            src={codeIcon()}
+                                        <Code2Icon
+                                            aria-hidden="true"
+                                            data-icon="inline-start"
                                         />
                                         <FormattedMessage
                                             defaultMessage="Code"
@@ -352,9 +354,9 @@ const GUIComponent = props => {
                                         className={tabClassNames.tab}
                                         onClick={onActivateCostumesTab}
                                     >
-                                        <img
-                                            draggable={false}
-                                            src={costumesIcon()}
+                                        <BrushIcon
+                                            aria-hidden="true"
+                                            data-icon="inline-start"
                                         />
                                         {targetIsStage ? (
                                             <FormattedMessage
@@ -374,9 +376,9 @@ const GUIComponent = props => {
                                         className={tabClassNames.tab}
                                         onClick={onActivateSoundsTab}
                                     >
-                                        <img
-                                            draggable={false}
-                                            src={soundsIcon()}
+                                        <Volume2Icon
+                                            aria-hidden="true"
+                                            data-icon="inline-start"
                                         />
                                         <FormattedMessage
                                             defaultMessage="Sounds"
@@ -395,24 +397,12 @@ const GUIComponent = props => {
                                             options={{
                                                 media: `${basePath}static/${theme.getBlocksMediaFolder()}/`
                                             }}
+                                            readOnly={readOnly}
                                             stageSize={stageSize}
                                             onOpenCustomExtensionModal={onOpenCustomExtensionModal}
                                             theme={theme}
                                             vm={vm}
                                         />
-                                    </Box>
-                                    <Box className={styles.extensionButtonContainer}>
-                                        <button
-                                            className={styles.extensionButton}
-                                            title={intl.formatMessage(messages.addExtension)}
-                                            onClick={onExtensionButtonClick}
-                                        >
-                                            <img
-                                                className={styles.extensionButtonIcon}
-                                                draggable={false}
-                                                src={addExtensionIcon}
-                                            />
-                                        </button>
                                     </Box>
                                     <Box className={styles.watermark}>
                                         <Watermark />
@@ -420,16 +410,29 @@ const GUIComponent = props => {
                                 </TabPanel>
                                 <TabPanel className={tabClassNames.tabPanel}>
                                     {costumesTabVisible ? <CostumeTab
+                                        readOnly={readOnly}
                                         vm={vm}
                                     /> : null}
                                 </TabPanel>
                                 <TabPanel className={tabClassNames.tabPanel}>
-                                    {soundsTabVisible ? <SoundTab vm={vm} /> : null}
+                                    {soundsTabVisible ? <SoundTab
+                                        readOnly={readOnly}
+                                        vm={vm}
+                                    /> : null}
                                 </TabPanel>
                             </Tabs>
                             {backpackVisible ? (
                                 <Backpack host={backpackHost} />
                             ) : null}
+                            {!isPlayerOnly && !readOnly && (
+                                <EditorDock
+                                    hasBackpack={backpackVisible && Boolean(backpackHost)}
+                                    key={intl.locale}
+                                    onOpenBackdropLibrary={onOpenBackdropLibrary}
+                                    onOpenExtensionLibrary={onOpenExtensionLibrary}
+                                    onOpenSpriteLibrary={onOpenSpriteLibrary}
+                                />
+                            )}
                         </Box>
 
                         <Box className={classNames(styles.stageAndTargetWrapper, styles[stageSize])}>
@@ -437,11 +440,13 @@ const GUIComponent = props => {
                                 isFullScreen={isFullScreen}
                                 isRendererSupported={isRendererSupported()}
                                 isRtl={isRtl}
+                                readOnly={readOnly}
                                 stageSize={stageSize}
                                 vm={vm}
                             />
                             <Box className={styles.targetWrapper}>
                                 <TargetPane
+                                    readOnly={readOnly}
                                     stageSize={stageSize}
                                     vm={vm}
                                 />
@@ -450,6 +455,10 @@ const GUIComponent = props => {
                     </Box>
                 </Box>
                 <DragLayer />
+                {!readOnly && <PlanetAiAssistant vm={vm} />}
+                {!isPlayerOnly && !readOnly && <PlanetProjectChat />}
+                {!isPlayerOnly && !readOnly && <PlanetCollaborationInvite />}
+                {!isPlayerOnly && !readOnly && <PlanetCollaborationPermissions />}
             </Box>
         );
     }}</MediaQuery>);
@@ -507,8 +516,10 @@ GUIComponent.propTypes = {
     onClickPackager: PropTypes.func,
     onClickLogo: PropTypes.func,
     onCloseAccountNav: PropTypes.func,
-    onExtensionButtonClick: PropTypes.func,
+    onOpenBackdropLibrary: PropTypes.func,
     onOpenCustomExtensionModal: PropTypes.func,
+    onOpenExtensionLibrary: PropTypes.func,
+    onOpenSpriteLibrary: PropTypes.func,
     onLogOut: PropTypes.func,
     onOpenRegistration: PropTypes.func,
     onRequestCloseBackdropLibrary: PropTypes.func,
@@ -524,6 +535,7 @@ GUIComponent.propTypes = {
     onTelemetryModalOptOut: PropTypes.func,
     onToggleLoginOpen: PropTypes.func,
     renderLogin: PropTypes.func,
+    readOnly: PropTypes.bool,
     securityManager: PropTypes.shape({}),
     showComingSoon: PropTypes.bool,
     showOpenFilePicker: PropTypes.func,
@@ -562,6 +574,7 @@ GUIComponent.defaultProps = {
     isShared: false,
     isTotallyNormal: false,
     loading: false,
+    readOnly: false,
     showComingSoon: false,
     stageSizeMode: STAGE_SIZE_MODES.large
 };

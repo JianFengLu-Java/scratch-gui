@@ -94,6 +94,7 @@ class PlayButton extends React.Component {
         return (
             <PlayButtonComponent
                 className={className}
+                isLoading={this.props.isLoading}
                 isPlaying={isPlaying}
                 onClick={this.handleClick}
                 onMouseDown={this.handleMouseDown}
@@ -107,6 +108,7 @@ class PlayButton extends React.Component {
 
 PlayButton.propTypes = {
     className: PropTypes.string,
+    isLoading: PropTypes.bool,
     isPlaying: PropTypes.bool.isRequired,
     onPlay: PropTypes.func.isRequired,
     onStop: PropTypes.func.isRequired

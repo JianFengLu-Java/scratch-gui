@@ -18,13 +18,13 @@
 .min-input, .max-input {
     margin-bottom: 1.5rem;
     width: 100%;
-    border: 1px solid $ui-black-transparent;
-    border-radius: 5px;
+    border: 1px solid var(--tw-dialog-border);
+    border-radius: 0.375rem;
     padding: 0 1rem;
     height: 3rem;
-    color: $text-primary-transparent;
+    color: var(--tw-dialog-foreground);
     font-size: .875rem;
-    background-color: $input-background;
+    background-color: var(--tw-dialog-input);
 }
 
 .button-row {
@@ -34,18 +34,29 @@
 
 .button-row button {
     padding: 0.75rem 1rem;
-    border-radius: 0.25rem;
-    background: white;
-    color: black;
-    border: 1px solid $ui-black-transparent;
+    border-radius: 0.375rem;
+    background: var(--tw-dialog-background);
+    color: var(--tw-dialog-foreground);
+    border: 1px solid var(--tw-dialog-border);
     font-weight: 600;
     font-size: 0.85rem;
 }
 
 .button-row button.ok-button {
-    background: $looks-secondary;
-    border: $looks-secondary;
-    color: white;
+    background: var(--tw-dialog-primary);
+    border-color: var(--tw-dialog-primary);
+    color: var(--tw-dialog-primary-foreground);
+}
+
+.button-row button:hover {
+    background: var(--tw-dialog-accent);
+    color: var(--tw-dialog-accent-foreground);
+}
+
+.button-row button.ok-button:hover {
+    background: var(--tw-dialog-primary-hover);
+    border-color: var(--tw-dialog-primary-hover);
+    color: var(--tw-dialog-primary-foreground);
 }
 
 [dir="ltr"] .button-row button + button {

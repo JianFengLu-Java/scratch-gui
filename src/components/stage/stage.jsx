@@ -27,6 +27,7 @@ const StageComponent = props => {
         colorInfo,
         micIndicator,
         question,
+        readOnly,
         stageSize,
         useEditorDragStyle,
         onDeactivateColorPicker,
@@ -77,7 +78,9 @@ const StageComponent = props => {
                     </Box>
                     <Box className={styles.monitorWrapper}>
                         <MonitorList
-                            draggable={useEditorDragStyle}
+                            draggable={
+                                !readOnly && useEditorDragStyle
+                            }
                             stageSize={stageDimensions}
                         />
                     </Box>
@@ -168,10 +171,12 @@ StageComponent.propTypes = {
     onDoubleClick: PropTypes.func,
     onQuestionAnswered: PropTypes.func,
     question: PropTypes.string,
+    readOnly: PropTypes.bool,
     stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)).isRequired,
     useEditorDragStyle: PropTypes.bool
 };
 StageComponent.defaultProps = {
-    dragRef: () => {}
+    dragRef: () => {},
+    readOnly: false
 };
 export default StageComponent;

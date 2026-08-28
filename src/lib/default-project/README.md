@@ -1,3 +1,2 @@
-`dango-cat.svg` was created by https://scratch.mit.edu/users/littlebunny06/ 🍡🐱
-
-If `default-project.sb3` is replaced with a non-empty file, it will be used instead of the costumes.
+`override-default-project.sb3` is the Programming Planet startup project. It contains the blank
+stage and the same default role package that is published to the managed editor asset library.

@@ -7,6 +7,12 @@ import VM from 'scratch-vm';
 import {getBackdropLibrary} from '../lib/libraries/tw-async-libraries';
 import backdropTags from '../lib/libraries/backdrop-tags';
 import LibraryComponent from '../components/library/library.jsx';
+import log from '../lib/log';
+import {
+    finishAssetLoad,
+    startAssetLoad,
+    updateAssetLoad
+} from '../lib/asset-load-feedback';
 
 const messages = defineMessages({
     libraryTitle: {
@@ -35,6 +41,15 @@ class BackdropLibrary extends React.Component {
         }
     }
     handleItemSelect (item) {
+        const vm = this.props.vm;
+        const loadId = startAssetLoad('backdrop', item.name);
+        const baselineFinished = vm.runtime.finishedAssetRequests;
+        const baselineTotal = vm.runtime.totalAssetRequests;
+        const handleProgress = (finished, total) => updateAssetLoad(
+            loadId,
+            Math.max(0, finished - baselineFinished),
+            Math.max(0, total - baselineTotal)
+        );
         const vmBackdrop = {
             name: item.name,
             rotationCenterX: item.rotationCenterX,
@@ -43,7 +58,16 @@ class BackdropLibrary extends React.Component {
             skinId: null
         };
         // Do not switch to stage, just add the backdrop
-        this.props.vm.addBackdrop(item.md5ext, vmBackdrop);
+        vm.on('ASSET_PROGRESS', handleProgress);
+        vm.addBackdrop(item.md5ext, vmBackdrop).then(() => {
+            vm.off('ASSET_PROGRESS', handleProgress);
+            finishAssetLoad(loadId, item.name, 'success');
+        })
+            .catch(error => {
+                vm.off('ASSET_PROGRESS', handleProgress);
+                log.error(error);
+                finishAssetLoad(loadId, item.name, 'error');
+            });
     }
     render () {
         return (

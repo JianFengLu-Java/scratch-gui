@@ -41,9 +41,9 @@
 }
 
 .option-card {
-    background: $ui-white;
-    border: 2px solid $ui-black-transparent;
-    border-radius: $space;
+    background: var(--tw-dialog-background);
+    border: 1px solid var(--tw-dialog-border);
+    border-radius: 0.5rem;
     padding: calc($space * 2);
     text-align: center;
     flex-grow: 1;
@@ -53,8 +53,9 @@
 }
 
 .option-card:hover {
-    border: 2px solid $looks-secondary;
-    box-shadow: 0px 0px 0px 4px $looks-transparent;
+    border: 1px solid var(--tw-dialog-ring);
+    background: var(--tw-dialog-accent);
+    box-shadow: 0 0 0 1px var(--tw-dialog-ring);
 }
 
 .option-card + .option-card {
@@ -83,19 +84,19 @@
 }
 
 .button-row button {
-    border: 1px solid $ui-black-transparent;
-    border-radius: 0.25rem;
+    border: 1px solid var(--tw-dialog-border);
+    border-radius: 0.375rem;
     padding: 0.75rem 1rem;
-    background: white;
-    color: black;
-    font-weight: bold;
+    background: var(--tw-dialog-background);
+    color: var(--tw-dialog-foreground);
+    font-weight: 500;
     font-size: 0.85rem;
 }
 
 .button-row button.ok-button {
-    background: $looks-secondary;
-    border: $looks-secondary;
-    color: white;
+    background: var(--tw-dialog-primary);
+    border-color: var(--tw-dialog-primary);
+    color: var(--tw-dialog-primary-foreground);
 }
 
 [dir="ltr"] .button-row button + button {

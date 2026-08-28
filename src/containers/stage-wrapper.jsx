@@ -8,8 +8,13 @@ const StageWrapper = props => <StageWrapperComponent {...props} />;
 
 StageWrapper.propTypes = {
     isRendererSupported: PropTypes.bool.isRequired,
+    readOnly: PropTypes.bool,
     stageSize: PropTypes.oneOf(Object.keys(STAGE_DISPLAY_SIZES)).isRequired,
     vm: PropTypes.instanceOf(VM).isRequired
+};
+
+StageWrapper.defaultProps = {
+    readOnly: false
 };
 
 export default StageWrapper;
