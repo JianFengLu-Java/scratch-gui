@@ -11,6 +11,7 @@ import {
 import PropTypes from 'prop-types';
 import React from 'react';
 
+import PlanetUserAvatar from '../editor-dock/planet-user-avatar.jsx';
 import {
     getPlanetCollaborationVoiceState,
     PLANET_COLLABORATION_VOICE_EVENT,
@@ -344,9 +345,11 @@ export class PlanetProjectVoiceControls extends React.Component {
                                 key={participant.sessionId}
                                 title={participant.nickname || '协作者'}
                             >
-                                <span style={{backgroundColor: participant.color || '#0ea5e9'}}>
-                                    {(participant.nickname || '协').slice(0, 1)}
-                                </span>
+                                <PlanetUserAvatar
+                                    className={styles.voiceParticipantAvatar}
+                                    member={participant}
+                                    style={{backgroundColor: participant.color || '#0ea5e9'}}
+                                />
                                 <b>{participant.nickname || '协作者'}</b>
                                 {participant.host && <small>{'房主'}</small>}
                                 {participant.muted && <MicOffIcon aria-label="已静音" />}

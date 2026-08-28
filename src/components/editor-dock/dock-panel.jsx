@@ -6,7 +6,7 @@ import {XIcon} from 'lucide-react';
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import {PLANET_DOCK_PANEL_OPEN_EVENT} from '../../lib/editor-dock-events';
+import {registerDockPanel} from '../../lib/dock-panel-manager';
 
 import styles from './dock-panel.css';
 
@@ -30,24 +30,23 @@ const DockPanel = ({
 }) => {
     const panelRef = React.useRef(null);
     const dragHandleRef = React.useRef(null);
+    const registrationRef = React.useRef(null);
     const onCloseRef = React.useRef(onClose);
     onCloseRef.current = onClose;
+    const activatePanel = React.useCallback(() => {
+        if (registrationRef.current) registrationRef.current.activate();
+    }, []);
 
-    React.useEffect(() => {
-        const handlePanelOpen = event => {
-            if (event.detail && event.detail.panelId !== panelId) onCloseRef.current();
-        };
-        const handleKeyDown = event => {
-            if (event.key === 'Escape') onCloseRef.current();
-        };
-        window.addEventListener(PLANET_DOCK_PANEL_OPEN_EVENT, handlePanelOpen);
-        document.addEventListener('keydown', handleKeyDown);
-        window.dispatchEvent(new CustomEvent(PLANET_DOCK_PANEL_OPEN_EVENT, {
-            detail: {panelId}
-        }));
+    React.useLayoutEffect(() => {
+        const registration = registerDockPanel(
+            panelId,
+            panelRef.current,
+            () => onCloseRef.current()
+        );
+        registrationRef.current = registration;
         return () => {
-            window.removeEventListener(PLANET_DOCK_PANEL_OPEN_EVENT, handlePanelOpen);
-            document.removeEventListener('keydown', handleKeyDown);
+            registration.unregister();
+            if (registrationRef.current === registration) registrationRef.current = null;
         };
     }, [panelId]);
 
@@ -70,6 +69,7 @@ const DockPanel = ({
             dragClickables: false,
             edgeResistance: 0.88,
             onPress () {
+                activatePanel();
                 this.applyBounds(calculateBounds(this.x, this.y));
                 panelRef.current.classList.add(styles.dragging);
             },
@@ -101,7 +101,7 @@ const DockPanel = ({
     }, {scope: panelRef});
 
     const titleId = `planet-dock-panel-${panelId}-title`;
-    const descriptionId = `planet-dock-panel-${panelId}-description`;
+    const descriptionId = description ? `planet-dock-panel-${panelId}-description` : null;
 
     return (
         <section
@@ -112,6 +112,9 @@ const DockPanel = ({
             data-dock-panel={panelId}
             ref={panelRef}
             role="dialog"
+            onFocusCapture={activatePanel}
+            onMouseDownCapture={activatePanel}
+            onTouchStartCapture={activatePanel}
         >
             {leading}
             <div className={styles.column}>
@@ -126,7 +129,7 @@ const DockPanel = ({
                         ) : null}
                         <div className={styles.headerCopy}>
                             <h2 id={titleId}>{title}</h2>
-                            <p id={descriptionId}>{description}</p>
+                            {description ? <p id={descriptionId}>{description}</p> : null}
                         </div>
                     </div>
                     <div className={styles.headerActions}>
@@ -152,7 +155,7 @@ DockPanel.propTypes = {
     actions: PropTypes.node,
     children: PropTypes.node.isRequired,
     className: PropTypes.string,
-    description: PropTypes.string.isRequired,
+    description: PropTypes.string,
     dragLabel: PropTypes.string.isRequired,
     icon: PropTypes.elementType,
     leading: PropTypes.node,
@@ -164,6 +167,7 @@ DockPanel.propTypes = {
 DockPanel.defaultProps = {
     actions: null,
     className: null,
+    description: null,
     icon: null,
     leading: null
 };

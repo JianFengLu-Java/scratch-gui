@@ -5,9 +5,13 @@ import {
     RadioIcon,
     SendIcon
 } from 'lucide-react';
+// Webpack 4 resolves this package export through an explicit local alias.
+// eslint-disable-next-line import/no-unresolved
+import {MessageScroller} from '@shadcn/react/message-scroller';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
+import PlanetUserAvatar from '../editor-dock/planet-user-avatar.jsx';
 import DockPanel from '../editor-dock/dock-panel.jsx';
 import {
     PlanetProjectVoiceControls,
@@ -15,6 +19,7 @@ import {
 } from './planet-project-voice.jsx';
 import {
     collaborationEnabled,
+    getPlanetCollaborationChatState,
     PLANET_COLLABORATION_CHAT_EVENT,
     PLANET_COLLABORATION_CHAT_SEND_EVENT,
     PLANET_COLLABORATION_STATUS_EVENT
@@ -28,26 +33,41 @@ import {
 import styles from './planet-project-chat.css';
 
 const MAX_MESSAGE_LENGTH = 500;
+const MESSAGE_GROUP_INTERVAL_MS = 5 * 60 * 1000;
+
+const messageTimestamp = message => {
+    const timestamp = new Date(message && message.sentAt).getTime();
+    return Number.isFinite(timestamp) ? timestamp : 0;
+};
+
+const startsNewMessageGroup = (message, previousMessage) => !previousMessage ||
+    String(previousMessage.userId) !== String(message.userId) ||
+    (messageTimestamp(message) > 0 && messageTimestamp(previousMessage) > 0 &&
+        messageTimestamp(message) - messageTimestamp(previousMessage) >= MESSAGE_GROUP_INTERVAL_MS);
+
+const endsMessageGroup = (message, nextMessage) => !nextMessage ||
+    String(nextMessage.userId) !== String(message.userId) ||
+    (messageTimestamp(nextMessage) > 0 && messageTimestamp(message) > 0 &&
+        messageTimestamp(nextMessage) - messageTimestamp(message) >= MESSAGE_GROUP_INTERVAL_MS);
 
 class PlanetProjectChat extends React.Component {
     constructor (props) {
         super(props);
+        const initialChatState = getPlanetCollaborationChatState();
         this.state = {
             composerMode: 'text',
-            connected: false,
+            connected: Boolean(initialChatState && initialChatState.connected),
             draft: '',
             error: '',
-            messages: [],
+            messages: initialChatState ? initialChatState.messages : [],
             open: false,
-            ownUserId: null,
-            projectId: null,
+            ownUserId: initialChatState ? initialChatState.ownUserId : null,
+            projectId: initialChatState ? initialChatState.projectId : null,
             unread: 0,
             view: 'chat'
         };
-        this.messageList = React.createRef();
         this.handleChatEvent = this.handleChatEvent.bind(this);
         this.handleDraftChange = this.handleDraftChange.bind(this);
-        this.handleKeyDown = this.handleKeyDown.bind(this);
         this.handleStatus = this.handleStatus.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
         this.handleToggleComposer = this.handleToggleComposer.bind(this);
@@ -61,7 +81,6 @@ class PlanetProjectChat extends React.Component {
     componentDidMount () {
         window.addEventListener(PLANET_COLLABORATION_CHAT_EVENT, this.handleChatEvent);
         window.addEventListener(PLANET_COLLABORATION_STATUS_EVENT, this.handleStatus);
-        document.addEventListener('keydown', this.handleKeyDown);
         this.projectChatApi = Object.freeze({
             close: this.handleClose,
             open: this.handleOpen,
@@ -74,10 +93,6 @@ class PlanetProjectChat extends React.Component {
         this.publishDockState();
     }
     componentDidUpdate (previousProps, previousState) {
-        if (this.state.open && (previousState.messages.length !== this.state.messages.length ||
-            previousState.open !== this.state.open)) {
-            this.scrollToLatest();
-        }
         if (previousState.connected !== this.state.connected ||
             previousState.open !== this.state.open ||
             previousState.unread !== this.state.unread) {
@@ -87,7 +102,6 @@ class PlanetProjectChat extends React.Component {
     componentWillUnmount () {
         window.removeEventListener(PLANET_COLLABORATION_CHAT_EVENT, this.handleChatEvent);
         window.removeEventListener(PLANET_COLLABORATION_STATUS_EVENT, this.handleStatus);
-        document.removeEventListener('keydown', this.handleKeyDown);
         if (window.PlanetProjectChat === this.projectChatApi) delete window.PlanetProjectChat;
     }
     handleStatus (event) {
@@ -131,9 +145,6 @@ class PlanetProjectChat extends React.Component {
     handleDraftChange (event) {
         this.setState({draft: event.target.value, error: ''});
     }
-    handleKeyDown (event) {
-        if (event.key === 'Escape' && this.state.open) this.handleClose();
-    }
     handleSubmit (event) {
         event.preventDefault();
         const content = this.state.draft.trim();
@@ -171,11 +182,6 @@ class PlanetProjectChat extends React.Component {
                 unread: this.state.unread
             }
         }));
-    }
-    scrollToLatest () {
-        if (this.messageList.current) {
-            this.messageList.current.scrollTop = this.messageList.current.scrollHeight;
-        }
     }
     formatTime (value) {
         const date = new Date(value);
@@ -230,39 +236,102 @@ class PlanetProjectChat extends React.Component {
                     </div>
                 ) : (
                     <React.Fragment>
-                        <div
-                            aria-live="polite"
-                            className={styles.messages}
-                            ref={this.messageList}
+                        <MessageScroller.Provider
+                            autoScroll
+                            defaultScrollPosition="end"
                         >
-                            {this.state.messages.length === 0 ? (
-                                <div className={styles.empty}>{'还没有消息'}</div>
-                            ) : this.state.messages.map(message => {
-                                const own = String(message.userId) === this.state.ownUserId;
-                                return (
-                                    <article
-                                        className={`${styles.message} ${own ? styles.ownMessage : ''}`}
-                                        key={message.messageId}
+                            <MessageScroller.Root className={styles.messageScroller}>
+                                <MessageScroller.Viewport
+                                    aria-label="项目聊天记录"
+                                    className={styles.messages}
+                                    preserveScrollOnPrepend
+                                >
+                                    <MessageScroller.Content
+                                        aria-live="polite"
+                                        className={styles.messageScrollerContent}
                                     >
-                                        <div className={styles.messageMeta}>
-                                            <span
-                                                aria-hidden="true"
-                                                className={styles.userDot}
-                                                style={{backgroundColor: message.color || '#0ea5e9'}}
-                                            />
-                                            <strong>{own ? '我' : (message.nickname || '协作者')}</strong>
-                                            <time>{this.formatTime(message.sentAt)}</time>
-                                        </div>
-                                        {message.messageType === 'VOICE' ? (
-                                            <PlanetProjectVoiceMessage
-                                                message={message}
-                                                projectId={this.state.projectId}
-                                            />
-                                        ) : <p>{message.content}</p>}
-                                    </article>
-                                );
-                            })}
-                        </div>
+                                        {this.state.messages.length === 0 ? (
+                                            <div className={styles.empty}>{'还没有消息'}</div>
+                                        ) : this.state.messages.map((message, index) => {
+                                            const own = String(message.userId) === this.state.ownUserId;
+                                            const previousMessage = this.state.messages[index - 1];
+                                            const nextMessage = this.state.messages[index + 1];
+                                            const startsGroup = startsNewMessageGroup(message, previousMessage);
+                                            const showAvatar = endsMessageGroup(message, nextMessage);
+                                            const showTime = index === 0 || (messageTimestamp(message) > 0 &&
+                                                messageTimestamp(previousMessage) > 0 &&
+                                                messageTimestamp(message) - messageTimestamp(previousMessage) >=
+                                                    MESSAGE_GROUP_INTERVAL_MS);
+                                            const nickname = message.nickname || '协作者';
+                                            return (
+                                                <MessageScroller.Item
+                                                    className={styles.messageItem}
+                                                    key={message.messageId}
+                                                    messageId={String(message.messageId)}
+                                                >
+                                                    {showTime && (
+                                                        <time className={styles.messageTime}>
+                                                            {this.formatTime(message.sentAt)}
+                                                        </time>
+                                                    )}
+                                                    <article
+                                                        aria-label={`${own ? '我' : nickname}的消息`}
+                                                        className={`${styles.message} ${own ? styles.ownMessage : ''}`}
+                                                        data-align={own ? 'end' : 'start'}
+                                                        data-slot="message"
+                                                    >
+                                                        <div
+                                                            className={styles.messageAvatar}
+                                                            data-slot="message-avatar"
+                                                        >
+                                                            {showAvatar ? (
+                                                                <PlanetUserAvatar
+                                                                    member={{
+                                                                        avatarUrl: message.avatarUrl,
+                                                                        nickname
+                                                                    }}
+                                                                />
+                                                            ) : null}
+                                                        </div>
+                                                        <div
+                                                            className={styles.messageContent}
+                                                            data-slot="message-content"
+                                                        >
+                                                            {startsGroup ? (
+                                                                <div
+                                                                    className={styles.messageHeader}
+                                                                    data-slot="message-header"
+                                                                >
+                                                                    {own ? '我' : nickname}
+                                                                </div>
+                                                            ) : null}
+                                                            <div
+                                                                className={`${styles.bubble} ${own ?
+                                                                    styles.bubbleDefault : styles.bubbleOutline}`}
+                                                                data-slot="bubble"
+                                                                data-variant={own ? 'default' : 'outline'}
+                                                            >
+                                                                <div
+                                                                    className={styles.bubbleContent}
+                                                                    data-slot="bubble-content"
+                                                                >
+                                                                    {message.messageType === 'VOICE' ? (
+                                                                        <PlanetProjectVoiceMessage
+                                                                            message={message}
+                                                                            projectId={this.state.projectId}
+                                                                        />
+                                                                    ) : <p>{message.content}</p>}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </article>
+                                                </MessageScroller.Item>
+                                            );
+                                        })}
+                                    </MessageScroller.Content>
+                                </MessageScroller.Viewport>
+                            </MessageScroller.Root>
+                        </MessageScroller.Provider>
                         <form
                             className={styles.composer}
                             onSubmit={this.handleSubmit}

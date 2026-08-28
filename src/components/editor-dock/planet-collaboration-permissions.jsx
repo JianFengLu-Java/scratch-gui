@@ -30,28 +30,14 @@ import {isPlanetProjectRoute} from '../../lib/planet-project-loader';
 
 import styles from './planet-collaboration-permissions.css';
 import DockPanel from './dock-panel.jsx';
+import PlanetUserAvatar from './planet-user-avatar.jsx';
 
 const assignmentMap = data => (data.assignments || []).reduce((result, assignment) => ({
     ...result,
     [assignment.targetId]: assignment.userIds || []
 }), {});
 
-const initials = value => (String(value || '用户')
-    .trim()
-    .slice(0, 1) || '用').toUpperCase();
-
-const Avatar = ({member}) => (
-    <span className={styles.avatar}>
-        {member.avatarUrl ? <img alt="" src={member.avatarUrl} /> : initials(member.nickname)}
-    </span>
-);
-
-Avatar.propTypes = {
-    member: PropTypes.shape({
-        avatarUrl: PropTypes.string,
-        nickname: PropTypes.string
-    }).isRequired
-};
+export const Avatar = PlanetUserAvatar;
 
 
 const PlanetCollaborationPermissions = ({projectId, targets}) => {
@@ -101,17 +87,12 @@ const PlanetCollaborationPermissions = ({projectId, targets}) => {
         const handlePermissionEvent = event => {
             if (event.detail && event.detail.type === 'collaboration-permissions-updated') load();
         };
-        const handleEscape = event => {
-            if (event.key === 'Escape') setOpen(false);
-        };
         window.PlanetCollaborationPermissions = api;
         window.addEventListener(PLANET_COLLABORATION_PERMISSION_EVENT, handlePermissionEvent);
-        document.addEventListener('keydown', handleEscape);
         window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_PERMISSIONS_READY_EVENT, {detail: api}));
         return () => {
             if (window.PlanetCollaborationPermissions === api) delete window.PlanetCollaborationPermissions;
             window.removeEventListener(PLANET_COLLABORATION_PERMISSION_EVENT, handlePermissionEvent);
-            document.removeEventListener('keydown', handleEscape);
         };
     }, [load]);
 
@@ -240,9 +221,16 @@ const PlanetCollaborationPermissions = ({projectId, targets}) => {
                                                     type="button"
                                                     onClick={() => setSelectedUserId(userId)}
                                                 >
-                                                    <Avatar member={member} />
+                                                    <Avatar
+                                                        className={styles.avatar}
+                                                        member={member}
+                                                    />
                                                     <span className={styles.memberCopy}>
-                                                        <strong className={classNames({[styles.memberName]: member.member})}>
+                                                        <strong
+                                                            className={classNames({
+                                                                [styles.memberName]: member.member
+                                                            })}
+                                                        >
                                                             {member.nickname}
                                                         </strong>
                                                         <small>
@@ -261,7 +249,11 @@ const PlanetCollaborationPermissions = ({projectId, targets}) => {
                                         <React.Fragment>
                                             <header className={styles.targetHeader}>
                                                 <span>
-                                                    <strong className={classNames({[styles.memberName]: selectedMember.member})}>
+                                                    <strong
+                                                        className={classNames({
+                                                            [styles.memberName]: selectedMember.member
+                                                        })}
+                                                    >
                                                         {selectedMember.nickname}
                                                     </strong>
                                                     <small>{selectedMember.role === 'OWNER' ? '全部权限' :

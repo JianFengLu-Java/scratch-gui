@@ -16,7 +16,6 @@ import {
     ChevronDownIcon,
     CircleAlertIcon,
     Clock3Icon,
-    CloudIcon,
     CopyIcon,
     DownloadIcon,
     FileIcon,
@@ -32,7 +31,6 @@ import {
     ShuffleIcon,
     SlidersHorizontalIcon,
     Undo2Icon,
-    UserRoundPenIcon,
 } from "lucide-react";
 
 import VM from "scratch-vm";
@@ -57,8 +55,6 @@ import MenuBarHOC from "../../containers/menu-bar-hoc.jsx";
 import SettingsMenu from "./settings-menu.jsx";
 
 import FramerateChanger from "../../containers/tw-framerate-changer.jsx";
-import ChangeUsername from "../../containers/tw-change-username.jsx";
-import CloudVariablesToggler from "../../containers/tw-cloud-toggler.jsx";
 import TWSaveStatus from "./tw-save-status.jsx";
 import TWNews from "./tw-news.jsx";
 import PlanetUserMenu from "./planet-user-menu.jsx";
@@ -991,72 +987,6 @@ class MenuBar extends React.Component {
                                             </MenuItem>
                                         )}
                                     </FramerateChanger>
-                                    <ChangeUsername>
-                                        {(changeUsername) => (
-                                            <MenuItem
-                                                icon={UserRoundPenIcon}
-                                                onClick={changeUsername}
-                                            >
-                                                <FormattedMessage
-                                                    defaultMessage="Change Username"
-                                                    description="Menu bar item for changing the username"
-                                                    id="tw.menuBar.changeUsername"
-                                                />
-                                            </MenuItem>
-                                        )}
-                                    </ChangeUsername>
-                                    <CloudVariablesToggler>
-                                        {(
-                                            toggleCloudVariables,
-                                            { enabled, canUseCloudVariables },
-                                        ) => (
-                                            <MenuItem
-                                                icon={CloudIcon}
-                                                className={classNames({
-                                                    [styles.disabled]:
-                                                        !canUseCloudVariables,
-                                                })}
-                                                onClick={toggleCloudVariables}
-                                            >
-                                                {canUseCloudVariables ? (
-                                                    enabled ? (
-                                                        <FormattedMessage
-                                                            defaultMessage="Disable Cloud Variables"
-                                                            description="Menu bar item for disabling cloud variables"
-                                                            id="tw.menuBar.cloudOff"
-                                                        />
-                                                    ) : (
-                                                        <FormattedMessage
-                                                            defaultMessage="Enable Cloud Variables"
-                                                            description="Menu bar item for enabling cloud variables"
-                                                            id="tw.menuBar.cloudOn"
-                                                        />
-                                                    )
-                                                ) : (
-                                                    <FormattedMessage
-                                                        defaultMessage="Cloud Variables are not Available"
-                                                        // eslint-disable-next-line max-len
-                                                        description="Menu bar item for when cloud variables are not available"
-                                                        id="tw.menuBar.cloudUnavailable"
-                                                    />
-                                                )}
-                                            </MenuItem>
-                                        )}
-                                    </CloudVariablesToggler>
-                                </MenuSection>
-                                <MenuSection>
-                                    <MenuItem
-                                        icon={SlidersHorizontalIcon}
-                                        onClick={
-                                            this.props.onClickSettingsModal
-                                        }
-                                    >
-                                        <FormattedMessage
-                                            defaultMessage="Advanced Settings"
-                                            description="Menu bar item for advanced settings"
-                                            id="tw.menuBar.moreSettings"
-                                        />
-                                    </MenuItem>
                                 </MenuSection>
                             </MenuBarMenu>
                         </MenuLabel>

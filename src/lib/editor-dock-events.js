@@ -8,7 +8,6 @@ export const PLANET_COLLABORATION_INVITE_READY_EVENT = 'planet-collaboration-inv
 export const PLANET_COLLABORATION_INVITE_STATE_EVENT = 'planet-collaboration-invite-state';
 export const PLANET_COLLABORATION_PERMISSIONS_READY_EVENT = 'planet-collaboration-permissions-ready';
 export const PLANET_COLLABORATION_PERMISSIONS_STATE_EVENT = 'planet-collaboration-permissions-state';
-export const PLANET_DOCK_PANEL_OPEN_EVENT = 'planet-dock-panel-open';
 
 export const dispatchEditorResourceCommand = command => {
     window.dispatchEvent(new CustomEvent(PLANET_EDITOR_RESOURCE_COMMAND_EVENT, {

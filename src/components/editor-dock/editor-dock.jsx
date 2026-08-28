@@ -27,7 +27,6 @@ import {
     PLANET_COLLABORATION_INVITE_STATE_EVENT,
     PLANET_COLLABORATION_PERMISSIONS_READY_EVENT,
     PLANET_COLLABORATION_PERMISSIONS_STATE_EVENT,
-    PLANET_DOCK_PANEL_OPEN_EVENT,
     PLANET_PROJECT_CHAT_READY_EVENT,
     PLANET_PROJECT_CHAT_STATE_EVENT,
     dispatchEditorResourceCommand
@@ -195,7 +194,10 @@ const EditorDock = ({
             if (openMenu && dockRef.current && !dockRef.current.contains(event.target)) setOpenMenu(null);
         };
         const handleEscape = event => {
-            if (event.key === 'Escape') setOpenMenu(null);
+            if (event.key === 'Escape' && openMenu) {
+                event.preventDefault();
+                setOpenMenu(null);
+            }
         };
         window.addEventListener(PLANET_PROJECT_CHAT_STATE_EVENT, handleChatState);
         window.addEventListener(PLANET_AI_ASSISTANT_STATE_EVENT, handleAiState);
@@ -203,7 +205,7 @@ const EditorDock = ({
         window.addEventListener(PLANET_COLLABORATION_INVITE_STATE_EVENT, handleInviteState);
         window.addEventListener(PLANET_COLLABORATION_PERMISSIONS_STATE_EVENT, handlePermissionsState);
         document.addEventListener('pointerdown', handleOutsidePointer);
-        document.addEventListener('keydown', handleEscape);
+        document.addEventListener('keydown', handleEscape, true);
         return () => {
             window.removeEventListener(PLANET_PROJECT_CHAT_STATE_EVENT, handleChatState);
             window.removeEventListener(PLANET_AI_ASSISTANT_STATE_EVENT, handleAiState);
@@ -211,7 +213,7 @@ const EditorDock = ({
             window.removeEventListener(PLANET_COLLABORATION_INVITE_STATE_EVENT, handleInviteState);
             window.removeEventListener(PLANET_COLLABORATION_PERMISSIONS_STATE_EVENT, handlePermissionsState);
             document.removeEventListener('pointerdown', handleOutsidePointer);
-            document.removeEventListener('keydown', handleEscape);
+            document.removeEventListener('keydown', handleEscape, true);
         };
     }, [openMenu]);
 
@@ -300,21 +302,10 @@ const EditorDock = ({
         else dispatchEditorResourceCommand(command);
     };
     const toggleResourceMenu = kind => {
-        setOpenMenu(previous => {
-            const next = previous === kind ? null : kind;
-            if (next) {
-                window.dispatchEvent(new CustomEvent(PLANET_DOCK_PANEL_OPEN_EVENT, {
-                    detail: {panelId: `resource-${kind}`}
-                }));
-            }
-            return next;
-        });
+        setOpenMenu(previous => (previous === kind ? null : kind));
     };
     const openExtensionLibrary = () => {
         setOpenMenu(null);
-        window.dispatchEvent(new CustomEvent(PLANET_DOCK_PANEL_OPEN_EVENT, {
-            detail: {panelId: 'extensions'}
-        }));
         onOpenExtensionLibrary();
     };
 

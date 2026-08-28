@@ -4,12 +4,12 @@
     background: var(--tw-dialog-background, #fff);
     border: 1px solid var(--tw-dialog-border, #e5e5e5);
     border-radius: .875rem;
-    bottom: 4.75rem;
+    bottom: calc(4.75rem + var(--dock-panel-cascade-y, 0px));
     box-shadow: 0 .9rem 2.5rem -.9rem var(--tw-dialog-shadow, rgba(23, 23, 23, .18)),
         0 1px 2px var(--tw-dialog-shadow, rgba(23, 23, 23, .08));
     color: var(--tw-dialog-foreground, #171717);
     display: flex;
-    left: 50%;
+    left: calc(50% + var(--dock-panel-cascade-x, 0px));
     max-height: calc(100vh - 9rem);
     max-height: calc(100dvh - 9rem);
     max-width: calc(100vw - 1rem);
@@ -18,7 +18,17 @@
     transform: translateX(-50%);
     transform-origin: 50% 100%;
     will-change: transform;
-    z-index: $z-index-modal;
+    z-index: calc($z-index-modal + var(--dock-panel-stack-index, 0));
+}
+
+.panel[data-dock-panel-active="false"] {
+    box-shadow: 0 .55rem 1.7rem -.9rem var(--tw-dialog-shadow, rgba(23, 23, 23, .14)),
+        0 1px 2px var(--tw-dialog-shadow, rgba(23, 23, 23, .06));
+}
+
+.panel[data-dock-panel-active="true"] {
+    border-color: color-mix(in srgb, var(--tw-dialog-foreground, #171717) 18%,
+        var(--tw-dialog-border, #e5e5e5));
 }
 
 .column {
@@ -137,6 +147,7 @@
 @media (max-width: 640px) {
     .panel {
         bottom: 4.2rem;
+        left: 50%;
         max-height: calc(100vh - 8.25rem);
         max-height: calc(100dvh - 8.25rem);
     }

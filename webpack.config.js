@@ -61,6 +61,12 @@ const base = {
     resolve: {
         symlinks: false,
         alias: {
+            '@shadcn/react/message-scroller$': path.resolve(
+                __dirname,
+                'node_modules/@shadcn/react/dist/message-scroller/index.js'
+            ),
+            'react$': path.resolve(__dirname, 'src/lib/react-compat'),
+            'react-original$': require.resolve('react'),
             'text-encoding$': path.resolve(__dirname, 'src/lib/tw-text-encoder'),
             'scratch-render-fonts$': path.resolve(__dirname, 'src/lib/tw-scratch-render-fonts')
         }
@@ -73,6 +79,7 @@ const base = {
                 path.resolve(__dirname, 'src'),
                 /node_modules[\\/]scratch-[^\\/]+[\\/]src/,
                 /node_modules[\\/]pify/,
+                /node_modules[\\/]@shadcn[\\/]react[\\/]/,
                 /node_modules[\\/]@vernier[\\/]godirect/,
                 /node_modules[\\/](yjs|lib0)[\\/]/
             ],
@@ -262,6 +269,10 @@ module.exports = [
                     {
                         from: path.resolve(__dirname, '../../../logo/Frame 2.svg'),
                         to: 'brand-favicon.svg'
+                    },
+                    {
+                        from: path.resolve(__dirname, '../../../logo/Frame 4.svg'),
+                        to: 'brand-lockup.svg'
                     }
                 ]
             }),

@@ -20,7 +20,13 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {compose} from 'redux';
 import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
-import {getIsLoading} from '../reducers/project-state.js';
+import {
+    LoadingState,
+    getIsError,
+    getIsFetchingWithId,
+    getIsLoading,
+    getIsLoadingWithId
+} from '../reducers/project-state.js';
 import AppStateHOC from '../lib/app-state-hoc.jsx';
 import ErrorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
 import TWProjectMetaFetcherHOC from '../lib/tw-project-meta-fetcher-hoc.jsx';
@@ -42,6 +48,7 @@ import AddonChannels from '../addons/channels';
 import {loadServiceWorker} from './load-service-worker';
 import runAddons from '../addons/entry';
 import InvalidEmbed from '../components/tw-invalid-embed/invalid-embed.jsx';
+import CrashMessage from '../components/crash-message/crash-message.jsx';
 import AddonSettingsModal from '../components/tw-addon-settings-modal/addon-settings-modal.jsx';
 import {APP_NAME, DOCUMENT_APP_NAME} from '../lib/brand.js';
 
@@ -184,10 +191,11 @@ const Footer = () => (
 class Interface extends React.Component {
     constructor (props) {
         super(props);
-        this.state = {addonSettingsOpen: false, selectedAddonId: undefined};
+        this.state = {addonSettingsOpen: false, selectedAddonId: null};
         this.handleUpdateProjectTitle = this.handleUpdateProjectTitle.bind(this);
         this.handleClickAddonSettings = this.handleClickAddonSettings.bind(this);
-        this.closeAddonSettings = this.closeAddonSettings.bind(this);
+        this.handleReload = this.handleReload.bind(this);
+        this.handleCloseAddonSettings = this.handleCloseAddonSettings.bind(this);
     }
     componentDidUpdate (prevProps) {
         if (prevProps.isLoading && !this.props.isLoading) {
@@ -204,10 +212,13 @@ class Interface extends React.Component {
     handleClickAddonSettings (addonId) {
         this.setState({
             addonSettingsOpen: true,
-            selectedAddonId: typeof addonId === 'string' ? addonId : undefined
+            selectedAddonId: typeof addonId === 'string' ? addonId : null
         });
     }
-    closeAddonSettings () {
+    handleReload () {
+        window.location.reload();
+    }
+    handleCloseAddonSettings () {
         this.setState({addonSettingsOpen: false});
     }
     render () {
@@ -218,16 +229,33 @@ class Interface extends React.Component {
         const {
             /* eslint-disable no-unused-vars */
             intl,
+            error,
             hasCloudVariables,
             description,
             isFullScreen,
             isLoading,
+            isProjectPending,
+            isError,
             isPlayerOnly,
             isRtl,
             projectId,
             /* eslint-enable no-unused-vars */
             ...props
         } = this.props;
+        if (isError) {
+            let errorMessage;
+            if (error && typeof error === 'object' && error.message) {
+                errorMessage = error.message;
+            } else if (error) {
+                errorMessage = String(error);
+            }
+            return (
+                <CrashMessage
+                    errorMessage={errorMessage}
+                    onReload={this.handleReload}
+                />
+            );
+        }
         const isHomepage = isPlayerOnly && !isFullScreen;
         const isEditor = !isPlayerOnly;
         return (
@@ -238,6 +266,12 @@ class Interface extends React.Component {
                 })}
                 dir={isRtl ? 'rtl' : 'ltr'}
             >
+                {isProjectPending && (
+                    <CrashMessage
+                        loading
+                        onReload={this.handleReload}
+                    />
+                )}
                 <TWWindchimeSubmitter />
                 {isHomepage ? (
                     <div className={styles.menu}>
@@ -266,7 +300,7 @@ class Interface extends React.Component {
                     />
                     {this.state.addonSettingsOpen && <AddonSettingsModal
                         addonId={this.state.selectedAddonId}
-                        onClose={this.closeAddonSettings}
+                        onClose={this.handleCloseAddonSettings}
                     />}
                     {isHomepage ? (
                         <React.Fragment>
@@ -374,24 +408,34 @@ Interface.propTypes = {
         credits: PropTypes.string,
         instructions: PropTypes.string
     }),
+    error: PropTypes.oneOfType([PropTypes.object, PropTypes.string]),
     isFullScreen: PropTypes.bool,
     isLoading: PropTypes.bool,
+    isProjectPending: PropTypes.bool,
+    isError: PropTypes.bool,
     isPlayerOnly: PropTypes.bool,
     isRtl: PropTypes.bool,
     projectId: PropTypes.string,
     readOnly: PropTypes.bool
 };
 
-const mapStateToProps = state => ({
-    hasCloudVariables: state.scratchGui.tw.hasCloudVariables,
-    customStageSize: state.scratchGui.customStageSize,
-    description: state.scratchGui.tw.description,
-    isFullScreen: state.scratchGui.mode.isFullScreen,
-    isLoading: getIsLoading(state.scratchGui.projectState.loadingState),
-    isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
-    isRtl: state.locales.isRtl,
-    projectId: state.scratchGui.projectState.projectId
-});
+const mapStateToProps = state => {
+    const loadingState = state.scratchGui.projectState.loadingState;
+    return {
+        hasCloudVariables: state.scratchGui.tw.hasCloudVariables,
+        customStageSize: state.scratchGui.customStageSize,
+        description: state.scratchGui.tw.description,
+        error: state.scratchGui.projectState.error,
+        isFullScreen: state.scratchGui.mode.isFullScreen,
+        isLoading: getIsLoading(loadingState),
+        isProjectPending: loadingState === LoadingState.NOT_LOADED ||
+            getIsFetchingWithId(loadingState) || getIsLoadingWithId(loadingState),
+        isError: getIsError(loadingState),
+        isPlayerOnly: state.scratchGui.mode.isPlayerOnly,
+        isRtl: state.locales.isRtl,
+        projectId: state.scratchGui.projectState.projectId
+    };
+};
 
 const mapDispatchToProps = () => ({});
 

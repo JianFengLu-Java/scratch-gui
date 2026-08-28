@@ -1,4 +1,8 @@
-import {readPlanetEnvelope, refreshPlanetSession} from './planet-session';
+import {
+    readPlanetEnvelope,
+    refreshPlanetSession,
+    resolvePlanetAssetUrl
+} from './planet-session';
 
 const API_ROOT = '/backend-api';
 
@@ -16,6 +20,17 @@ const authorizedRequest = async (path, options = {}, sessionOverride = null) => 
     }).then(readPlanetEnvelope);
 };
 
+const normalizePerson = person => ({
+    ...person,
+    avatarUrl: resolvePlanetAssetUrl(person && person.avatarUrl)
+});
+
+export const normalizePlanetCollaborationInviteData = data => ({
+    ...data,
+    friends: Array.isArray(data && data.friends) ? data.friends.map(normalizePerson) : [],
+    members: Array.isArray(data && data.members) ? data.members.map(normalizePerson) : []
+});
+
 export const fetchPlanetCollaborationInviteData = async projectId => {
     const session = await refreshPlanetSession();
     const encodedProjectId = encodeURIComponent(projectId);
@@ -29,12 +44,12 @@ export const fetchPlanetCollaborationInviteData = async projectId => {
     const friendPage = canManage ? await authorizedRequest(
         '/users/me/friends?page=1&pageSize=100', {}, session
     ) : {items: []};
-    return {
+    return normalizePlanetCollaborationInviteData({
         canManage,
         friends: friendPage.items || [],
         members,
         viewerUserId
-    };
+    });
 };
 
 export const createPlanetCollaborationLink = projectId => authorizedRequest(

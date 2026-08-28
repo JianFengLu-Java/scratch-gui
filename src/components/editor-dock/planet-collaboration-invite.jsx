@@ -31,25 +31,14 @@ import {collaborationEnabled} from '../../lib/planet-collaboration';
 import {isPlanetProjectRoute} from '../../lib/planet-project-loader';
 
 import DockPanel from './dock-panel.jsx';
+import PlanetUserAvatar from './planet-user-avatar.jsx';
 import styles from './planet-collaboration-invite.css';
 
-const initials = value => (String(value || '用户')
-    .trim()
-    .slice(0, 2) || '用户').toUpperCase();
-
 const PersonAvatar = ({person}) => (
-    <span aria-hidden="true" className={styles.avatar}>
-        {initials(person.nickname)}
-        {person.avatarUrl ? (
-            <img
-                alt=""
-                src={person.avatarUrl}
-                onError={event => {
-                    event.currentTarget.style.display = 'none';
-                }}
-            />
-        ) : null}
-    </span>
+    <PlanetUserAvatar
+        className={styles.avatar}
+        member={person}
+    />
 );
 
 PersonAvatar.propTypes = {
@@ -213,7 +202,6 @@ const PlanetCollaborationInvite = ({projectId}) => {
         <DockPanel
             actions={refreshButton}
             className={styles.panel}
-            description="邀请好友或管理项目成员"
             dragLabel="拖动邀请协作窗口"
             icon={UserPlusIcon}
             onClose={() => setOpen(false)}
@@ -265,9 +253,7 @@ const PlanetCollaborationInvite = ({projectId}) => {
                                     <span>{copied ? '已复制' : '复制'}</span>
                                 </button>
                             </div>
-                        ) : (
-                            <p className={styles.sectionHint}>{'生成后可直接复制给协作者。'}</p>
-                        )}
+                        ) : null}
                     </section>
                 ) : null}
 
@@ -276,7 +262,6 @@ const PlanetCollaborationInvite = ({projectId}) => {
                         <header className={styles.sectionHeader}>
                             <div>
                                 <h3>{'邀请好友'}</h3>
-                                <p>{'好友会收到包含加入链接的消息'}</p>
                             </div>
                         </header>
                         <label className={styles.search}>
@@ -320,7 +305,6 @@ const PlanetCollaborationInvite = ({projectId}) => {
                                 <div className={styles.empty}>
                                     <UsersIcon aria-hidden="true" />
                                     <strong>{query ? '没有匹配的好友' : '暂无可邀请的好友'}</strong>
-                                    <small>{query ? '换个昵称或 UID 试试' : '双方互相关注后会成为好友'}</small>
                                 </div>
                             )}
                         </div>
@@ -332,7 +316,7 @@ const PlanetCollaborationInvite = ({projectId}) => {
                         <header className={styles.sectionHeader}>
                             <div>
                                 <h3>{'项目成员'}</h3>
-                                <p>{`${data.members.length} 人可进入当前项目`}</p>
+                                <p>{`${data.members.length} 人`}</p>
                             </div>
                             {data.canManage ? null : (
                                 <span className={styles.ownerBadge}>{'房主管理'}</span>

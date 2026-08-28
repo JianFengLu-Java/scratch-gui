@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 
 import {openPlanetWriteSession} from './planet-cloud-autosave';
-import {refreshPlanetSession} from './planet-session';
+import {refreshPlanetSession, resolvePlanetAssetUrl} from './planet-session';
 
 const API_CONTEXT_PATH = '/api/v1';
 const LOCAL_ORIGIN = 'planet-local-project';
@@ -11,7 +11,19 @@ const HEARTBEAT_INTERVAL_MS = 25000;
 const VOICE_ICE_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 const VOICE_ICE_REFRESH_MIN_DELAY_MS = 30 * 1000;
 const SESSION_REPLACED_CLOSE_CODE = 4001;
+const CHAT_HISTORY_LIMIT = 50;
+let latestChatState = null;
 let latestVoiceState = null;
+
+const normalizeCollaborationPerson = person => ({
+    ...person,
+    avatarUrl: resolvePlanetAssetUrl(person && person.avatarUrl)
+});
+
+const normalizeChatMessage = message => normalizeCollaborationPerson(message);
+
+const normalizeParticipants = participants => (Array.isArray(participants) ?
+    participants.map(normalizeCollaborationPerson) : []);
 
 export const PLANET_COLLABORATION_STATUS_EVENT = 'planet-collaboration-status';
 export const PLANET_COLLABORATION_REMOTE_APPLIED_EVENT = 'planet-collaboration-remote-applied';
@@ -40,6 +52,22 @@ export const getPlanetCollaborationVoiceState = () => {
         participants: [...latestVoiceState.participants]
     };
 };
+
+export const getPlanetCollaborationChatState = () => {
+    if (!latestChatState) return null;
+    return {
+        ...latestChatState,
+        messages: [...latestChatState.messages]
+    };
+};
+
+const currentChatState = projectId => (latestChatState &&
+    latestChatState.projectId === String(projectId) ? latestChatState : {
+        connected: false,
+        messages: [],
+        ownUserId: null,
+        projectId: String(projectId)
+    });
 
 const resolveWebSocketUrl = (projectId, ticket) => {
     const origin = new URL(window.location.origin);
@@ -143,6 +171,11 @@ export class PlanetYjsCollaboration {
         }
         if (message.type === 'session-ready') {
             this.sessionId = message.sessionId;
+            const chatState = currentChatState(this.projectId);
+            latestChatState = {
+                ...chatState,
+                ownUserId: String(message.userId || '')
+            };
             latestVoiceState = {
                 canCreateRoom: Boolean(message.voiceCanCreateRoom),
                 enabled: Boolean(message.voiceEnabled),
@@ -205,7 +238,7 @@ export class PlanetYjsCollaboration {
             this.status({
                 status: 'connected',
                 participantCount: message.participantCount,
-                participants: message.participants
+                participants: normalizeParticipants(message.participants)
             });
         } else if (message.type === 'role-locks' || message.type === 'role-lock-granted' ||
             message.type === 'role-lock-denied') {
@@ -243,20 +276,47 @@ export class PlanetYjsCollaboration {
             window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_INVITATION_EVENT, {
                 detail: message
             }));
-        } else if (message.type === 'chat-history' || message.type === 'chat-message' ||
-            message.type === 'chat-error') {
+        } else if (message.type === 'chat-history') {
+            const chatState = currentChatState(this.projectId);
+            const messages = Array.isArray(message.messages) ?
+                message.messages.slice(-CHAT_HISTORY_LIMIT).map(normalizeChatMessage) : [];
+            latestChatState = {
+                ...chatState,
+                messages
+            };
+            window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_CHAT_EVENT, {
+                detail: {...message, messages}
+            }));
+        } else if (message.type === 'chat-message' && message.message) {
+            const chatState = currentChatState(this.projectId);
+            const normalizedMessage = normalizeChatMessage(message.message);
+            const duplicate = chatState.messages.some(existing =>
+                existing.messageId === normalizedMessage.messageId);
+            latestChatState = {
+                ...chatState,
+                messages: duplicate ? chatState.messages :
+                    [...chatState.messages, normalizedMessage].slice(-CHAT_HISTORY_LIMIT)
+            };
+            window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_CHAT_EVENT, {
+                detail: {...message, message: normalizedMessage}
+            }));
+        } else if (message.type === 'chat-error') {
             window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_CHAT_EVENT, {
                 detail: message
             }));
         } else if (message.type === 'voice-room' || message.type === 'voice-signal' ||
             message.type === 'voice-error' || message.type === 'voice-room-closed' ||
             message.type === 'voice-ice-servers') {
+            const voiceMessage = message.type === 'voice-room' ? {
+                ...message,
+                participants: normalizeParticipants(message.participants)
+            } : message;
             if (message.type === 'voice-room' && latestVoiceState) {
                 latestVoiceState = {
                     ...latestVoiceState,
                     hostUserId: message.hostUserId || null,
                     participantLimit: Number(message.participantLimit || 4),
-                    participants: Array.isArray(message.participants) ? message.participants : [],
+                    participants: voiceMessage.participants,
                     roomActive: Boolean(message.active)
                 };
             } else if (message.type === 'voice-ice-servers' && latestVoiceState) {
@@ -271,7 +331,7 @@ export class PlanetYjsCollaboration {
                 latestVoiceState = {...latestVoiceState, participants: [], roomActive: false};
             }
             window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_VOICE_EVENT, {
-                detail: message
+                detail: voiceMessage
             }));
         } else if (message.type === 'project-access-removed' &&
             String(message.projectId) === this.projectId) {
@@ -364,6 +424,7 @@ export class PlanetYjsCollaboration {
     clearTransientUi (reason = 'closed') {
         clearTimeout(this.voiceIceRefreshTimer);
         this.voiceIceRefreshTimer = null;
+        latestChatState = null;
         latestVoiceState = null;
         window.dispatchEvent(new CustomEvent(PLANET_ROLE_LOCK_STATUS_EVENT, {
             detail: {type: 'collaboration-destroyed', reason}
@@ -405,6 +466,14 @@ export class PlanetYjsCollaboration {
     }
 
     status (next) {
+        if (next.status === 'connected' || next.status === 'connecting' ||
+            next.status === 'disconnected' || next.status === 'replaced' ||
+            next.status === 'error') {
+            latestChatState = {
+                ...currentChatState(this.projectId),
+                connected: next.status === 'connected'
+            };
+        }
         this.onStatus(next);
     }
 
