@@ -140,7 +140,10 @@ import WorkPublishModal from "../work-publish-modal/work-publish-modal.jsx";
 import { notScratchDesktop } from "../../lib/isScratchDesktop.js";
 import { APP_NAME } from "../../lib/brand.js";
 import { setProjectTitle } from "../../reducers/project-title";
-import { emitPlanetAutosaveStatus } from "../../lib/planet-cloud-autosave";
+import {
+    emitPlanetAutosaveStatus,
+    PLANET_AUTOSAVE_REQUEST_EVENT,
+} from "../../lib/planet-cloud-autosave";
 import {
     isPlanetProjectRoute,
     savePlanetProjectName,
@@ -336,7 +339,11 @@ class MenuBar extends React.Component {
         this.props.onRequestCloseFile();
     }
     handleClickSave() {
-        this.props.onClickSave();
+        if (isPlanetProjectRoute()) {
+            window.dispatchEvent(new CustomEvent(PLANET_AUTOSAVE_REQUEST_EVENT));
+        } else {
+            this.props.onClickSave();
+        }
         this.props.onRequestCloseFile();
     }
     handleClickSaveAsCopy() {
@@ -423,7 +430,11 @@ class MenuBar extends React.Component {
         }
         if (modifier) {
             if (event.key.toLowerCase() === "s") {
-                this.props.handleSaveProject();
+                if (isPlanetProjectRoute()) {
+                    window.dispatchEvent(new CustomEvent(PLANET_AUTOSAVE_REQUEST_EVENT));
+                } else {
+                    this.props.handleSaveProject();
+                }
                 event.preventDefault();
             } else if (event.key.toLowerCase() === "o") {
                 event.preventDefault();

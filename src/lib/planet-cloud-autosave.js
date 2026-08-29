@@ -38,11 +38,11 @@ export const sha256PlanetBlob = async blob => {
 export const abortPlanetUpload = (session, objectId) => authorizedRequest(session,
     `/uploads/${encodeURIComponent(objectId)}`, {method: 'DELETE'});
 
-export const uploadPlanetProjectFile = async (session, file, contentSha256) => {
+const uploadPlanetFile = async (session, file, purpose, contentSha256, label) => {
     const presigned = await authorizedRequest(session, '/uploads/presign', {
         method: 'POST',
         body: JSON.stringify({
-            purpose: 'PROJECT_FILE',
+            purpose,
             fileName: file.name,
             mimeType: file.type,
             sizeBytes: file.size,
@@ -56,7 +56,7 @@ export const uploadPlanetProjectFile = async (session, file, contentSha256) => {
             body: file,
             headers: presigned.headers || {}
         });
-        if (!response.ok) throw new Error(`项目文件上传失败（${response.status}）`);
+        if (!response.ok) throw new Error(`${label}上传失败（${response.status}）`);
         const etag = normalizeEtag(response.headers.get('ETag')) ||
             (externalUrl(uploadUrl) ? '' : contentSha256);
         if (!etag) throw new Error('OSS 未暴露 ETag，请在 Bucket CORS 的 Expose Headers 中加入 ETag。');
@@ -77,6 +77,17 @@ export const uploadPlanetProjectFile = async (session, file, contentSha256) => {
         throw error;
     }
 };
+
+export const uploadPlanetProjectFile = (session, file, contentSha256) =>
+    uploadPlanetFile(session, file, 'PROJECT_FILE', contentSha256, '项目文件');
+
+export const uploadPlanetStageCover = async (session, file) => uploadPlanetFile(
+    session,
+    file,
+    'WORK_COVER',
+    await sha256PlanetBlob(file),
+    '舞台封面'
+);
 
 export const rememberPlanetCloudState = (projectId, state) => {
     cloudStates.set(String(projectId), {
@@ -105,18 +116,22 @@ export const savePlanetCloudAutosave = async ({
     contentSha256,
     editorSessionToken,
     file,
-    projectId
+    projectId,
+    stageCoverFile
 }) => {
     const session = await refreshPlanetSession();
     const before = planetCloudState(projectId);
     const objectId = await uploadPlanetProjectFile(session, file, contentSha256);
+    let stageCoverObjectId = null;
     try {
+        stageCoverObjectId = await uploadPlanetStageCover(session, stageCoverFile);
         const saved = await authorizedRequest(session,
             `/projects/${encodeURIComponent(projectId)}/autosave`, {
                 method: 'PUT',
                 headers: {'X-Editor-Session-Token': editorSessionToken},
                 body: JSON.stringify({
                     fileObjectId: objectId,
+                    stageCoverObjectId,
                     baseVersionId: before.baseVersionId,
                     contentSha256,
                     expectedRevision: before.revision
@@ -126,16 +141,23 @@ export const savePlanetCloudAutosave = async ({
         if (saved.replacedFileObjectId) {
             abortPlanetUpload(session, saved.replacedFileObjectId).catch(() => {});
         }
+        if (saved.replacedStageCoverObjectId) {
+            abortPlanetUpload(session, saved.replacedStageCoverObjectId).catch(() => {});
+        }
         return saved;
     } catch (error) {
         if (error.status === 409) {
             const remote = await fetchPlanetAutosave(session, projectId).catch(() => null);
             if (remote && remote.fileObjectId === String(objectId) &&
+                remote.stageCoverObjectId === String(stageCoverObjectId) &&
                 remote.contentSha256 === contentSha256) {
                 rememberPlanetCloudState(projectId, remote);
                 return remote;
             }
             error.autosaveConflict = true;
+        }
+        if (stageCoverObjectId) {
+            await abortPlanetUpload(session, stageCoverObjectId).catch(() => {});
         }
         await abortPlanetUpload(session, objectId).catch(() => {});
         throw error;

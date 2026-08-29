@@ -35,4 +35,42 @@ describe('planet stage cover', () => {
     test('rejects when the stage renderer is unavailable', async () => {
         await expect(capturePlanetStageCover({}, '作品')).rejects.toThrow('暂时无法读取舞台');
     });
+
+    test('compresses an autosave cover to a bounded WebP file', async () => {
+        const originalImage = global.Image;
+        const originalDocument = global.document;
+        const drawImage = jest.fn();
+        global.Image = class MockImage {
+            constructor () {
+                this.naturalWidth = 1280;
+                this.naturalHeight = 720;
+            }
+            set src (value) { // eslint-disable-line no-unused-vars
+                this.onload();
+            }
+        };
+        global.document = {createElement: jest.fn(() => ({
+            getContext: () => ({drawImage}),
+            toBlob: callback => callback(new Blob(['webp'], {type: 'image/webp'}))
+        }))};
+        const vm = {
+            postIOData: jest.fn(),
+            renderer: {
+                requestSnapshot: jest.fn(callback => callback('data:image/png;base64,aGVsbG8=')),
+                draw: jest.fn()
+            }
+        };
+
+        try {
+            const file = await capturePlanetStageCover(vm, '自动保存', {compress: true});
+
+            expect(file.name).toBe('自动保存-舞台.webp');
+            expect(file.type).toBe('image/webp');
+            expect(drawImage).toHaveBeenCalledWith(expect.anything(), 0, 0, 640, 360);
+        } finally {
+            global.Image = originalImage;
+            if (originalDocument) global.document = originalDocument;
+            else delete global.document;
+        }
+    });
 });

@@ -12,6 +12,7 @@ import {
     sha256PlanetBlob
 } from '../lib/planet-cloud-autosave';
 import {isPlanetProjectRoute} from '../lib/planet-project-loader';
+import {capturePlanetStageCover} from '../lib/planet-stage-cover';
 import {PLANET_COLLABORATION_REMOTE_APPLIED_EVENT} from '../lib/planet-collaboration';
 import {refreshPlanetSession} from '../lib/planet-session';
 import {getIsShowingProject} from '../reducers/project-state';
@@ -28,6 +29,7 @@ class PlanetAutosaveManager extends React.Component {
         this.changeRevision = 0;
         this.savedRevision = 0;
         this.saving = false;
+        this.saveQueuedForce = false;
         this.mounted = false;
         this.handleProjectChanged = this.handleProjectChanged.bind(this);
         this.handleRemoteProjectApplied = this.handleRemoteProjectApplied.bind(this);
@@ -75,6 +77,7 @@ class PlanetAutosaveManager extends React.Component {
         this.savedRevision = 0;
         this.editorSession = null;
         this.saving = false;
+        this.saveQueuedForce = false;
     }
     clearTimers () {
         clearTimeout(this.debounceTimer);
@@ -121,7 +124,7 @@ class PlanetAutosaveManager extends React.Component {
         this.debounceTimer = setTimeout(this.save, delay);
     }
     handleSaveRequest () {
-        if (this.active()) this.save();
+        if (this.active()) this.save(true);
     }
     handleVisibilityChange () {
         if (document.visibilityState === 'hidden' && this.active()) this.save();
@@ -135,10 +138,11 @@ class PlanetAutosaveManager extends React.Component {
         this.editorSession = await openPlanetWriteSession(session, this.props.projectId);
         return this.editorSession.sessionToken;
     }
-    async save () {
-        if (!this.active() || this.changeRevision <= this.savedRevision) return;
+    async save (force = false) {
+        if (!this.active() || (!force && this.changeRevision <= this.savedRevision)) return;
         if (this.saving) {
             this.saveQueued = true;
+            this.saveQueuedForce = this.saveQueuedForce || force;
             return;
         }
         clearTimeout(this.debounceTimer);
@@ -154,12 +158,18 @@ class PlanetAutosaveManager extends React.Component {
                 type: 'application/x.scratch.sb3'
             });
             const contentSha256 = await sha256PlanetBlob(file);
-            if (planetCloudState(this.props.projectId).contentSha256 !== contentSha256) {
+            if (force || planetCloudState(this.props.projectId).contentSha256 !== contentSha256) {
+                const stageCoverFile = await capturePlanetStageCover(
+                    this.props.vm,
+                    `project-${this.props.projectId}`,
+                    {compress: true}
+                );
                 await savePlanetCloudAutosave({
                     contentSha256,
                     editorSessionToken: await this.writeSessionToken(),
                     file,
-                    projectId: this.props.projectId
+                    projectId: this.props.projectId,
+                    stageCoverFile
                 });
             }
             this.savedRevision = capturedRevision;
@@ -173,10 +183,16 @@ class PlanetAutosaveManager extends React.Component {
                 status: error.autosaveConflict ? 'conflict' : 'error',
                 message: error.message
             });
-            if (!error.autosaveConflict) this.retryTimer = setTimeout(this.save, RETRY_MS);
+            if (!error.autosaveConflict) {
+                this.retryTimer = setTimeout(() => this.save(force), RETRY_MS);
+            }
         } finally {
             this.saving = false;
-            if (this.saveQueued || this.changeRevision > capturedRevision) {
+            if (this.saveQueuedForce) {
+                this.saveQueued = false;
+                this.saveQueuedForce = false;
+                this.save(true);
+            } else if (this.saveQueued || this.changeRevision > capturedRevision) {
                 this.saveQueued = false;
                 clearTimeout(this.debounceTimer);
                 this.queueDebouncedSave();

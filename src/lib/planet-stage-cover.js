@@ -11,7 +11,38 @@ const dataUriToFile = (dataUri, title) => {
     return new File([bytes], `${safeFileName(title)}-舞台.png`, {type: match[1] || 'image/png'});
 };
 
-export const capturePlanetStageCover = (vm, title) => new Promise((resolve, reject) => {
+const compressedDataUriToFile = (dataUri, title) => new Promise(resolve => {
+    const image = new Image();
+    image.onload = () => {
+        try {
+            const naturalWidth = image.naturalWidth || image.width;
+            const naturalHeight = image.naturalHeight || image.height;
+            const scale = Math.min(1, 640 / Math.max(naturalWidth, naturalHeight));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(naturalWidth * scale));
+            canvas.height = Math.max(1, Math.round(naturalHeight * scale));
+            const context = canvas.getContext('2d');
+            if (!context || typeof canvas.toBlob !== 'function') {
+                resolve(dataUriToFile(dataUri, title));
+                return;
+            }
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(blob => {
+                if (!blob) {
+                    resolve(dataUriToFile(dataUri, title));
+                    return;
+                }
+                resolve(new File([blob], `${safeFileName(title)}-舞台.webp`, {type: 'image/webp'}));
+            }, 'image/webp', 0.76);
+        } catch (error) {
+            resolve(dataUriToFile(dataUri, title));
+        }
+    };
+    image.onerror = () => resolve(dataUriToFile(dataUri, title));
+    image.src = dataUri;
+});
+
+export const capturePlanetStageCover = (vm, title, options = {}) => new Promise((resolve, reject) => {
     if (!vm || !vm.renderer || typeof vm.renderer.requestSnapshot !== 'function') {
         reject(new Error('当前项目暂时无法读取舞台，请改为上传封面图片。'));
         return;
@@ -37,11 +68,9 @@ export const capturePlanetStageCover = (vm, title) => new Promise((resolve, reje
     try {
         vm.postIOData('video', {forceTransparentPreview: true});
         vm.renderer.requestSnapshot(dataUri => {
-            try {
-                succeed(dataUriToFile(dataUri, title));
-            } catch (error) {
-                fail(error);
-            }
+            const file = options.compress ? compressedDataUriToFile(dataUri, title) :
+                Promise.resolve().then(() => dataUriToFile(dataUri, title));
+            file.then(succeed, fail);
         });
         vm.renderer.draw();
     } catch (error) {
