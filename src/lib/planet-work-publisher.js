@@ -158,8 +158,8 @@ const saveVersion = async (session, projectId, uploads, form, onProgress) => {
                 stageHeight: form.stageHeight
             },
             versionType: form.versionType,
-            changeLog: '从 TurboWarp 编辑器提交',
-            sourceAccess: form.remixPermission
+            changeLog: form.changeLog || '从 TurboWarp 编辑器提交',
+            sourceAccess: form.sourceAccess
         })
     });
     return {coverObjectId: uploads.coverUpload.objectId, versionId: version.id};
@@ -176,7 +176,9 @@ const workPayload = (projectId, version, form, revision) => ({
     instruction: form.instructions.trim() || null,
     originType: 'ORIGINAL',
     originWorkId: null,
-    remixPermission: form.remixPermission,
+    remixPermission: form.sourceAccess,
+    remixPolicy: form.remixPolicy,
+    remixAuthorizationConfirmed: form.remixAuthorizationConfirmed,
     visibility: form.visibility,
     versionType: form.versionType,
     stageWidth: form.stageWidth,
@@ -205,7 +207,7 @@ const saveWorkRelease = (session, workId, version, form) => authorizedRequest(se
             versionId: version.versionId,
             coverObjectId: version.coverObjectId,
             versionType: form.versionType,
-            changeLog: '从 TurboWarp 编辑器提交',
+            changeLog: form.changeLog || '从 TurboWarp 编辑器提交',
             stageWidth: form.stageWidth,
             stageHeight: form.stageHeight
         })
@@ -224,14 +226,29 @@ const submissionKey = (targetType, targetId) => {
     return {storageKey, value};
 };
 
-export const loadWorkPublishOptions = async () => {
+export const loadWorkPublishOptions = async candidateProjectId => {
     const [session, categories, tags] = await Promise.all([
         refreshPlanetSession(),
         publicRequest('/categories?scene=WORK'),
         publicRequest('/tags?scene=WORK')
     ]);
-    const profile = await authorizedRequest(session, '/users/me');
-    return {categories, profile, session, tags};
+    const projectId = currentProjectId(candidateProjectId);
+    const [profile, existingWork] = await Promise.all([
+        authorizedRequest(session, '/users/me'),
+        projectId ? findProjectWork(session, projectId) : Promise.resolve(null)
+    ]);
+    const releases = existingWork && ['PUBLISHED', 'OFFLINE'].includes(existingWork.status) ?
+        await loadWorkReleases(session, existingWork.id) : [];
+    return {
+        categories,
+        existingWork,
+        latestReleaseNo: releases.reduce((latest, release) => Math.max(latest, release.releaseNo || 0), 0),
+        profile,
+        publicationMode: releases.length > 0 ? 'UPDATE' : 'FIRST',
+        releases,
+        session,
+        tags
+    };
 };
 
 export const saveCurrentProjectDraft = async ({

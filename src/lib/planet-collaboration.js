@@ -171,6 +171,8 @@ export class PlanetYjsCollaboration {
         }
         if (message.type === 'session-ready') {
             this.sessionId = message.sessionId;
+            // A reconnect can have missed appearance invalidations while offline.
+            window.dispatchEvent(new CustomEvent('programming-planet:bubble-appearance-changed'));
             const chatState = currentChatState(this.projectId);
             latestChatState = {
                 ...chatState,
@@ -275,6 +277,10 @@ export class PlanetYjsCollaboration {
         } else if (message.type === 'project-invitation') {
             window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_INVITATION_EVENT, {
                 detail: message
+            }));
+        } else if (message.type === 'BUBBLE_APPEARANCE_CHANGED' || message.type === 'BUBBLE_CATALOG_CHANGED') {
+            window.dispatchEvent(new CustomEvent('programming-planet:bubble-appearance-changed', {
+                detail: message.data
             }));
         } else if (message.type === 'chat-history') {
             const chatState = currentChatState(this.projectId);

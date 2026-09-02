@@ -2,8 +2,7 @@ import {
     KeyboardIcon,
     MessageCircleIcon,
     MicIcon,
-    RadioIcon,
-    SendIcon
+    RadioIcon
 } from 'lucide-react';
 // Webpack 4 resolves this package export through an explicit local alias.
 // eslint-disable-next-line import/no-unresolved
@@ -13,6 +12,8 @@ import ReactDOM from 'react-dom';
 
 import PlanetUserAvatar from '../editor-dock/planet-user-avatar.jsx';
 import DockPanel from '../editor-dock/dock-panel.jsx';
+import PlanetRichMessageComposer from './planet-rich-message-composer.jsx';
+import PlanetBubbleMessage from './planet-bubble-message.jsx';
 import {
     PlanetProjectVoiceControls,
     PlanetProjectVoiceMessage
@@ -33,22 +34,6 @@ import {
 import styles from './planet-project-chat.css';
 
 const MAX_MESSAGE_LENGTH = 500;
-const MESSAGE_GROUP_INTERVAL_MS = 5 * 60 * 1000;
-
-const messageTimestamp = message => {
-    const timestamp = new Date(message && message.sentAt).getTime();
-    return Number.isFinite(timestamp) ? timestamp : 0;
-};
-
-const startsNewMessageGroup = (message, previousMessage) => !previousMessage ||
-    String(previousMessage.userId) !== String(message.userId) ||
-    (messageTimestamp(message) > 0 && messageTimestamp(previousMessage) > 0 &&
-        messageTimestamp(message) - messageTimestamp(previousMessage) >= MESSAGE_GROUP_INTERVAL_MS);
-
-const endsMessageGroup = (message, nextMessage) => !nextMessage ||
-    String(nextMessage.userId) !== String(message.userId) ||
-    (messageTimestamp(nextMessage) > 0 && messageTimestamp(message) > 0 &&
-        messageTimestamp(nextMessage) - messageTimestamp(message) >= MESSAGE_GROUP_INTERVAL_MS);
 
 class PlanetProjectChat extends React.Component {
     constructor (props) {
@@ -142,13 +127,12 @@ class PlanetProjectChat extends React.Component {
             });
         }
     }
-    handleDraftChange (event) {
-        this.setState({draft: event.target.value, error: ''});
+    handleDraftChange (value) {
+        this.setState({draft: value, error: ''});
     }
-    handleSubmit (event) {
-        event.preventDefault();
+    handleSubmit () {
         const content = this.state.draft.trim();
-        if (!content || !this.state.connected) return;
+        if (!content || content.length > MAX_MESSAGE_LENGTH || !this.state.connected) return;
         window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_CHAT_SEND_EVENT, {
             detail: {content}
         }));
@@ -252,16 +236,10 @@ class PlanetProjectChat extends React.Component {
                                     >
                                         {this.state.messages.length === 0 ? (
                                             <div className={styles.empty}>{'还没有消息'}</div>
-                                        ) : this.state.messages.map((message, index) => {
+                                        ) : this.state.messages.map(message => {
                                             const own = String(message.userId) === this.state.ownUserId;
-                                            const previousMessage = this.state.messages[index - 1];
-                                            const nextMessage = this.state.messages[index + 1];
-                                            const startsGroup = startsNewMessageGroup(message, previousMessage);
-                                            const showAvatar = endsMessageGroup(message, nextMessage);
-                                            const showTime = index === 0 || (messageTimestamp(message) > 0 &&
-                                                messageTimestamp(previousMessage) > 0 &&
-                                                messageTimestamp(message) - messageTimestamp(previousMessage) >=
-                                                    MESSAGE_GROUP_INTERVAL_MS);
+                                            const bubbleKey = [this.state.projectId, this.state.ownUserId,
+                                                message.messageId].join(':');
                                             const nickname = message.nickname || '协作者';
                                             return (
                                                 <MessageScroller.Item
@@ -269,11 +247,6 @@ class PlanetProjectChat extends React.Component {
                                                     key={message.messageId}
                                                     messageId={String(message.messageId)}
                                                 >
-                                                    {showTime && (
-                                                        <time className={styles.messageTime}>
-                                                            {this.formatTime(message.sentAt)}
-                                                        </time>
-                                                    )}
                                                     <article
                                                         aria-label={`${own ? '我' : nickname}的消息`}
                                                         className={`${styles.message} ${own ? styles.ownMessage : ''}`}
@@ -284,28 +257,31 @@ class PlanetProjectChat extends React.Component {
                                                             className={styles.messageAvatar}
                                                             data-slot="message-avatar"
                                                         >
-                                                            {showAvatar ? (
-                                                                <PlanetUserAvatar
-                                                                    member={{
-                                                                        avatarUrl: message.avatarUrl,
-                                                                        nickname
-                                                                    }}
-                                                                />
-                                                            ) : null}
+                                                            <PlanetUserAvatar
+                                                                member={{
+                                                                    avatarUrl: message.avatarUrl,
+                                                                    nickname
+                                                                }}
+                                                            />
                                                         </div>
                                                         <div
                                                             className={styles.messageContent}
                                                             data-slot="message-content"
                                                         >
-                                                            {startsGroup ? (
+                                                            {!own && (
                                                                 <div
                                                                     className={styles.messageHeader}
                                                                     data-slot="message-header"
                                                                 >
-                                                                    {own ? '我' : nickname}
+                                                                    <span
+                                                                        className={styles.messageName}
+                                                                        title={nickname}
+                                                                    >
+                                                                        {nickname}
+                                                                    </span>
                                                                 </div>
-                                                            ) : null}
-                                                            <div
+                                                            )}
+                                                            {message.messageType === 'VOICE' ? <div
                                                                 className={`${styles.bubble} ${own ?
                                                                     styles.bubbleDefault : styles.bubbleOutline}`}
                                                                 data-slot="bubble"
@@ -315,14 +291,28 @@ class PlanetProjectChat extends React.Component {
                                                                     className={styles.bubbleContent}
                                                                     data-slot="bubble-content"
                                                                 >
-                                                                    {message.messageType === 'VOICE' ? (
-                                                                        <PlanetProjectVoiceMessage
-                                                                            message={message}
-                                                                            projectId={this.state.projectId}
-                                                                        />
-                                                                    ) : <p>{message.content}</p>}
+                                                                    <PlanetProjectVoiceMessage
+                                                                        message={message}
+                                                                        projectId={this.state.projectId}
+                                                                    />
                                                                 </div>
-                                                            </div>
+                                                            </div> : <PlanetBubbleMessage
+                                                                data-slot="bubble"
+                                                                key={bubbleKey}
+                                                                message={message}
+                                                                own={own}
+                                                                projectId={String(this.state.projectId)}
+                                                                timeLabel={this.formatTime(message.sentAt)}
+                                                                viewerId={this.state.ownUserId}
+                                                            />}
+                                                            {message.messageType === 'VOICE' && <time
+                                                                className={styles.messageTime}
+                                                                data-slot="message-time"
+                                                                dateTime={message.sentAt}
+                                                                title={new Date(message.sentAt).toLocaleString()}
+                                                            >
+                                                                {this.formatTime(message.sentAt)}
+                                                            </time>}
                                                         </div>
                                                     </article>
                                                 </MessageScroller.Item>
@@ -332,10 +322,7 @@ class PlanetProjectChat extends React.Component {
                                 </MessageScroller.Viewport>
                             </MessageScroller.Root>
                         </MessageScroller.Provider>
-                        <form
-                            className={styles.composer}
-                            onSubmit={this.handleSubmit}
-                        >
+                        <div className={styles.composer}>
                             {this.state.error && <div className={styles.error}>{this.state.error}</div>}
                             <div className={styles.composerRow}>
                                 <button
@@ -353,29 +340,19 @@ class PlanetProjectChat extends React.Component {
                                         room={false}
                                     />
                                 ) : (
-                                    <React.Fragment>
-                                        <input
-                                            aria-label="聊天消息"
-                                            autoComplete="off"
-                                            className={styles.input}
-                                            disabled={!this.state.connected}
-                                            maxLength={MAX_MESSAGE_LENGTH}
-                                            onChange={this.handleDraftChange}
-                                            placeholder={this.state.connected ? '输入消息…' : '等待协作连接…'}
-                                            value={this.state.draft}
-                                        />
-                                        <button
-                                            aria-label="发送消息"
-                                            className={styles.sendButton}
-                                            disabled={!this.state.connected || !this.state.draft.trim()}
-                                            type="submit"
-                                        >
-                                            <SendIcon aria-hidden="true" />
-                                        </button>
-                                    </React.Fragment>
+                                    <PlanetRichMessageComposer
+                                        disabled={!this.state.connected}
+                                        label="聊天消息"
+                                        maxLength={MAX_MESSAGE_LENGTH}
+                                        onChange={this.handleDraftChange}
+                                        onSubmit={this.handleSubmit}
+                                        placeholder={this.state.connected ? '输入消息…' : '等待协作连接…'}
+                                        sendLabel="发送消息"
+                                        value={this.state.draft}
+                                    />
                                 )}
                             </div>
-                        </form>
+                        </div>
                     </React.Fragment>
                 )}
             </DockPanel>,

@@ -44,6 +44,57 @@
     user-select: text;
 }
 
+.first-publish-context,
+.update-context {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: .8rem;
+    border: 1px solid var(--tw-dialog-border);
+    border-radius: .7rem;
+    padding: .7rem .8rem;
+    background: var(--tw-dialog-background);
+    box-shadow: 0 1px 2px var(--tw-dialog-shadow);
+}
+
+.update-context {
+    border-color: var(--tw-dialog-ring);
+    background: var(--tw-dialog-accent);
+}
+
+.first-publish-context > div,
+.update-context > div {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: .14rem;
+}
+
+.first-publish-context strong,
+.update-context strong {
+    color: var(--tw-dialog-foreground);
+    font-size: .72rem;
+}
+
+.first-publish-context span,
+.update-context span {
+    color: var(--tw-dialog-muted-foreground);
+    font-size: .62rem;
+    line-height: 1.45;
+}
+
+.first-publish-context > b,
+.update-context > b {
+    flex: 0 0 auto;
+    border: 1px solid var(--tw-dialog-border);
+    border-radius: 999px;
+    padding: .25rem .55rem;
+    background: var(--tw-dialog-background);
+    color: var(--tw-dialog-foreground);
+    font-size: .58rem;
+}
+
 .section-header,
 .field-row,
 .cover-actions,

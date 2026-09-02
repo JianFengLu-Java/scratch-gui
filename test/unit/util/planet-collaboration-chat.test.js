@@ -111,4 +111,24 @@ describe('planet collaboration chat state', () => {
         expect(getPlanetCollaborationVoiceState().participants[0].avatarUrl)
             .toBe('/backend-api/files/99');
     });
+
+    test('invalidates appearance without adding or mutating chat messages', async () => {
+        await collaboration.handleMessage({data: JSON.stringify({type: 'chat-history', messages: []})});
+        const before = getPlanetCollaborationChatState().messages;
+        for (const type of ['BUBBLE_APPEARANCE_CHANGED', 'BUBBLE_CATALOG_CHANGED']) {
+            const data = {userId: '7', appearanceRevision: 3};
+            await collaboration.handleMessage({data: JSON.stringify({type, data})});
+            expect(window.dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({
+                type: 'programming-planet:bubble-appearance-changed', detail: data
+            }));
+        }
+        expect(getPlanetCollaborationChatState().messages).toEqual(before);
+        window.dispatchEvent.mockClear();
+        await collaboration.handleMessage({
+            data: JSON.stringify({type: 'session-ready', sessionId: 'reconnected', userId: '7'})
+        });
+        expect(window.dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({
+            type: 'programming-planet:bubble-appearance-changed'
+        }));
+    });
 });

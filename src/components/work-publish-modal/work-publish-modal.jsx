@@ -20,7 +20,7 @@ import styles from './work-publish-modal.css';
 const MAX_COVER_SIZE = 10 * 1024 * 1024;
 const DRAFT_FIELDS = [
     'categoryId', 'tagIds', 'summary', 'instructions', 'visibility',
-    'remixPermission', 'versionType', 'notifyFollowers', 'copyrightAccepted'
+    'remixPolicy', 'versionType', 'changeLog', 'notifyFollowers'
 ];
 
 const VISIBILITY_OPTIONS = [
@@ -33,10 +33,16 @@ const VERSION_OPTIONS = [
     {value: 'BETA', label: '测试版', description: '仍在测试与收集反馈'}
 ];
 const REMIX_OPTIONS = [
-    {value: 'DOWNLOAD_AND_REMIX', label: '允许下载与改编', description: '其他人可学习并二次创作'},
-    {value: 'VIEW_SOURCE', label: '仅查看源码', description: '可学习，但不能下载改编'},
-    {value: 'NO_REMIX', label: '不开放源码', description: '仅提供作品运行体验'}
+    {value: 'OPEN', label: '开放改编', description: '其他用户确认条款后可直接创建改编'},
+    {value: 'APPLICATION_REQUIRED', label: '申请后改编', description: '逐个审核并明确同意后才能改编'},
+    {value: 'FORBIDDEN', label: '禁止改编', description: '当前作品不接受新的改编'}
 ];
+
+const sourceAccessForPolicy = policy => ({
+    OPEN: 'DOWNLOAD_AND_REMIX',
+    APPLICATION_REQUIRED: 'VIEW_SOURCE',
+    FORBIDDEN: 'NO_REMIX'
+}[policy] || 'NO_REMIX');
 
 const draftKey = projectId => `pp:work-publish-draft:${projectId || 'local-project'}`;
 
@@ -70,10 +76,16 @@ class WorkPublishModal extends React.Component {
             summary: draft ? draft.summary : '',
             instructions: draft ? draft.instructions : '',
             visibility: draft && draft.visibility ? draft.visibility : 'PUBLIC',
-            remixPermission: draft && draft.remixPermission ? draft.remixPermission : 'DOWNLOAD_AND_REMIX',
+            remixPolicy: draft && draft.remixPolicy ? draft.remixPolicy : 'FORBIDDEN',
             versionType: draft && draft.versionType ? draft.versionType : 'RELEASE',
+            changeLog: draft && draft.changeLog ? draft.changeLog : '',
             notifyFollowers: draft ? draft.notifyFollowers !== false : true,
-            copyrightAccepted: draft ? draft.copyrightAccepted === true : false,
+            copyrightAccepted: false,
+            remixAuthorizationConfirmed: false,
+            hasRecoveredDraft: Boolean(draft),
+            publicationMode: 'CHECKING',
+            latestReleaseNo: 0,
+            existingWorkId: '',
             categories: [],
             tags: [],
             profile: null,
@@ -122,12 +134,30 @@ class WorkPublishModal extends React.Component {
     }
     async loadOptions () {
         try {
-            const context = await loadWorkPublishOptions();
+            const context = await loadWorkPublishOptions(this.props.projectId);
             if (!this.mounted) return;
             this.setState(state => ({
                 categories: context.categories || [],
                 tags: context.tags || [],
-                categoryId: state.categoryId || (context.categories[0] && context.categories[0].id) || '',
+                categoryId: state.hasRecoveredDraft ? state.categoryId :
+                    (context.existingWork && context.existingWork.category && context.existingWork.category.id) ||
+                    state.categoryId || (context.categories[0] && context.categories[0].id) || '',
+                tagIds: state.hasRecoveredDraft ? state.tagIds :
+                    ((context.existingWork && context.existingWork.tags) || []).map(tag => tag.id),
+                name: context.existingWork ? context.existingWork.title : state.name,
+                summary: state.hasRecoveredDraft ? state.summary :
+                    (context.existingWork && context.existingWork.summary) || state.summary,
+                instructions: state.hasRecoveredDraft ? state.instructions :
+                    (context.existingWork && context.existingWork.instruction) || state.instructions,
+                visibility: state.hasRecoveredDraft ? state.visibility :
+                    (context.existingWork && context.existingWork.visibility) || state.visibility,
+                remixPolicy: state.hasRecoveredDraft ? state.remixPolicy :
+                    (context.existingWork && context.existingWork.remixPolicy) || state.remixPolicy,
+                versionType: state.hasRecoveredDraft ? state.versionType :
+                    (context.publicationMode === 'UPDATE' ? 'IMPROVED' : state.versionType),
+                publicationMode: context.publicationMode,
+                latestReleaseNo: context.latestReleaseNo,
+                existingWorkId: context.existingWork ? context.existingWork.id : '',
                 profile: context.profile,
                 session: context.session,
                 loadingOptions: false,
@@ -210,6 +240,7 @@ class WorkPublishModal extends React.Component {
         });
     }
     validate () {
+        if (this.state.publicationMode === 'CHECKING') return '正在检查作品发布状态，请稍后重试。';
         const name = this.state.name.trim();
         if (name.length < 2 || name.length > 40) return '作品名称需为 2–40 个字符。';
         if (!this.state.cover) return '请先准备作品封面。';
@@ -218,6 +249,14 @@ class WorkPublishModal extends React.Component {
             return '作品介绍需为 10–500 个字符。';
         }
         if (this.state.instructions.length > 1000) return '操作说明不能超过 1000 个字符。';
+        if (this.state.publicationMode === 'UPDATE' &&
+            (this.state.changeLog.trim().length < 2 || this.state.changeLog.trim().length > 500)) {
+            return '更新说明需为 2–500 个字符。';
+        }
+        if (this.state.publicationMode === 'FIRST' && this.state.remixPolicy !== 'FORBIDDEN' &&
+            !this.state.remixAuthorizationConfirmed) {
+            return '开放改编前，请完整阅读并确认改编授权。';
+        }
         if (!this.state.copyrightAccepted) return '请确认版权承诺后再发布。';
         if (!this.state.session) return '发布会话尚未就绪，请稍后重试。';
         return '';
@@ -230,8 +269,12 @@ class WorkPublishModal extends React.Component {
             summary: this.state.summary,
             instructions: this.state.instructions,
             visibility: this.state.visibility,
-            remixPermission: this.state.remixPermission,
+            remixPolicy: this.state.remixPolicy,
+            sourceAccess: sourceAccessForPolicy(this.state.remixPolicy),
+            remixAuthorizationConfirmed: this.state.publicationMode === 'UPDATE' ||
+                this.state.remixPolicy === 'FORBIDDEN' || this.state.remixAuthorizationConfirmed,
             versionType: this.state.versionType,
+            changeLog: this.state.changeLog.trim(),
             stageWidth: this.props.stageWidth,
             stageHeight: this.props.stageHeight,
             notifyFollowers: this.state.notifyFollowers,
@@ -246,7 +289,13 @@ class WorkPublishModal extends React.Component {
         }
         const normalizedName = this.state.name.trim();
         this.props.onChangeProjectTitle(normalizedName);
-        this.setState({publishing: true, error: '', notice: '', progress: 2, progressLabel: '准备发布'});
+        this.setState({
+            publishing: true,
+            error: '',
+            notice: '',
+            progress: 2,
+            progressLabel: this.state.publicationMode === 'UPDATE' ? '准备更新版本' : '准备首次发布'
+        });
         try {
             await this.props.onSaveProjectTitle(normalizedName);
             const result = await publishCurrentProject({
@@ -262,7 +311,9 @@ class WorkPublishModal extends React.Component {
             this.setState({
                 publishing: false,
                 submitted: true,
-                notice: `作品已提交审核（作品编号 ${result.submission.id}）。`,
+                notice: this.state.publicationMode === 'UPDATE' ?
+                    `更新版本已提交审核（版本编号 ${result.submission.id}），当前公开版本不受影响。` :
+                    `作品已提交首次发布审核（作品编号 ${result.submission.id}）。`,
                 progress: 100,
                 progressLabel: '已进入审核队列'
             });
@@ -280,7 +331,7 @@ class WorkPublishModal extends React.Component {
             .then(() => this.setState({exporting: false, notice: '本地 .sb3 备份已导出。'}))
             .catch(() => this.setState({exporting: false, error: '作品导出失败，请稍后再试。', notice: ''}));
     }
-    renderOptionGroup (name, value, options) {
+    renderOptionGroup (name, value, options, locked = false) {
         const busy = this.state.publishing || this.state.exporting;
         return (
             <div className={styles.optionGroup} role="radiogroup" aria-label={name}>
@@ -291,10 +342,15 @@ class WorkPublishModal extends React.Component {
                             key={option.value}
                             type="button"
                             className={active ? styles.optionActive : styles.option}
-                            disabled={busy}
+                            disabled={busy || locked}
                             role="radio"
                             aria-checked={active}
-                            onClick={() => this.setState({[name]: option.value, notice: ''})}
+                            onClick={() => this.setState({
+                                [name]: option.value,
+                                remixAuthorizationConfirmed: name === 'remixPolicy' ? false :
+                                    this.state.remixAuthorizationConfirmed,
+                                notice: ''
+                            })}
                         >
                             <span className={styles.optionIndicator} aria-hidden="true">
                                 {active && <CheckIcon />}
@@ -308,19 +364,33 @@ class WorkPublishModal extends React.Component {
     }
     render () {
         const busy = this.state.publishing || this.state.exporting;
+        const updating = this.state.publicationMode === 'UPDATE';
+        const metadataLocked = busy || updating;
         const profileLabel = this.state.profile ?
             `${this.state.profile.nickname} · UID ${this.state.profile.uid}` : '正在确认登录账号';
         const dimensionLabel = `${this.props.stageWidth} × ${this.props.stageHeight}`;
         return (
             <Modal
                 className={styles.modalContent}
-                contentLabel="发布作品"
+                contentLabel={updating ? '发布更新版本' : '首次发布作品'}
                 headerClassName={styles.modalHeader}
                 id="workPublishModal"
                 overlayClassName={styles.modalOverlay}
                 onRequestClose={busy ? () => {} : this.props.onCancel}
             >
                 <Box className={styles.body}>
+                    <section
+                        aria-live="polite"
+                        className={updating ? styles.updateContext : styles.firstPublishContext}
+                    >
+                        <div>
+                            <strong>{updating ? '更新已发布作品' : '首次发布作品'}</strong>
+                            <span>{updating ?
+                                `本次将创建不可变的 v${this.state.latestReleaseNo + 1}，审核期间旧版本继续公开运行。` :
+                                '本次审核通过后会生成作品入口和首个不可变发布版本。'}</span>
+                        </div>
+                        <b>{updating ? '版本更新' : '首次发布'}</b>
+                    </section>
                     <form className={styles.form} onSubmit={event => event.preventDefault()}>
                         <aside className={styles.coverPanel}>
                             <div className={styles.sectionHeader}>
@@ -357,6 +427,8 @@ class WorkPublishModal extends React.Component {
                             <dl className={styles.metadataList}>
                                 <div><dt>发布账号</dt><dd>{profileLabel}</dd></div>
                                 <div><dt>作品尺寸</dt><dd>{dimensionLabel}</dd></div>
+                                <div><dt>发布类型</dt><dd>{updating ?
+                                    `更新为 v${this.state.latestReleaseNo + 1}` : '首次发布'}</dd></div>
                                 <div><dt>草稿状态</dt><dd>创作中心自动保存</dd></div>
                             </dl>
                         </aside>
@@ -371,14 +443,14 @@ class WorkPublishModal extends React.Component {
                                     <label className={styles.fieldRow}>
                                         <span className={styles.fieldCopy}><b>作品名称</b><small>与编辑器 Header 和项目名称保持一致</small></span>
                                         <span className={styles.fieldControl}>
-                                            <input autoFocus disabled={busy} value={this.state.name} maxLength={40} placeholder="给作品起一个名字" onChange={this.handleNameChange} />
+                                            <input autoFocus disabled={metadataLocked} value={this.state.name} maxLength={40} placeholder="给作品起一个名字" onChange={this.handleNameChange} />
                                             <small>{this.state.name.length}/40</small>
                                         </span>
                                     </label>
                                     <label className={styles.fieldRow}>
                                         <span className={styles.fieldCopy}><b>作品分类</b><small>选择最符合内容的分类</small></span>
                                         <span className={styles.fieldControl}>
-                                            <select disabled={busy || this.state.loadingOptions} value={this.state.categoryId} onChange={event => this.setState({categoryId: event.target.value, notice: ''})}>
+                                            <select disabled={metadataLocked || this.state.loadingOptions} value={this.state.categoryId} onChange={event => this.setState({categoryId: event.target.value, notice: ''})}>
                                                 <option value="">请选择分类</option>
                                                 {this.state.categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}
                                             </select>
@@ -390,7 +462,7 @@ class WorkPublishModal extends React.Component {
                                             {this.state.tags.map(tag => {
                                                 const active = this.state.tagIds.includes(tag.id);
                                                 return (
-                                                    <button key={tag.id} type="button" disabled={busy} aria-pressed={active} className={active ? styles.tagActive : styles.tag} onClick={() => this.toggleTag(tag.id)}>
+                                                    <button key={tag.id} type="button" disabled={metadataLocked} aria-pressed={active} className={active ? styles.tagActive : styles.tag} onClick={() => this.toggleTag(tag.id)}>
                                                         {active && <CheckIcon />}{tag.name}
                                                     </button>
                                                 );
@@ -410,14 +482,14 @@ class WorkPublishModal extends React.Component {
                                     <label className={`${styles.fieldRow} ${styles.fieldRowStack}`}>
                                         <span className={styles.fieldCopy}><b>作品介绍</b><small>10–500 个字符</small></span>
                                         <span className={styles.fieldControl}>
-                                            <textarea disabled={busy} value={this.state.summary} maxLength={500} placeholder="介绍玩法、故事或创作灵感" onChange={event => this.setState({summary: event.target.value, notice: ''})} />
+                                            <textarea disabled={metadataLocked} value={this.state.summary} maxLength={500} placeholder="介绍玩法、故事或创作灵感" onChange={event => this.setState({summary: event.target.value, notice: ''})} />
                                             <small>{this.state.summary.length}/500</small>
                                         </span>
                                     </label>
                                     <label className={`${styles.fieldRow} ${styles.fieldRowStack}`}>
                                         <span className={styles.fieldCopy}><b>操作说明</b><small>选填，最多 1000 个字符</small></span>
                                         <span className={styles.fieldControl}>
-                                            <textarea disabled={busy} value={this.state.instructions} maxLength={1000} placeholder="例如：方向键移动，空格键跳跃" onChange={event => this.setState({instructions: event.target.value, notice: ''})} />
+                                            <textarea disabled={metadataLocked} value={this.state.instructions} maxLength={1000} placeholder="例如：方向键移动，空格键跳跃" onChange={event => this.setState({instructions: event.target.value, notice: ''})} />
                                             <small>{this.state.instructions.length}/1000</small>
                                         </span>
                                     </label>
@@ -426,22 +498,41 @@ class WorkPublishModal extends React.Component {
 
                             <section className={styles.formSection}>
                                 <div className={styles.sectionHeader}>
-                                    <span>发布选项</span>
-                                    <small>选择可见范围、版本和源码权限</small>
+                                    <span>{updating ? '更新发布选项' : '首次发布选项'}</span>
+                                    <small>{updating ? '填写本次版本说明并重新提交审核' : '选择可见范围、版本和改编策略'}</small>
                                 </div>
                                 <div className={styles.fieldList}>
+                                    {updating && (
+                                        <label className={`${styles.fieldRow} ${styles.fieldRowStack}`}>
+                                            <span className={styles.fieldCopy}><b>本次更新说明</b><small>2–500 个字符，会展示在版本历史中</small></span>
+                                            <span className={styles.fieldControl}>
+                                                <textarea disabled={busy} value={this.state.changeLog} maxLength={500} placeholder="例如：新增第二关，修复角色移动问题" onChange={event => this.setState({changeLog: event.target.value, notice: ''})} />
+                                                <small>{this.state.changeLog.length}/500</small>
+                                            </span>
+                                        </label>
+                                    )}
                                     <fieldset className={`${styles.fieldRow} ${styles.fieldRowStack}`}>
                                         <legend className={styles.fieldCopy}><b>可见范围</b><small>决定审核通过后的访问范围</small></legend>
-                                        {this.renderOptionGroup('visibility', this.state.visibility, VISIBILITY_OPTIONS)}
+                                        {this.renderOptionGroup('visibility', this.state.visibility, VISIBILITY_OPTIONS, updating)}
                                     </fieldset>
                                     <fieldset className={`${styles.fieldRow} ${styles.fieldRowStack}`}>
                                         <legend className={styles.fieldCopy}><b>版本类型</b><small>标记当前发布版本的完成度</small></legend>
                                         {this.renderOptionGroup('versionType', this.state.versionType, VERSION_OPTIONS)}
                                     </fieldset>
                                     <fieldset className={`${styles.fieldRow} ${styles.fieldRowStack}`}>
-                                        <legend className={styles.fieldCopy}><b>源码权限</b><small>控制其他用户学习和改编的方式</small></legend>
-                                        {this.renderOptionGroup('remixPermission', this.state.remixPermission, REMIX_OPTIONS)}
+                                        <legend className={styles.fieldCopy}><b>改编策略</b><small>{updating ?
+                                            '更新发布不改变当前授权；如需收回请在作品管理中调整' :
+                                            '控制其他用户直接改编、申请改编或禁止改编'}</small></legend>
+                                        {this.renderOptionGroup('remixPolicy', this.state.remixPolicy, REMIX_OPTIONS, updating)}
                                     </fieldset>
+                                    {!updating && this.state.remixPolicy !== 'FORBIDDEN' && (
+                                        <label className={styles.checkRow}>
+                                            <input type="checkbox" disabled={busy} checked={this.state.remixAuthorizationConfirmed} onChange={event => this.setState({remixAuthorizationConfirmed: event.target.checked})} />
+                                            <span><b>我已完整理解并确认开启改编授权</b><small>{this.state.remixPolicy === 'OPEN' ?
+                                                '其他用户无需逐次申请即可复制当前公开版本；之后收回只影响新的改编。' :
+                                                '只有我逐次审批并确认同意后，对方才能复制当前公开版本。'}</small></span>
+                                        </label>
+                                    )}
                                     <label className={styles.checkRow}>
                                         <input type="checkbox" disabled={busy} checked={this.state.notifyFollowers} onChange={event => this.setState({notifyFollowers: event.target.checked})} />
                                         <span><b>审核通过后通知关注者</b><small>仅公开作品会发送站内通知</small></span>
@@ -465,15 +556,18 @@ class WorkPublishModal extends React.Component {
                     {this.state.notice && <p className={styles.notice} aria-live="polite">{this.state.notice}</p>}
 
                     <footer className={styles.footer}>
-                        <span>{busy ? '正在生成发布版本，请保持页面打开' : '创作草稿会继续自动保存，不需要在此重复保存'}</span>
+                        <span>{busy ? '正在生成不可变发布版本，请保持页面打开' : updating ?
+                            '更新审核期间，当前公开版本继续运行；审核通过后才切换。' :
+                            '创作草稿会继续自动保存，不需要在此重复保存。'}</span>
                         <div className={styles.footerActions}>
                             <button type="button" className={styles.secondaryButton} disabled={busy} onClick={this.handleExport}>
                                 <FileDownIcon data-icon="inline-start" />
                                 {this.state.exporting ? '正在导出…' : '导出备份'}
                             </button>
-                            <button type="button" className={styles.primaryButton} disabled={busy || this.state.loadingOptions || this.state.submitted || this.state.generatingCover} onClick={this.handleSubmit}>
+                            <button type="button" className={styles.primaryButton} disabled={busy || this.state.loadingOptions || this.state.submitted || this.state.generatingCover || this.state.publicationMode === 'CHECKING'} onClick={this.handleSubmit}>
                                 <UploadCloudIcon data-icon="inline-start" />
-                                {this.state.publishing ? '正在发布…' : this.state.submitted ? '已提交审核' : '发布作品'}
+                                {this.state.publishing ? (updating ? '正在提交更新…' : '正在发布…') :
+                                    this.state.submitted ? '已提交审核' : updating ? '提交更新版本' : '首次发布作品'}
                             </button>
                         </div>
                     </footer>
