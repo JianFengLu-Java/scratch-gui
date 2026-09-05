@@ -1,5 +1,6 @@
 import {
     clearPlanetSession,
+    readPlanetEnvelope,
     refreshPlanetSession,
     resolvePlanetAssetUrl
 } from '../../../src/lib/planet-session';
@@ -16,6 +17,21 @@ describe('planet session', () => {
     afterEach(() => {
         clearPlanetSession();
         global.fetch = originalFetch;
+    });
+
+    test('shows actionable validation messages returned by the publishing API', async () => {
+        await expect(readPlanetEnvelope({ok: false, status: 400, json: async () => ({
+            code: 'VALIDATION_ERROR', message: '请求参数不合法', data: {fieldErrors: [
+                {field: 'remixPolicy', message: '请选择改编授权策略'},
+                {field: 'remixPolicy', message: '请选择改编授权策略'}
+            ]}
+        })})).rejects.toMatchObject({message: '请选择改编授权策略', status: 400, code: 'VALIDATION_ERROR'});
+    });
+
+    test('keeps the envelope message when field details are absent', async () => {
+        await expect(readPlanetEnvelope({ok: false, status: 400, json: async () => ({
+            code: 'VALIDATION_ERROR', message: '请求参数不合法', data: null
+        })})).rejects.toThrow('请求参数不合法');
     });
 
     test('routes backend avatar paths through the same-origin API proxy', () => {

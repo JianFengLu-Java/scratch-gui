@@ -165,7 +165,16 @@ const saveVersion = async (session, projectId, uploads, form, onProgress) => {
     return {coverObjectId: uploads.coverUpload.objectId, versionId: version.id};
 };
 
-const workPayload = (projectId, version, form, revision) => ({
+const validateRemixAuthorization = form => {
+    if (!['FORBIDDEN', 'OPEN', 'APPLICATION_REQUIRED'].includes(form.remixPolicy)) {
+        throw new Error('请选择改编授权策略；若未显示该选项，请刷新编辑器后重试。');
+    }
+    if (form.remixPolicy !== 'FORBIDDEN' && form.remixAuthorizationConfirmed !== true) {
+        throw new Error('开放改编前，请完整阅读并确认改编授权。');
+    }
+};
+
+export const workPayload = (projectId, version, form, revision) => ({
     projectId,
     versionId: version.versionId,
     title: form.name.trim(),
@@ -178,7 +187,7 @@ const workPayload = (projectId, version, form, revision) => ({
     originWorkId: null,
     remixPermission: form.sourceAccess,
     remixPolicy: form.remixPolicy,
-    remixAuthorizationConfirmed: form.remixAuthorizationConfirmed,
+    remixAuthorizationConfirmed: form.remixAuthorizationConfirmed === true,
     visibility: form.visibility,
     versionType: form.versionType,
     stageWidth: form.stageWidth,
@@ -260,6 +269,7 @@ export const saveCurrentProjectDraft = async ({
     serializeProject,
     session
 }) => {
+    validateRemixAuthorization(form);
     onProgress('正在检查项目状态', 8);
     let projectId = currentProjectId(candidateProjectId);
     let existingWork = projectId ? await findProjectWork(session, projectId) : null;

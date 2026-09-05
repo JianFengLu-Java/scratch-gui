@@ -9,7 +9,13 @@ let refreshPromise = null;
 export const readPlanetEnvelope = async response => {
     const payload = await response.json().catch(() => null);
     if (!response.ok || !payload || payload.code !== 'OK') {
-        const error = new Error(payload && payload.message ? payload.message : `请求失败（${response.status}）`);
+        const fields = payload && payload.code === 'VALIDATION_ERROR' && payload.data && payload.data.fieldErrors;
+        const messages = Array.isArray(fields) ? fields
+            .filter(field => field && typeof field.message === 'string' && field.message.trim())
+            .map(field => field.message) : [];
+        const message = messages.length ? [...new Set(messages)].join('；') :
+            payload && payload.message ? payload.message : `请求失败（${response.status}）`;
+        const error = new Error(message);
         error.status = response.status;
         error.code = payload && payload.code;
         throw error;
