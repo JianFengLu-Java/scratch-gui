@@ -56,7 +56,6 @@ import SettingsMenu from "./settings-menu.jsx";
 
 import FramerateChanger from "../../containers/tw-framerate-changer.jsx";
 import TWSaveStatus from "./tw-save-status.jsx";
-import TWNews from "./tw-news.jsx";
 import PlanetUserMenu from "./planet-user-menu.jsx";
 import PlanetAutosaveStatus from "./planet-autosave-status.jsx";
 import PlanetAutosaveManager from "../../containers/planet-autosave-manager.jsx";
@@ -999,114 +998,22 @@ class MenuBar extends React.Component {
                                         )}
                                     </FramerateChanger>
                                 </MenuSection>
+                                {!this.props.readOnly && (
+                                    <MenuSection>
+                                        {this.props.onClickAddonSettings && (
+                                            <MenuItem icon={PuzzleIcon} onClick={this.props.onClickAddonSettings}>
+                                                插件设置
+                                            </MenuItem>
+                                        )}
+                                        {this.props.onClickSettingsModal && (
+                                            <MenuItem icon={SlidersHorizontalIcon} onClick={this.props.onClickSettingsModal}>
+                                                高级设置
+                                            </MenuItem>
+                                        )}
+                                    </MenuSection>
+                                )}
                             </MenuBarMenu>
                         </MenuLabel>
-                        {this.props.isTotallyNormal && (
-                            <MenuLabel
-                                open={this.props.modeMenuOpen}
-                                onOpen={this.props.onClickMode}
-                                onClose={this.props.onRequestCloseMode}
-                            >
-                                <FormattedMessage
-                                    defaultMessage="Mode"
-                                    description="Mode menu item in the menu bar"
-                                    id="gui.menuBar.modeMenu"
-                                />
-                                <MenuBarMenu
-                                    className={classNames(styles.menuBarMenu)}
-                                    open={this.props.modeMenuOpen}
-                                    place={this.props.isRtl ? "left" : "right"}
-                                >
-                                    <MenuSection>
-                                        <MenuItem
-                                            onClick={this.handleSetMode("NOW")}
-                                        >
-                                            <span
-                                                className={classNames({
-                                                    [styles.inactive]:
-                                                        !this.props.modeNow,
-                                                })}
-                                            >
-                                                {"✓"}
-                                            </span>{" "}
-                                            <FormattedMessage
-                                                defaultMessage="Normal mode"
-                                                description="April fools: resets editor to not have any pranks"
-                                                id="gui.menuBar.normalMode"
-                                            />
-                                        </MenuItem>
-                                        <MenuItem
-                                            onClick={this.handleSetMode("2020")}
-                                        >
-                                            <span
-                                                className={classNames({
-                                                    [styles.inactive]:
-                                                        !this.props.mode2020,
-                                                })}
-                                            >
-                                                {"✓"}
-                                            </span>{" "}
-                                            <FormattedMessage
-                                                defaultMessage="Caturday mode"
-                                                description="April fools: Cat blocks mode"
-                                                id="gui.menuBar.caturdayMode"
-                                            />
-                                        </MenuItem>
-                                    </MenuSection>
-                                </MenuBarMenu>
-                            </MenuLabel>
-                        )}
-
-                        {!this.props.readOnly && this.props.onClickAddonSettings && (
-                            <div
-                                aria-label={this.props.intl.formatMessage({
-                                    defaultMessage: 'Addons',
-                                    id: 'tw.menuBar.addons'
-                                })}
-                                className={classNames(
-                                    styles.menuBarItem,
-                                    styles.hoverable,
-                                )}
-                                onClick={this.props.onClickAddonSettings}
-                                onKeyDown={this.handleAddonSettingsKeyDown}
-                                role="button"
-                                tabIndex="0"
-                            >
-                                <PuzzleIcon data-icon="inline-start" />
-                                <span className={styles.collapsibleLabel}>
-                                    <FormattedMessage
-                                        defaultMessage="Addons"
-                                        description="Button to open addon settings"
-                                        id="tw.menuBar.addons"
-                                    />
-                                </span>
-                            </div>
-                        )}
-                        {!this.props.readOnly && this.props.onClickSettingsModal && (
-                            <div
-                                aria-label={this.props.intl.formatMessage({
-                                    defaultMessage: 'Advanced',
-                                    id: 'tw.menuBar.advanced'
-                                })}
-                                className={classNames(
-                                    styles.menuBarItem,
-                                    styles.hoverable,
-                                )}
-                                onClick={this.props.onClickSettingsModal}
-                                onKeyDown={this.handleAdvancedSettingsKeyDown}
-                                role="button"
-                                tabIndex="0"
-                            >
-                                <SlidersHorizontalIcon data-icon="inline-start" />
-                                <span className={styles.collapsibleLabel}>
-                                    <FormattedMessage
-                                        defaultMessage="Advanced"
-                                        description="Button to open advanced settings menu"
-                                        id="tw.menuBar.advanced"
-                                    />
-                                </span>
-                            </div>
-                        )}
                         <WorkspacePlaceholder />
                     </div>
 
@@ -1226,7 +1133,6 @@ class MenuBar extends React.Component {
         return (
             <React.Fragment>
                 {menuBar}
-                {!this.props.readOnly && <TWNews />}
                 <AlertDialog
                     cancelLabel="继续创作"
                     confirmLabel="确定返回"
