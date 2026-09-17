@@ -57,10 +57,11 @@ const SpriteSelectorComponent = function (props) {
     React.useEffect(() => {
         const handleResourceCommand = event => {
             const command = event.detail && event.detail.command;
-            if (command === 'sprite-library') onNewSpriteClick();
-            else if (command === 'sprite-paint') onPaintSpriteClick();
-            else if (command === 'sprite-surprise') onSurpriseSpriteClick();
-            else if (command === 'sprite-upload') onFileUploadClick();
+            // Preserve the event contract of the original target-pane button handlers.
+            if (command === 'sprite-library') onNewSpriteClick(event);
+            else if (command === 'sprite-paint') onPaintSpriteClick(event);
+            else if (command === 'sprite-surprise') onSurpriseSpriteClick(event);
+            else if (command === 'sprite-upload') onFileUploadClick(event);
         };
         if (!readOnly) window.addEventListener(PLANET_EDITOR_RESOURCE_COMMAND_EVENT, handleResourceCommand);
         return () => {

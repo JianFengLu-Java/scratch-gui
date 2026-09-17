@@ -40,10 +40,11 @@ const StageSelector = props => {
     React.useEffect(() => {
         const handleResourceCommand = event => {
             const command = event.detail && event.detail.command;
-            if (command === 'backdrop-library') onNewBackdropClick();
-            else if (command === 'backdrop-paint') onEmptyBackdropClick();
-            else if (command === 'backdrop-surprise') onSurpriseBackdropClick();
-            else if (command === 'backdrop-upload') onBackdropFileUploadClick();
+            // Backdrop handlers call stopPropagation before mutating the VM or opening the file input.
+            if (command === 'backdrop-library') onNewBackdropClick(event);
+            else if (command === 'backdrop-paint') onEmptyBackdropClick(event);
+            else if (command === 'backdrop-surprise') onSurpriseBackdropClick(event);
+            else if (command === 'backdrop-upload') onBackdropFileUploadClick(event);
         };
         if (!readOnly) window.addEventListener(PLANET_EDITOR_RESOURCE_COMMAND_EVENT, handleResourceCommand);
         return () => {
