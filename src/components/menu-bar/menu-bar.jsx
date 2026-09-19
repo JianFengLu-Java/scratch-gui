@@ -1,3 +1,4 @@
+const assignmentEntry = new URLSearchParams(location.search).get('assignment') === '1';
 import classNames from "classnames";
 import { connect } from "react-redux";
 import { compose } from "redux";
@@ -998,7 +999,7 @@ class MenuBar extends React.Component {
                                         )}
                                     </FramerateChanger>
                                 </MenuSection>
-                                {!this.props.readOnly && (
+                                {!this.props.readOnly && !assignmentEntry && (
                                     <MenuSection>
                                         {this.props.onClickAddonSettings && (
                                             <MenuItem icon={PuzzleIcon} onClick={this.props.onClickAddonSettings}>
@@ -1087,21 +1088,21 @@ class MenuBar extends React.Component {
                     aria-label="项目状态与账户"
                     className={styles.accountInfoGroup}
                 >
-                    {!this.props.isPlayerOnly && !this.props.readOnly && (
+                    {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && (
                         <PlanetAutosaveManager
                             projectId={this.props.projectId}
                             vm={this.props.vm}
                         />
                     )}
-                    {!this.props.isPlayerOnly && !this.props.readOnly && (
+                    {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && (
                         <PlanetCollaborationManager
                             projectId={this.props.projectId}
                             vm={this.props.vm}
                         />
                     )}
-                    {!this.props.isPlayerOnly && !this.props.readOnly && <PlanetRemoteCursors />}
-                    {!this.props.isPlayerOnly && !this.props.readOnly && <PlanetRoleLockOverlay />}
-                    {!this.props.isPlayerOnly && !this.props.readOnly && (
+                    {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && <PlanetRemoteCursors />}
+                    {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && <PlanetRoleLockOverlay />}
+                    {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && (
                         <Button
                             className={styles.publishWorkButton}
                             onClick={this.handleOpenWorkPublish}
@@ -1113,17 +1114,17 @@ class MenuBar extends React.Component {
                     {this.props.readOnly && (
                         <div className={styles.reviewModeBadge}>{'审核模式 · 仅查看'}</div>
                     )}
-                    {!this.props.readOnly && <div
+                    {!this.props.readOnly && !assignmentEntry && <div
                         aria-label="项目同步状态"
                         className={styles.statusGroup}
                     >
                         <PlanetAutosaveStatus />
                         <PlanetCollaborationStatus projectId={this.props.projectId} />
                     </div>}
-                    {!this.props.readOnly && (
+                    {!this.props.readOnly && !assignmentEntry && (
                         <TWSaveStatus showSaveFilePicker={this.props.showSaveFilePicker} />
                     )}
-                    {!this.props.isPlayerOnly && !this.props.readOnly && <PlanetUserMenu />}
+                    {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && <PlanetUserMenu />}
                 </div>
 
                 {aboutButton}

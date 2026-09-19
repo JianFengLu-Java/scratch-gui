@@ -1,3 +1,4 @@
+const assignmentEntry = new URLSearchParams(location.search).get('assignment') === '1';
 import classNames from 'classnames';
 import omit from 'lodash.omit';
 import PropTypes from 'prop-types';
@@ -455,10 +456,10 @@ const GUIComponent = props => {
                     </Box>
                 </Box>
                 <DragLayer />
-                {!readOnly && <PlanetAiAssistant vm={vm} />}
-                {!isPlayerOnly && !readOnly && <PlanetProjectChat />}
-                {!isPlayerOnly && !readOnly && <PlanetCollaborationInvite />}
-                {!isPlayerOnly && !readOnly && <PlanetCollaborationPermissions />}
+                {!readOnly && !assignmentEntry && <PlanetAiAssistant vm={vm} />}
+                {!isPlayerOnly && !readOnly && !assignmentEntry && <PlanetProjectChat />}
+                {!isPlayerOnly && !readOnly && !assignmentEntry && <PlanetCollaborationInvite />}
+                {!isPlayerOnly && !readOnly && !assignmentEntry && <PlanetCollaborationPermissions />}
             </Box>
         );
     }}</MediaQuery>);

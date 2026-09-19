@@ -19,6 +19,8 @@ import './import-first';
 import React from 'react';
 
 import Interface from './render-interface.jsx';
+import {assignmentEditorProps} from '../lib/planet-assignment-bridge';
 import render from './app-target';
 
-render(<Interface />);
+const assignmentMode = new URLSearchParams(location.search).get('assignment') === '1';
+render(<Interface {...(assignmentMode ? assignmentEditorProps : {})} />);
