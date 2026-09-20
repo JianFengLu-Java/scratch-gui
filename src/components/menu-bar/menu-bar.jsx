@@ -128,7 +128,7 @@ import mystuffIcon from "./icon--mystuff.png";
 import profileIcon from "./icon--profile.png";
 import remixIcon from "./icon--remix.svg";
 import aboutIcon from "./icon--about.svg";
-import planetBrandLockup from "../../../../../../logo/Frame 4.svg";
+import planetBrandLockup from "../../assets/brand/planet-lockup.svg";
 
 import ninetiesLogo from "./nineties_logo.svg";
 import catLogo from "./cat_logo.svg";

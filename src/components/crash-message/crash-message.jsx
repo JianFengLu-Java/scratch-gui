@@ -10,7 +10,7 @@ import {
 import Box from '../box/box.jsx';
 
 import styles from './crash-message.css';
-import planetBrandLockup from '../../../../../../logo/Frame 4.svg';
+import planetBrandLockup from '../../assets/brand/planet-lockup.svg';
 
 const CrashMessage = props => (
     <div
