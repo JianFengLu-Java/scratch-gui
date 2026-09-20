@@ -267,11 +267,11 @@ module.exports = [
             new CopyWebpackPlugin({
                 patterns: [
                     {
-                        from: path.resolve(__dirname, '../../../logo/Frame 2.svg'),
+                        from: path.resolve(__dirname, 'src/assets/brand/planet-mark.svg'),
                         to: 'brand-favicon.svg'
                     },
                     {
-                        from: path.resolve(__dirname, '../../../logo/Frame 4.svg'),
+                        from: path.resolve(__dirname, 'src/assets/brand/planet-lockup.svg'),
                         to: 'brand-lockup.svg'
                     }
                 ]

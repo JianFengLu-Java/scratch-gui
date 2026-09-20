@@ -1,3 +1,4 @@
+const assignmentEntry = new URLSearchParams(location.search).get('assignment') === '1';
 import classNames from "classnames";
 import { connect } from "react-redux";
 import { compose } from "redux";
@@ -10,6 +11,8 @@ import {
 import PropTypes from "prop-types";
 import bindAll from "lodash.bindall";
 import bowser from "bowser";
+import AssignmentControls from "./assignment-controls.jsx";
+import {requestAssignmentSave} from "../../lib/planet-assignment-bridge";
 import React from "react";
 import {
     AppWindowIcon,
@@ -125,7 +128,7 @@ import mystuffIcon from "./icon--mystuff.png";
 import profileIcon from "./icon--profile.png";
 import remixIcon from "./icon--remix.svg";
 import aboutIcon from "./icon--about.svg";
-import planetBrandLockup from "../../../../../../logo/Frame 4.svg";
+import planetBrandLockup from "../../assets/brand/planet-lockup.svg";
 
 import ninetiesLogo from "./nineties_logo.svg";
 import catLogo from "./cat_logo.svg";
@@ -429,7 +432,9 @@ class MenuBar extends React.Component {
         }
         if (modifier) {
             if (event.key.toLowerCase() === "s") {
-                if (isPlanetProjectRoute()) {
+                if (assignmentEntry) {
+                    requestAssignmentSave();
+                } else if (isPlanetProjectRoute()) {
                     window.dispatchEvent(new CustomEvent(PLANET_AUTOSAVE_REQUEST_EVENT));
                 } else {
                     this.props.handleSaveProject();
@@ -998,7 +1003,7 @@ class MenuBar extends React.Component {
                                         )}
                                     </FramerateChanger>
                                 </MenuSection>
-                                {!this.props.readOnly && (
+                                {!this.props.readOnly && !assignmentEntry && (
                                     <MenuSection>
                                         {this.props.onClickAddonSettings && (
                                             <MenuItem icon={PuzzleIcon} onClick={this.props.onClickAddonSettings}>
@@ -1087,21 +1092,21 @@ class MenuBar extends React.Component {
                     aria-label="项目状态与账户"
                     className={styles.accountInfoGroup}
                 >
-                    {!this.props.isPlayerOnly && !this.props.readOnly && (
+                    {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && (
                         <PlanetAutosaveManager
                             projectId={this.props.projectId}
                             vm={this.props.vm}
                         />
                     )}
-                    {!this.props.isPlayerOnly && !this.props.readOnly && (
+                    {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && (
                         <PlanetCollaborationManager
                             projectId={this.props.projectId}
                             vm={this.props.vm}
                         />
                     )}
-                    {!this.props.isPlayerOnly && !this.props.readOnly && <PlanetRemoteCursors />}
-                    {!this.props.isPlayerOnly && !this.props.readOnly && <PlanetRoleLockOverlay />}
-                    {!this.props.isPlayerOnly && !this.props.readOnly && (
+                    {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && <PlanetRemoteCursors />}
+                    {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && <PlanetRoleLockOverlay />}
+                    {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && (
                         <Button
                             className={styles.publishWorkButton}
                             onClick={this.handleOpenWorkPublish}
@@ -1110,20 +1115,21 @@ class MenuBar extends React.Component {
                             {'发布作品'}
                         </Button>
                     )}
-                    {this.props.readOnly && (
+                    {assignmentEntry && <AssignmentControls readOnly={this.props.readOnly} />}
+                    {this.props.readOnly && !assignmentEntry && (
                         <div className={styles.reviewModeBadge}>{'审核模式 · 仅查看'}</div>
                     )}
-                    {!this.props.readOnly && <div
+                    {!this.props.readOnly && !assignmentEntry && <div
                         aria-label="项目同步状态"
                         className={styles.statusGroup}
                     >
                         <PlanetAutosaveStatus />
                         <PlanetCollaborationStatus projectId={this.props.projectId} />
                     </div>}
-                    {!this.props.readOnly && (
+                    {!this.props.readOnly && !assignmentEntry && (
                         <TWSaveStatus showSaveFilePicker={this.props.showSaveFilePicker} />
                     )}
-                    {!this.props.isPlayerOnly && !this.props.readOnly && <PlanetUserMenu />}
+                    {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && <PlanetUserMenu />}
                 </div>
 
                 {aboutButton}

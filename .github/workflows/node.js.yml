@@ -17,6 +17,7 @@ jobs:
       with:
         node-version: 22
         cache: npm
-    - run: npm ci
+    # Match the React 16 compatibility setup used by the host build script.
+    - run: npm ci --legacy-peer-deps
     - run: npm run build
     - run: npm run test:unit

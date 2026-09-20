@@ -1,0 +1,8 @@
+@import "../../css/colors.css";
+
+.controls { display: flex; align-items: center; gap: 0.5rem; padding: 0 0.5rem; white-space: nowrap; }
+.controls span { font-size: 0.75rem; }
+.controls button { font: inherit; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 0.375rem; padding: 0.4rem 0.65rem; cursor: pointer; }
+.controls button:disabled { opacity: 0.5; cursor: default; }
+.controls button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.controls .save { background: $ui-white; color: $motion-primary; border-color: $ui-white; }

@@ -55,7 +55,8 @@ import {APP_NAME, DOCUMENT_APP_NAME} from '../lib/brand.js';
 import styles from './interface.css';
 
 const sourceReviewEntry = /(?:^|\/)review-editor(?:\/|\.html|$)/.test(location.pathname);
-const isInvalidEmbed = window.parent !== window && !sourceReviewEntry;
+const assignmentEntry = new URLSearchParams(location.search).get('assignment') === '1';
+const isInvalidEmbed = window.parent !== window && !sourceReviewEntry && !assignmentEntry;
 
 const messages = defineMessages({
     defaultTitle: {
@@ -82,7 +83,7 @@ if (AddonChannels.changeChannel) {
     });
 }
 
-if (!sourceReviewEntry) runAddons();
+if (!sourceReviewEntry && !assignmentEntry) runAddons();
 
 const Footer = () => (
     <footer className={styles.footer}>
@@ -199,7 +200,7 @@ class Interface extends React.Component {
     }
     componentDidUpdate (prevProps) {
         if (prevProps.isLoading && !this.props.isLoading) {
-            if (!this.props.readOnly) loadServiceWorker();
+            if (!this.props.readOnly && !assignmentEntry) loadServiceWorker();
         }
     }
     handleUpdateProjectTitle (title, isDefault) {
