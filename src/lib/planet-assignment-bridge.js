@@ -4,6 +4,12 @@ const enabled = params.get('assignment') === '1';
 const channel = params.get('channel');
 const parentOrigin = params.get('parentOrigin');
 const readOnly = params.get('readonly') === 'true';
+export const assignmentHostControls = enabled && params.get('hostControls') === '1';
+export const ASSIGNMENT_HOST_STATE_EVENT = 'assignment-host-state';
+let hostState = {ready: false, saving: false, saved: false, dirty: false, saveLabel: '保存作品'};
+export const getAssignmentHostState = () => hostState;
+export const requestAssignmentSave = () => { if (!readOnly) send('ASSIGNMENT_SAVE_REQUEST'); };
+export const requestAssignmentClose = () => send('ASSIGNMENT_CLOSE_REQUEST');
 const MAX_BYTES = 20 * 1024 * 1024;
 let vm;
 let ready = false;
@@ -14,7 +20,13 @@ const send = (type, extra = {}) => {
 };
 window.addEventListener('message', async event => {
     if (!enabled || event.source !== window.parent || event.origin !== parentOrigin || !event.data ||
-        event.data.channel !== channel || !ready || !vm) return;
+        event.data.channel !== channel) return;
+    if (event.data.type === 'ASSIGNMENT_HOST_STATE') {
+        hostState = event.data.state;
+        window.dispatchEvent(new CustomEvent(ASSIGNMENT_HOST_STATE_EVENT));
+        return;
+    }
+    if (!ready || !vm) return;
     const {type, requestId, data} = event.data;
     if (type === 'ASSIGNMENT_PING') return send('ASSIGNMENT_READY');
     if (loading) return;

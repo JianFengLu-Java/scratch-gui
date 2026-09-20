@@ -11,6 +11,8 @@ import {
 import PropTypes from "prop-types";
 import bindAll from "lodash.bindall";
 import bowser from "bowser";
+import AssignmentControls from "./assignment-controls.jsx";
+import {requestAssignmentSave} from "../../lib/planet-assignment-bridge";
 import React from "react";
 import {
     AppWindowIcon,
@@ -430,7 +432,9 @@ class MenuBar extends React.Component {
         }
         if (modifier) {
             if (event.key.toLowerCase() === "s") {
-                if (isPlanetProjectRoute()) {
+                if (assignmentEntry) {
+                    requestAssignmentSave();
+                } else if (isPlanetProjectRoute()) {
                     window.dispatchEvent(new CustomEvent(PLANET_AUTOSAVE_REQUEST_EVENT));
                 } else {
                     this.props.handleSaveProject();
@@ -1111,7 +1115,8 @@ class MenuBar extends React.Component {
                             {'发布作品'}
                         </Button>
                     )}
-                    {this.props.readOnly && (
+                    {assignmentEntry && <AssignmentControls readOnly={this.props.readOnly} />}
+                    {this.props.readOnly && !assignmentEntry && (
                         <div className={styles.reviewModeBadge}>{'审核模式 · 仅查看'}</div>
                     )}
                     {!this.props.readOnly && !assignmentEntry && <div
