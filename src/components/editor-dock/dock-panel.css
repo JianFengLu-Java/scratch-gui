@@ -21,6 +21,56 @@
     z-index: calc($z-index-modal + var(--dock-panel-stack-index, 0));
 }
 
+.conversation {
+    background: color-mix(in srgb, var(--tw-dialog-background, #fff) 97%,
+        var(--tw-dialog-foreground, #171717));
+    border-color: color-mix(in srgb, var(--tw-dialog-foreground, #171717) 14%,
+        var(--tw-dialog-border, #e5e5e5));
+    border-radius: 1.125rem;
+    box-shadow: 0 1.4rem 3.6rem -1.5rem color-mix(in srgb,
+        var(--tw-dialog-foreground, #171717) 30%, transparent),
+        0 .15rem .5rem color-mix(in srgb, var(--tw-dialog-foreground, #171717) 8%, transparent);
+}
+
+.conversation .header {
+    min-height: 3rem;
+    padding: .42rem .55rem .42rem .65rem;
+}
+
+.conversation .drag-handle {
+    gap: .55rem;
+}
+
+.conversation .header-icon {
+    background: color-mix(in srgb, var(--tw-dialog-foreground, #171717) 9%,
+        var(--tw-dialog-background, #fff));
+    border-color: color-mix(in srgb, var(--tw-dialog-foreground, #171717) 12%, transparent);
+    border-radius: .62rem;
+    height: 1.8rem;
+    width: 1.8rem;
+}
+
+.conversation .header-icon svg {
+    height: .9rem;
+    width: .9rem;
+}
+
+.conversation .header-copy h2 {
+    font-size: .78rem;
+    letter-spacing: -.01em;
+}
+
+.conversation .header-copy p {
+    font-size: .59rem;
+    margin-top: .12rem;
+}
+
+.conversation .icon-button {
+    border-radius: .58rem;
+    height: 1.9rem;
+    width: 1.9rem;
+}
+
 .panel[data-dock-panel-active="false"] {
     box-shadow: 0 .55rem 1.7rem -.9rem var(--tw-dialog-shadow, rgba(23, 23, 23, .14)),
         0 1px 2px var(--tw-dialog-shadow, rgba(23, 23, 23, .06));

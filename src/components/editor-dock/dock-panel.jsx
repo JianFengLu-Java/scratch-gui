@@ -18,6 +18,7 @@ gsap.registerPlugin(useGSAP, Draggable);
 
 const DockPanel = ({
     actions,
+    appearance,
     children,
     className,
     description,
@@ -108,7 +109,9 @@ const DockPanel = ({
             aria-describedby={descriptionId}
             aria-labelledby={titleId}
             aria-modal="false"
-            className={classNames(styles.panel, className)}
+            className={classNames(styles.panel, {
+                [styles.conversation]: appearance === 'conversation'
+            }, className)}
             data-dock-panel={panelId}
             ref={panelRef}
             role="dialog"
@@ -153,6 +156,7 @@ const DockPanel = ({
 
 DockPanel.propTypes = {
     actions: PropTypes.node,
+    appearance: PropTypes.oneOf(['default', 'conversation']),
     children: PropTypes.node.isRequired,
     className: PropTypes.string,
     description: PropTypes.string,
@@ -166,6 +170,7 @@ DockPanel.propTypes = {
 
 DockPanel.defaultProps = {
     actions: null,
+    appearance: 'default',
     className: null,
     description: null,
     icon: null,

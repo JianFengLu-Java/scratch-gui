@@ -2,7 +2,11 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import {
+    CheckCircle2Icon,
+    CircleXIcon,
+    Clock3Icon,
     HistoryIcon,
+    LoaderCircleIcon,
     PlusIcon,
     SendIcon,
     SparklesIcon
@@ -26,6 +30,12 @@ import {
 import {PLANET_AI_ASSISTANT_STATE_EVENT} from '../../lib/editor-dock-events';
 
 import styles from './planet-ai-assistant.css';
+
+const STARTER_PROMPTS = [
+    '让角色点击绿旗后移动并旋转',
+    '检查当前脚本有没有逻辑问题',
+    '帮我设计一个简单的得分机制'
+];
 
 const projectIdFromRoute = () => {
     const match = location.pathname.match(/^\/create\/(\d+)\/(?:editor|fullscreen)\/?$/);
@@ -290,11 +300,17 @@ class PlanetAiAssistant extends React.Component {
             preview = {title: '脚本计划需要重新生成', description: error.message};
         }
         const status = this.state.toolStates[toolCall.id];
-        const finished = status && status !== 'running';
+        const StatusIcon = status === 'succeeded' ? CheckCircle2Icon :
+            status === 'running' ? LoaderCircleIcon : CircleXIcon;
         return (
             <section className={styles.toolCard} key={toolCall.id} aria-label="AI 积木修改计划">
-                <div className={styles.toolEyebrow}>需要你的确认</div>
-                <strong>{preview.title}</strong>
+                <div className={styles.toolHeader}>
+                    <span className={styles.toolGlyph}><SparklesIcon aria-hidden="true" /></span>
+                    <div>
+                        <div className={styles.toolEyebrow}>需要你的确认</div>
+                        <strong>{preview.title}</strong>
+                    </div>
+                </div>
                 <p>{preview.description}</p>
                 <div className={styles.toolActions}>
                     <button
@@ -314,9 +330,11 @@ class PlanetAiAssistant extends React.Component {
                         {status === 'running' ? '正在应用…' : '应用到编辑器'}
                     </button>
                 </div>
-                {finished ? <div className={styles.toolStatus}>
-                    {status === 'succeeded' ? '已添加，可使用编辑器撤销操作恢复。' :
-                        status === 'cancelled' ? '已取消，没有修改编辑器。' : '应用失败，请重新规划。'}
+                {status ? <div className={styles.toolStatus} data-status={status}>
+                    <StatusIcon aria-hidden="true" />
+                    <span>{status === 'running' ? '正在应用积木修改…' :
+                        status === 'succeeded' ? '已添加，可使用编辑器撤销操作恢复。' :
+                            status === 'cancelled' ? '已取消，没有修改编辑器。' : '应用失败，请重新规划。'}</span>
                 </div> : null}
             </section>
         );
@@ -379,6 +397,7 @@ class PlanetAiAssistant extends React.Component {
                         <HistoryIcon aria-hidden="true" />
                     </button>
                 )}
+                appearance="conversation"
                 className={this.state.historyOpen ? styles.panelWithHistory : styles.panel}
                 description="规划并搭建基础积木"
                 dragLabel="拖动 AI 创作助手窗口"
@@ -396,35 +415,61 @@ class PlanetAiAssistant extends React.Component {
                         message => this.renderMessage(message)
                     ) : (
                         <div className={styles.emptyState}>
-                            <SparklesIcon aria-hidden="true" />
+                            <span className={styles.emptyIcon}><SparklesIcon aria-hidden="true" /></span>
                             <strong>从一个小目标开始</strong>
-                            <p>例如：“给当前角色添加绿旗点击后移动并旋转的积木。”</p>
+                            <p>我会读取当前角色与积木，再给出可确认的修改计划。</p>
+                            <div className={styles.starterPrompts} aria-label="示例问题">
+                                {STARTER_PROMPTS.map(prompt => (
+                                    <button
+                                        key={prompt}
+                                        type="button"
+                                        onClick={() => this.setState({input: prompt})}
+                                    >
+                                        <span>{prompt}</span>
+                                        <span aria-hidden="true">↗</span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     )}
-                    {this.state.sending ? <div className={styles.thinking}>AI 正在整理积木计划…</div> : null}
+                    {this.state.sending ? <div className={styles.thinking} role="status">
+                        <span className={styles.pixelLoader} aria-hidden="true">
+                            {[0, 1, 2, 3, 4, 5, 6, 7, 8].map(index => <i key={index} />)}
+                        </span>
+                        <span className={styles.thinkingCopy}>
+                            <strong>正在构思</strong>
+                            <small>读取工作台 · 整理积木计划</small>
+                        </span>
+                    </div> : null}
                     <div ref={this.messagesEnd} />
                 </div>
                 {this.state.error ? <div className={styles.error} role="alert">{this.state.error}</div> : null}
                 <footer className={styles.composer}>
-                    <textarea
-                        aria-label="告诉 AI 你想制作什么"
-                        disabled={this.state.sending}
-                        maxLength={2000}
-                        placeholder="描述你想让角色做什么…"
-                        rows={2}
-                        value={this.state.input}
-                        onChange={event => this.setState({input: event.target.value})}
-                        onKeyDown={this.handleInputKeyDown}
-                    />
-                    <button
-                        aria-label="发送消息"
-                        className={styles.sendButton}
-                        disabled={this.state.sending || !this.state.input.trim()}
-                        type="button"
-                        onClick={this.handleSend}
-                    >
-                        <SendIcon aria-hidden="true" />
-                    </button>
+                    <div className={styles.composerMeta}>
+                        <span><SparklesIcon aria-hidden="true" /> 当前工作台</span>
+                        <span><Clock3Icon aria-hidden="true" /> 实时上下文</span>
+                    </div>
+                    <div className={styles.composerRow}>
+                        <textarea
+                            aria-label="告诉 AI 你想制作什么"
+                            disabled={this.state.sending}
+                            maxLength={2000}
+                            placeholder="描述目标，或输入 @ 引用当前角色…"
+                            rows={2}
+                            value={this.state.input}
+                            onChange={event => this.setState({input: event.target.value})}
+                            onKeyDown={this.handleInputKeyDown}
+                        />
+                        <button
+                            aria-label="发送消息"
+                            className={styles.sendButton}
+                            disabled={this.state.sending || !this.state.input.trim()}
+                            type="button"
+                            onClick={this.handleSend}
+                        >
+                            <SendIcon aria-hidden="true" />
+                        </button>
+                    </div>
                 </footer>
                 <div className={styles.disclaimer}>AI 可能会出错，应用前请检查积木计划。</div>
             </DockPanel>

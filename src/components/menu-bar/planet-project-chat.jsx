@@ -177,6 +177,7 @@ class PlanetProjectChat extends React.Component {
         const voiceComposer = this.state.composerMode === 'voice';
         return ReactDOM.createPortal(
             <DockPanel
+                appearance="conversation"
                 className={styles.panel}
                 description={this.state.connected ? '实时消息' : '正在连接'}
                 dragLabel="拖动项目聊天窗口"
@@ -235,7 +236,11 @@ class PlanetProjectChat extends React.Component {
                                         className={styles.messageScrollerContent}
                                     >
                                         {this.state.messages.length === 0 ? (
-                                            <div className={styles.empty}>{'还没有消息'}</div>
+                                            <div className={styles.empty}>
+                                                <span><MessageCircleIcon aria-hidden="true" /></span>
+                                                <strong>{'开始一起创作'}</strong>
+                                                <small>{'发条消息，和项目协作者同步想法。'}</small>
+                                            </div>
                                         ) : this.state.messages.map(message => {
                                             const own = String(message.userId) === this.state.ownUserId;
                                             const bubbleKey = [this.state.projectId, this.state.ownUserId,
