@@ -128,7 +128,7 @@ import mystuffIcon from "./icon--mystuff.png";
 import profileIcon from "./icon--profile.png";
 import remixIcon from "./icon--remix.svg";
 import aboutIcon from "./icon--about.svg";
-import planetBrandLockup from "../../assets/brand/planet-lockup.svg";
+import planetBrandMark from "../../assets/brand/planet-mark.svg";
 
 import ninetiesLogo from "./nineties_logo.svg";
 import catLogo from "./cat_logo.svg";
@@ -626,8 +626,12 @@ class MenuBar extends React.Component {
                             alt=""
                             aria-hidden="true"
                             className={styles.planetBrandLogo}
-                            src={planetBrandLockup}
+                            src={planetBrandMark}
                         />
+                        <span className={styles.planetBrandText}>
+                            <strong className={styles.planetBrandName}>{APP_NAME}</strong>
+                            <span className={styles.planetBrandDescription} lang="en">LET Coding Universe</span>
+                        </span>
                     </button>
                     <div
                         aria-label="编辑器命令"

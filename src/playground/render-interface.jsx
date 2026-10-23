@@ -19,7 +19,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import {connect} from 'react-redux';
 import {compose} from 'redux';
-import {FormattedMessage, defineMessages, injectIntl, intlShape} from 'react-intl';
+import {FormattedMessage, injectIntl, intlShape} from 'react-intl';
 import {
     LoadingState,
     getIsError,
@@ -57,14 +57,6 @@ import styles from './interface.css';
 const sourceReviewEntry = /(?:^|\/)review-editor(?:\/|\.html|$)/.test(location.pathname);
 const assignmentEntry = new URLSearchParams(location.search).get('assignment') === '1';
 const isInvalidEmbed = window.parent !== window && !sourceReviewEntry && !assignmentEntry;
-
-const messages = defineMessages({
-    defaultTitle: {
-        defaultMessage: 'Run Scratch projects faster',
-        description: 'Title of homepage',
-        id: 'tw.guiDefaultTitle'
-    }
-});
 
 const WrappedMenuBar = compose(
     SBFileUploaderHOC,
@@ -205,9 +197,9 @@ class Interface extends React.Component {
     }
     handleUpdateProjectTitle (title, isDefault) {
         if (isDefault || !title) {
-            document.title = `${DOCUMENT_APP_NAME} - ${this.props.intl.formatMessage(messages.defaultTitle)}`;
+            document.title = `${DOCUMENT_APP_NAME}-未命名作品`;
         } else {
-            document.title = `${title} - ${DOCUMENT_APP_NAME}`;
+            document.title = `${DOCUMENT_APP_NAME}-${title}`;
         }
     }
     handleClickAddonSettings (addonId) {

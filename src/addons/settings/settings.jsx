@@ -68,7 +68,7 @@ if (locale !== 'en') {
     }
 }
 
-document.title = `${settingsTranslations.title} - ${APP_NAME}`;
+document.title = `${APP_NAME}-${settingsTranslations.title}`;
 const theme = detectTheme();
 applyGuiColors(theme);
 

@@ -2,7 +2,27 @@
 @import "../../css/units.css";
 @import "../../css/z-index.css";
 
+@font-face {
+    font-family: "Planet Smiley Sans";
+    src: url("../../assets/brand/fonts/SmileySans-Oblique.woff2") format("woff2");
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Planet Dancing Script";
+    src: url("../../assets/brand/fonts/DancingScript-Variable.ttf") format("truetype");
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+}
+
 .menu-bar {
+    --brand-title-padding-top: .25rem;
+    --brand-symbol-size: 36px;
+    --brand-title-font-size: 16px;
+    --brand-description-font-size: 10px;
     --tw-menu-radius: .625rem;
     --tw-menu-padding: .25rem;
     --tw-menu-min-width: 12.5rem;
@@ -66,7 +86,8 @@
     align-items: center;
     justify-content: center;
     flex: none;
-    height: 2.25rem;
+    gap: 10px;
+    height: 2.5rem;
     border: 1px solid transparent;
     border-radius: .5rem;
     padding: 0 .2rem;
@@ -87,10 +108,40 @@
 
 .planet-brand-logo {
     display: block;
-    width: auto;
-    height: 2.15rem;
-    max-width: 6.25rem;
+    flex: none;
+    width: var(--brand-symbol-size);
+    height: var(--brand-symbol-size);
     object-fit: contain;
+}
+
+.planet-brand-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    text-align: start;
+    white-space: nowrap;
+}
+
+.planet-brand-name {
+    padding-top: var(--brand-title-padding-top);
+    font-family: "Planet Smiley Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: var(--brand-title-font-size);
+    font-style: normal;
+    font-weight: 400;
+    font-synthesis: none;
+    line-height: 18px;
+    letter-spacing: .02em;
+}
+
+.planet-brand-description {
+    color: var(--tw-topbar-muted-foreground);
+    font-family: "Planet Dancing Script", cursive;
+    font-size: var(--brand-description-font-size);
+    font-style: normal;
+    font-weight: 600;
+    font-synthesis: none;
+    line-height: 12px;
+    letter-spacing: 0;
 }
 
 .publish-work-button {
@@ -403,16 +454,22 @@
 }
 
 @media only screen and (max-width: 1360px) {
-    .planet-brand-logo {
-        height: 2rem;
-        max-width: 5.8rem;
-    }
-
     .status-group button {
         width: 2rem;
         padding: 0;
         justify-content: center;
         font-size: 0;
+    }
+}
+
+@media only screen and (max-width: 368px) {
+    .menu-bar {
+        --brand-symbol-size: 32px;
+        --brand-title-font-size: 15px;
+    }
+
+    .planet-brand {
+        gap: 7px;
     }
 }
 

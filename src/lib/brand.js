@@ -2,5 +2,5 @@
 // eslint-disable-next-line import/no-commonjs
 module.exports = {
     APP_NAME: '编程宇宙',
-    DOCUMENT_APP_NAME: 'Coding Universe'
+    DOCUMENT_APP_NAME: '编程宇宙'
 };

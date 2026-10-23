@@ -178,7 +178,7 @@ module.exports = [
         module: {
             rules: base.module.rules.concat([
                 {
-                    test: /\.(svg|png|wav|mp3|gif|jpg|woff2|hex)$/,
+                    test: /\.(svg|png|wav|mp3|gif|jpg|woff2|ttf|hex)$/,
                     loader: 'url-loader',
                     options: {
                         limit: 2048,
@@ -209,7 +209,7 @@ module.exports = [
                 chunks: ['editor'],
                 template: 'src/playground/index.ejs',
                 filename: 'editor.html',
-                title: `${DOCUMENT_APP_NAME} - Run Scratch projects faster`,
+                title: `${DOCUMENT_APP_NAME}-作品编辑器`,
                 isEditor: true,
                 ...htmlWebpackPluginCommon
             }),
@@ -217,7 +217,7 @@ module.exports = [
                 chunks: ['review-editor'],
                 template: 'src/playground/index.ejs',
                 filename: 'review-editor.html',
-                title: `${DOCUMENT_APP_NAME} - 审核模式`,
+                title: `${DOCUMENT_APP_NAME}-审核模式`,
                 isEditor: true,
                 ...htmlWebpackPluginCommon
             }),
@@ -225,35 +225,35 @@ module.exports = [
                 chunks: ['player'],
                 template: 'src/playground/index.ejs',
                 filename: 'index.html',
-                title: `${DOCUMENT_APP_NAME} - Run Scratch projects faster`,
+                title: `${DOCUMENT_APP_NAME}-作品播放器`,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
                 chunks: ['fullscreen'],
                 template: 'src/playground/index.ejs',
                 filename: 'fullscreen.html',
-                title: `${DOCUMENT_APP_NAME} - Run Scratch projects faster`,
+                title: `${DOCUMENT_APP_NAME}-全屏播放`,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
                 chunks: ['embed'],
                 template: 'src/playground/embed.ejs',
                 filename: 'embed.html',
-                title: `Embedded Project - ${DOCUMENT_APP_NAME}`,
+                title: `${DOCUMENT_APP_NAME}-嵌入作品`,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
                 chunks: ['addon-settings'],
                 template: 'src/playground/simple.ejs',
                 filename: 'addons.html',
-                title: `Addon Settings - ${DOCUMENT_APP_NAME}`,
+                title: `${DOCUMENT_APP_NAME}-扩展设置`,
                 ...htmlWebpackPluginCommon
             }),
             new HtmlWebpackPlugin({
                 chunks: ['credits'],
                 template: 'src/playground/simple.ejs',
                 filename: 'credits.html',
-                title: `${DOCUMENT_APP_NAME} Credits`,
+                title: `${DOCUMENT_APP_NAME}-致谢`,
                 ...htmlWebpackPluginCommon
             }),
             new CopyWebpackPlugin({
@@ -309,7 +309,7 @@ module.exports = [
             module: {
                 rules: base.module.rules.concat([
                     {
-                        test: /\.(svg|png|wav|mp3|gif|jpg|woff2|hex)$/,
+                        test: /\.(svg|png|wav|mp3|gif|jpg|woff2|ttf|hex)$/,
                         loader: 'url-loader',
                         options: {
                             limit: 2048,
