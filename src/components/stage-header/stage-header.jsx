@@ -65,6 +65,7 @@ const enableSettingsButton = new URLSearchParams(location.search).has('settings-
 
 const StageHeaderComponent = function (props) {
     const {
+        availableSize,
         customStageSize,
         showFixedLargeSize,
         isFullScreen,
@@ -84,7 +85,7 @@ const StageHeaderComponent = function (props) {
 
     let header = null;
 
-    const stageDimensions = getStageDimensions(stageSize, customStageSize, isFullScreen || isEmbedded);
+    const stageDimensions = getStageDimensions(stageSize, customStageSize, isFullScreen || isEmbedded, availableSize);
 
     if (isFullScreen || isEmbedded) {
         const settingsButton = isEmbedded && enableSettingsButton ? (
@@ -195,7 +196,8 @@ const StageHeaderComponent = function (props) {
             <Box
                 className={styles.stageHeaderWrapper}
                 // + 2 px because the stage will have 2 pixels of border around it
-                style={{minWidth: `${Math.max(stageDimensions.width, getMinWidth(stageSize)) + 2}px`}}
+                style={stageSize === STAGE_DISPLAY_SIZES.mobile ? {width: '100%', minWidth: 0} :
+                    {minWidth: `${Math.max(stageDimensions.width, getMinWidth(stageSize)) + 2}px`}}
             >
                 <Box className={styles.stageMenuWrapper}>
                     <Controls
@@ -236,6 +238,7 @@ const mapStateToProps = state => ({
 });
 
 StageHeaderComponent.propTypes = {
+    availableSize: PropTypes.shape({width: PropTypes.number, height: PropTypes.number}),
     intl: intlShape,
     customStageSize: PropTypes.shape({
         width: PropTypes.number,

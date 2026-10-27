@@ -6,6 +6,7 @@ import bindAll from 'lodash.bindall';
 import SecurityManagerModal from '../components/tw-security-manager-modal/security-manager-modal.jsx';
 import SecurityModals from '../lib/tw-security-manager-constants';
 import {getPersistedUnsandboxed, setPersistedUnsandboxed} from '../lib/tw-persisted-unsandboxed.js';
+import {isMirroredExtensionURL, rewriteExtensionURL} from '../lib/planet-extension-mirror';
 
 /* eslint-disable require-atomic-updates */
 
@@ -26,6 +27,7 @@ const manuallyTrustExtension = url => {
 const isTrustedExtension = url => (
     // Always trust our official extension repostiory.
     url.startsWith('https://extensions.turbowarp.org/') ||
+    isMirroredExtensionURL(url) ||
 
     // For development.
     url.startsWith('http://localhost:8000/') ||
@@ -140,6 +142,7 @@ let allowedGeolocation = false;
 
 const SECURITY_MANAGER_METHODS = [
     'getSandboxMode',
+    'rewriteExtensionURL',
     'canLoadExtensionFromProject',
     'canFetch',
     'canOpenWindow',
@@ -177,6 +180,10 @@ class TWSecurityManagerComponent extends React.Component {
         for (const method of SECURITY_MANAGER_METHODS) {
             vmSecurityManager[method] = propsSecurityManager[method] || this[method];
         }
+    }
+
+    rewriteExtensionURL (url) {
+        return rewriteExtensionURL(url);
     }
 
     // eslint-disable-next-line valid-jsdoc

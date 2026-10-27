@@ -39,6 +39,8 @@ import vmManagerHOC from '../lib/vm-manager-hoc.jsx';
 import cloudManagerHOC from '../lib/cloud-manager-hoc.jsx';
 
 import GUIComponent from '../components/gui/gui.jsx';
+import PlanetAchievementNotice from '../components/planet-achievement-notice/planet-achievement-notice.jsx';
+import PlanetAchievementManager from '../components/planet-achievement-manager/planet-achievement-manager.jsx';
 import {setIsScratchDesktop} from '../lib/isScratchDesktop.js';
 import TWFullScreenResizerHOC from '../lib/tw-fullscreen-resizer-hoc.jsx';
 import TWThemeManagerHOC from './tw-theme-manager-hoc.jsx';
@@ -101,12 +103,16 @@ class GUI extends React.Component {
             ...componentProps
         } = this.props;
         return (
-            <GUIComponent
-                loading={fetchingProject || isLoading || loadingStateVisible}
-                {...componentProps}
-            >
-                {children}
-            </GUIComponent>
+            <React.Fragment>
+                <GUIComponent
+                    loading={fetchingProject || isLoading || loadingStateVisible}
+                    {...componentProps}
+                >
+                    {children}
+                </GUIComponent>
+                <PlanetAchievementNotice vm={this.props.vm} />
+                <PlanetAchievementManager vm={this.props.vm} />
+            </React.Fragment>
         );
     }
 }

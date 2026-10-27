@@ -158,6 +158,63 @@ class SpriteInfo extends React.Component {
             </div>
         );
 
+        if (stageSize === STAGE_DISPLAY_SIZES.mobile) {
+            return (
+                <Box className={classNames(styles.spriteInfo, styles.mobileInfo)}>
+                    <div className={styles.mobileName}>
+                        <Label text={sprite}>{spriteNameInput}</Label>
+                        <ToggleButtons
+                            buttons={[
+                                {
+                                    handleClick: this.props.onClickVisible,
+                                    icon: showIcon,
+                                    isSelected: this.props.visible && !this.props.disabled,
+                                    title: this.props.intl.formatMessage(messages.showSpriteAction)
+                                },
+                                {
+                                    handleClick: this.props.onClickNotVisible,
+                                    icon: hideIcon,
+                                    isSelected: !this.props.visible && !this.props.disabled,
+                                    title: this.props.intl.formatMessage(messages.hideSpriteAction)
+                                }
+                            ]}
+                            disabled={this.props.disabled}
+                        />
+                    </div>
+                    <div className={styles.mobileFields}>
+                        {xPosition}
+                        {yPosition}
+                        <div className={styles.group}>
+                            <Label
+                                above
+                                text={sizeLabel}
+                            >
+                                <BufferedInput
+                                    small
+                                    disabled={this.props.disabled}
+                                    label={sizeLabel}
+                                    tabIndex="0"
+                                    type="number"
+                                    value={this.props.disabled ? '' : this.props.size}
+                                    onSubmit={this.props.onChangeSize}
+                                />
+                            </Label>
+                        </div>
+                        <div className={styles.group}>
+                            <DirectionPicker
+                                labelAbove
+                                direction={this.props.direction}
+                                disabled={this.props.disabled}
+                                rotationStyle={this.props.rotationStyle}
+                                onChangeDirection={this.props.onChangeDirection}
+                                onChangeRotationStyle={this.props.onChangeRotationStyle}
+                            />
+                        </div>
+                    </div>
+                </Box>
+            );
+        }
+
         if (stageSize === STAGE_DISPLAY_SIZES.small) {
             return (
                 <Box className={classNames(styles.spriteInfo, styles.spriteInfoCompact)}>

@@ -6,3 +6,9 @@
 .controls button:disabled { opacity: 0.5; cursor: default; }
 .controls button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 .controls .save { background: $ui-white; color: $motion-primary; border-color: $ui-white; }
+
+@media (max-width: 1023px) {
+    .controls { flex: 1; min-width: 0; gap: .375rem; padding: 0 .25rem; }
+    .controls span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: 11px; }
+    .controls button { flex: none; min-height: 36px; padding: .375rem .5rem; font-size: 11px; }
+}

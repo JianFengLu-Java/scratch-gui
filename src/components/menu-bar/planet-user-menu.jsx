@@ -1,6 +1,6 @@
 import classNames from 'classnames';
 import React from 'react';
-import {ChevronDownIcon} from 'lucide-react';
+import {ChevronDownIcon, UserRoundIcon} from 'lucide-react';
 
 import {
     readPlanetEnvelope,
@@ -26,15 +26,19 @@ class PlanetUserMenu extends React.Component {
         this.handleCloseMenu = this.handleCloseMenu.bind(this);
         this.handleKeyDown = this.handleKeyDown.bind(this);
         this.handleOpenMenu = this.handleOpenMenu.bind(this);
+        this.handleOutsidePointer = this.handleOutsidePointer.bind(this);
         this.handleToggle = this.handleToggle.bind(this);
         this.loadProfile = this.loadProfile.bind(this);
+        this.menuRef = React.createRef();
     }
     componentDidMount () {
         this.abortController = new AbortController();
         this.loadProfile();
+        document.addEventListener('pointerdown', this.handleOutsidePointer);
     }
     componentWillUnmount () {
         this.abortController.abort();
+        document.removeEventListener('pointerdown', this.handleOutsidePointer);
     }
     async loadProfile () {
         try {
@@ -65,10 +69,16 @@ class PlanetUserMenu extends React.Component {
         this.setState({avatarFailed: true});
     }
     handleOpenMenu () {
+        if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
         if (this.state.status === 'ready') this.setState({menuOpen: true});
     }
     handleCloseMenu () {
         this.setState({menuOpen: false});
+    }
+    handleOutsidePointer (event) {
+        if (this.state.menuOpen && this.menuRef.current && !this.menuRef.current.contains(event.target)) {
+            this.handleCloseMenu();
+        }
     }
     handleToggle () {
         if (this.state.status === 'ready') {
@@ -164,11 +174,14 @@ class PlanetUserMenu extends React.Component {
         if (this.state.status !== 'ready') {
             return (
                 <a
+                    aria-label="返回首页登录"
                     className={classNames(styles.trigger, styles.signedOut)}
                     href="/"
                     title={this.state.status === 'error' ? '用户信息同步失败，返回首页重试' : '返回首页登录'}
                 >
-                    {'返回首页登录'}
+                    <UserRoundIcon aria-hidden="true" className={styles.mobileAccountIcon} />
+                    <span className={styles.mobileAccountLabel}>{'登录'}</span>
+                    <span className={styles.signedOutLabel}>{'返回首页登录'}</span>
                 </a>
             );
         }
@@ -177,6 +190,7 @@ class PlanetUserMenu extends React.Component {
         return (
             <div
                 className={styles.userMenu}
+                ref={this.menuRef}
                 onBlur={this.handleBlur}
                 onFocus={this.handleOpenMenu}
                 onKeyDown={this.handleKeyDown}

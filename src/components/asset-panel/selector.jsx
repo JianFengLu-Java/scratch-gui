@@ -40,6 +40,7 @@ const Selector = props => {
         newButtonSection = (
             <Box className={styles.newButtons}>
                 <ActionMenu
+                    className={styles.addMenu}
                     img={img}
                     moreButtons={moreButtons}
                     title={title}
@@ -65,6 +66,7 @@ const Selector = props => {
                         onRemoveSortable={onRemoveSortable}
                     >
                         <SpriteSelectorItem
+                            horizontalScroll
                             asset={item.asset}
                             className={classNames(styles.listItem, {
                                 [styles.placeholder]: isRelevantDrag && index === draggingIndex

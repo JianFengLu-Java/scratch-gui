@@ -18,12 +18,14 @@ const messages = defineMessages({
 const StageSelector = props => {
     const {
         backdropCount,
+        backdropName,
         containerRef,
         dragOver,
         fileInputRef,
         intl,
         readOnly,
         selected,
+        standalone,
         raised,
         receivedBlocks,
         url,
@@ -56,11 +58,21 @@ const StageSelector = props => {
             aria-label={intl.formatMessage(messages.addBackdropFromLibrary)}
             className={classNames(styles.stageSelector, {
                 [styles.isSelected]: selected,
+                [styles.standalone]: standalone,
                 [styles.raised]: raised || dragOver,
                 [styles.receivedBlocks]: receivedBlocks
             })}
             componentRef={containerRef}
+            role={standalone ? 'button' : undefined}
+            tabIndex={standalone ? 0 : undefined}
+            aria-pressed={standalone ? selected : undefined}
             onClick={onClick}
+            onKeyDown={standalone ? event => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onClick(event);
+                }
+            } : undefined}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
             {...componentProps}
@@ -77,6 +89,7 @@ const StageSelector = props => {
             {url ? (
                 <img
                     className={styles.costumeCanvas}
+                    alt={backdropName || '舞台背景'}
                     src={url}
                     draggable={false}
                 />
@@ -103,6 +116,7 @@ const StageSelector = props => {
 
 StageSelector.propTypes = {
     backdropCount: PropTypes.number.isRequired,
+    backdropName: PropTypes.string,
     containerRef: PropTypes.func,
     dragOver: PropTypes.bool,
     fileInputRef: PropTypes.func,
@@ -119,6 +133,7 @@ StageSelector.propTypes = {
     raised: PropTypes.bool.isRequired,
     receivedBlocks: PropTypes.bool.isRequired,
     selected: PropTypes.bool.isRequired,
+    standalone: PropTypes.bool,
     url: PropTypes.string
 };
 

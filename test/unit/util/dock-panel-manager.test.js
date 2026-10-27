@@ -61,6 +61,20 @@ describe('dock panel manager', () => {
         expect(second.onClose).not.toHaveBeenCalled();
     });
 
+    test('closes existing panels when opening a mobile sheet', () => {
+        const first = register('invite');
+        const second = register('permissions');
+        const mobile = register('chat');
+        first.registration.closeOthers();
+        expect(mobile.onClose).not.toHaveBeenCalled();
+        mobile.registration.closeOthers();
+
+        expect(first.onClose).toHaveBeenCalledTimes(1);
+        expect(second.onClose).toHaveBeenCalledTimes(1);
+        expect(mobile.onClose).not.toHaveBeenCalled();
+        expect(mobile.element.getAttribute('data-dock-panel-active')).toBe('true');
+    });
+
     test('escape closes only the topmost panel', () => {
         const first = register('chat');
         const second = register('ai');

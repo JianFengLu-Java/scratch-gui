@@ -46,3 +46,35 @@
 .error .dot {
     background: var(--tw-status-danger, #dc2626);
 }
+
+.mobile-label, .mobile-prefix { display: none; }
+@media (max-width: 1023px) {
+    .desktop-label { display: none; }
+    .status.status {
+        gap: .375rem;
+        border: 0;
+        border-radius: .25rem;
+        background: transparent;
+        color: var(--tw-dialog-foreground, #171717);
+    }
+    .mobile-prefix {
+        display: block;
+        flex: none;
+        width: 24px;
+        color: var(--tw-dialog-muted-foreground, #737373);
+        font-size: 11px;
+        font-weight: 500;
+        text-align: start;
+    }
+    .mobile-label { display: block; flex: none; white-space: nowrap; }
+    .dot { display: block; flex: 0 0 6px; width: 6px; height: 6px; }
+    .status:disabled { cursor: default; opacity: 1; }
+    .status:active { background: var(--tw-dialog-accent); }
+    .status:focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: 0; }
+    .status.disconnected .mobile-label,
+    .status.replaced .mobile-label,
+    .status.error .mobile-label {
+        color: var(--tw-status-danger, #dc2626);
+    }
+    .status.invitation .mobile-label { color: var(--tw-dialog-foreground); }
+}

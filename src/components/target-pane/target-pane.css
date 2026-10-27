@@ -7,6 +7,9 @@
     flex-grow: 1;
 }
 
+.sprite-section { display: contents; }
+.stage-details { display: none; }
+
 .stage-selector-wrapper {
     display: flex;
     flex-basis: 72px;
@@ -19,4 +22,74 @@
 
 [dir="rtl"] .stage-selector-wrapper {
     margin-right: calc($space / 2);
+}
+
+@media (max-width: 1023px) {
+    .target-pane {
+        display: grid;
+        grid-template-columns: 72px minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: .375rem;
+        min-width: 0;
+        min-height: 184px;
+    }
+
+    .stage-selector-wrapper {
+        grid-column: 1;
+        grid-row: 2;
+        align-self: start;
+        width: 72px;
+        height: 80px;
+        margin-inline: 0 !important;
+    }
+
+    .target-pane[data-mobile-panel="sprites"],
+    .target-pane[data-mobile-panel="stage"] {
+        display: block;
+        flex: none;
+        width: 100%;
+        min-height: 0;
+    }
+
+    .target-pane[data-mobile-panel="sprites"] .stage-selector-wrapper,
+    .target-pane[data-mobile-panel="stage"] .sprite-section {
+        display: none;
+    }
+
+    .target-pane[data-mobile-panel="stage"] .stage-selector-wrapper {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        width: 100%;
+        height: auto;
+    }
+
+    .target-pane[data-mobile-panel="stage"] .stage-details {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        min-width: 0;
+        padding-top: 4px;
+        color: var(--tw-dialog-foreground);
+        font-size: 12px;
+    }
+
+    .stage-details > span { color: var(--tw-dialog-muted-foreground); }
+    .stage-details strong { max-width: 100%; overflow-wrap: anywhere; font-weight: 600; }
+    .stage-details button {
+        min-height: 44px;
+        margin-top: 4px;
+        padding: 0 12px;
+        border: 1px solid var(--tw-dialog-border);
+        border-radius: 6px;
+        background: var(--tw-dialog-background);
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+    .stage-details button:active { background: var(--tw-dialog-accent); }
+    .stage-details button:focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: 2px; }
 }

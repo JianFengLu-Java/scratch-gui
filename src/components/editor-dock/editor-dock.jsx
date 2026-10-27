@@ -20,6 +20,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import {
+    PLANET_EDITOR_ACCOUNT_SLOT_EVENT,
     PLANET_AI_ASSISTANT_STATE_EVENT,
     PLANET_BACKPACK_STATE_EVENT,
     PLANET_BACKPACK_TOGGLE_EVENT,
@@ -55,6 +56,7 @@ const resourceMenus = {
 
 const EditorDock = ({
     hasBackpack,
+    readOnly,
     onOpenBackdropLibrary,
     onOpenExtensionLibrary,
     onOpenSpriteLibrary
@@ -69,6 +71,10 @@ const EditorDock = ({
     const chatAvailable = isPlanetProjectRoute() && collaborationEnabled();
     const reducedMotion = typeof window !== 'undefined' &&
         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    React.useLayoutEffect(() => {
+        window.dispatchEvent(new CustomEvent(PLANET_EDITOR_ACCOUNT_SLOT_EVENT));
+        return () => window.dispatchEvent(new CustomEvent(PLANET_EDITOR_ACCOUNT_SLOT_EVENT));
+    }, []);
 
     React.useEffect(() => {
         const dock = dockRef.current;
@@ -163,7 +169,7 @@ const EditorDock = ({
 
     const {contextSafe} = useGSAP(() => {
         const matchMedia = gsap.matchMedia();
-        matchMedia.add('(prefers-reduced-motion: no-preference)', () => {
+        matchMedia.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
             gsap.fromTo('[data-dock-item]', {
                 autoAlpha: 0,
                 scale: 0.92,
@@ -218,7 +224,7 @@ const EditorDock = ({
     }, [openMenu]);
 
     const animateIn = contextSafe(event => {
-        if (reducedMotion || event.currentTarget.disabled) return;
+        if (reducedMotion || event.currentTarget.disabled || window.matchMedia('(max-width: 1023px)').matches) return;
         gsap.to(event.currentTarget, {
             duration: 0.18,
             ease: 'power2.out',
@@ -238,7 +244,7 @@ const EditorDock = ({
         });
     });
     const animatePress = contextSafe(event => {
-        if (reducedMotion || event.currentTarget.disabled) return;
+        if (reducedMotion || event.currentTarget.disabled || window.matchMedia('(max-width: 1023px)').matches) return;
         gsap.fromTo(event.currentTarget, {scale: 0.94}, {
             duration: 0.24,
             ease: 'back.out(2.4)',
@@ -316,6 +322,7 @@ const EditorDock = ({
         expanded,
         icon: Icon,
         label,
+        mobileLabel = label,
         onClick
     }) => (
         <button
@@ -326,6 +333,7 @@ const EditorDock = ({
             data-dock-item
             disabled={disabled}
             key={label}
+            title={label}
             type="button"
             onBlur={animateOut}
             onClick={event => {
@@ -337,6 +345,7 @@ const EditorDock = ({
             onMouseLeave={animateOut}
         >
             <Icon aria-hidden="true" />
+            <span aria-hidden="true" className={styles.mobileLabel}>{mobileLabel}</span>
             <span className={styles.tooltip} role="tooltip">{label}</span>
             {badge > 0 && <span className={styles.badge}>{badge}</span>}
         </button>
@@ -377,69 +386,78 @@ const EditorDock = ({
     return (
         <nav aria-label="编辑器快捷工具" className={styles.root} data-editor-dock ref={dockRef}>
             <div className={styles.surface}>
-                {renderResource('sprite', '角色', CatIcon)}
-                {renderResource('backdrop', '背景', ImageIcon)}
-                <span aria-hidden="true" className={styles.separator} role="separator" />
-                {renderDockButton({
-                    active: inviteOpen,
-                    disabled: !chatAvailable,
-                    expanded: inviteOpen,
-                    icon: UserPlusIcon,
-                    label: chatAvailable ? '邀请协作' : '邀请协作（需协作模式）',
-                    onClick: toggleInvite
-                })}
-                {renderDockButton({
-                    active: chatState.open,
-                    badge: chatState.unread,
-                    disabled: !chatAvailable,
-                    expanded: chatState.open,
-                    icon: MessageCircleIcon,
-                    label: chatAvailable ? '项目聊天' : '项目聊天（需协作模式）',
-                    onClick: toggleChat
-                })}
-                {renderDockButton({
-                    active: permissionsOpen,
-                    disabled: !chatAvailable,
-                    expanded: permissionsOpen,
-                    icon: ShieldCheckIcon,
-                    label: chatAvailable ? '角色权限' : '角色权限（需协作模式）',
-                    onClick: togglePermissions
-                })}
-                {renderDockButton({
-                    icon: PuzzleIcon,
-                    label: '扩展',
-                    onClick: openExtensionLibrary
-                })}
-                {renderDockButton({
-                    active: aiOpen,
-                    expanded: aiOpen,
-                    icon: SparklesIcon,
-                    label: 'AI 助手',
-                    onClick: toggleAi
-                })}
-                <span aria-hidden="true" className={styles.separator} role="separator" />
-                {renderDockButton({
-                    active: backpackOpen,
-                    disabled: !hasBackpack,
-                    expanded: backpackOpen,
-                    icon: BriefcaseIcon,
-                    label: hasBackpack ? '书包' : '书包暂不可用',
-                    onClick: toggleBackpack
-                })}
+                {!readOnly && <div className={styles.tools}>
+                    {renderResource('sprite', '角色', CatIcon)}
+                    {renderResource('backdrop', '背景', ImageIcon)}
+                    <span aria-hidden="true" className={styles.separator} role="separator" />
+                    {renderDockButton({
+                        active: inviteOpen,
+                        disabled: !chatAvailable,
+                        expanded: inviteOpen,
+                        icon: UserPlusIcon,
+                        label: chatAvailable ? '邀请协作' : '邀请协作（需协作模式）',
+                        mobileLabel: '邀请',
+                        onClick: toggleInvite
+                    })}
+                    {renderDockButton({
+                        active: chatState.open,
+                        badge: chatState.unread,
+                        disabled: !chatAvailable,
+                        expanded: chatState.open,
+                        icon: MessageCircleIcon,
+                        label: chatAvailable ? '项目聊天' : '项目聊天（需协作模式）',
+                        mobileLabel: '聊天',
+                        onClick: toggleChat
+                    })}
+                    {renderDockButton({
+                        active: permissionsOpen,
+                        disabled: !chatAvailable,
+                        expanded: permissionsOpen,
+                        icon: ShieldCheckIcon,
+                        label: chatAvailable ? '角色权限' : '角色权限（需协作模式）',
+                        mobileLabel: '权限',
+                        onClick: togglePermissions
+                    })}
+                    {renderDockButton({
+                        icon: PuzzleIcon,
+                        label: '扩展',
+                        onClick: openExtensionLibrary
+                    })}
+                    {renderDockButton({
+                        active: aiOpen,
+                        expanded: aiOpen,
+                        icon: SparklesIcon,
+                        label: 'AI 助手',
+                        onClick: toggleAi
+                    })}
+                    <span aria-hidden="true" className={styles.separator} role="separator" />
+                    {renderDockButton({
+                        active: backpackOpen,
+                        disabled: !hasBackpack,
+                        expanded: backpackOpen,
+                        icon: BriefcaseIcon,
+                        label: hasBackpack ? '书包' : '书包暂不可用',
+                        mobileLabel: '书包',
+                        onClick: toggleBackpack
+                    })}
+                </div>}
             </div>
+            <div className={styles.accountRow} data-editor-account-slot />
         </nav>
     );
 };
 
 EditorDock.propTypes = {
     hasBackpack: PropTypes.bool,
+    readOnly: PropTypes.bool,
     onOpenBackdropLibrary: PropTypes.func.isRequired,
     onOpenExtensionLibrary: PropTypes.func.isRequired,
     onOpenSpriteLibrary: PropTypes.func.isRequired
 };
 
 EditorDock.defaultProps = {
-    hasBackpack: false
+    hasBackpack: false,
+    readOnly: false
 };
 
 export default EditorDock;

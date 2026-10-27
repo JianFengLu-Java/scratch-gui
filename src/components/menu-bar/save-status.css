@@ -18,3 +18,72 @@
     border-color: var(--tw-topbar-border, $ui-black-transparent);
     color: var(--tw-topbar-foreground, inherit);
 }
+
+.save-now { background: transparent; font-family: inherit; font-size: inherit; }
+.save-now.desktop-hidden { display: none; }
+.mobile-save-icon, .mobile-save-label { display: none; }
+.local-project-status { display: none; }
+@media (max-width: 1023px) {
+    .local-project-status {
+        display: inline-flex;
+        align-items: center;
+        gap: .25rem;
+        min-width: 0;
+        height: 40px;
+        padding-inline: .375rem;
+        color: var(--tw-dialog-foreground);
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .local-project-icon { flex: none; width: 14px; height: 14px; stroke-width: 1.8; }
+    .local-project-label { white-space: nowrap; }
+    .local-unsaved .local-project-icon { color: var(--tw-status-warning, #d97706); }
+    .local-saved .local-project-icon { color: var(--tw-status-success, #16a34a); }
+
+    .save-now, .save-now.desktop-hidden {
+        display: flex;
+        flex: none;
+        flex-direction: column;
+        justify-content: center;
+        gap: 3px;
+        width: 44px;
+        min-width: 44px;
+        height: 40px;
+        padding: .25rem 0;
+        border: 1px solid var(--tw-dialog-border);
+        border-radius: .5rem;
+        background: var(--tw-dialog-background);
+        color: var(--tw-dialog-foreground);
+        font-size: 10px;
+        line-height: 12px;
+        touch-action: manipulation;
+    }
+    .mobile-save-icon { display: block; flex: none; width: 16px; height: 16px; stroke-width: 1.75; }
+    .mobile-save-label { display: block; white-space: nowrap; }
+    .save-label { display: none; }
+    .save-now:not(:disabled):active { background: var(--tw-dialog-accent); }
+    .save-now:focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: -2px; }
+    .save-now:disabled { cursor: default; opacity: .55; }
+
+    .local-alert {
+        position: fixed;
+        inset-inline: .5rem;
+        bottom: calc(var(--tw-mobile-dock-height, 113px) + env(safe-area-inset-bottom) + .5rem);
+        padding: .75rem;
+        border: 1px solid var(--tw-dialog-border);
+        border-radius: .625rem;
+        background: var(--tw-dialog-background);
+        color: var(--tw-dialog-foreground);
+        box-shadow: 0 .5rem 1.5rem var(--tw-dialog-shadow);
+    }
+    .local-alert :global([class*="inline-message_inline-message_"]) {
+        justify-content: flex-start;
+        padding: 0;
+        color: inherit;
+        white-space: normal;
+        font-size: 12px;
+        line-height: 18px;
+    }
+    .local-alert :global([class*="inline-message_warn_"]) { color: var(--tw-status-danger, #dc2626); }
+}

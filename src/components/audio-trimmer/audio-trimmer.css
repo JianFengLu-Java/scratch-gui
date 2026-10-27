@@ -146,3 +146,17 @@ $hover-scale: 1.25;
 .top-trim-handle img {
     transform: scaleY(-1);
 }
+
+@media (max-width: 1023px) {
+    .selector { touch-action: none; }
+    .selector .trim-handle {
+        left: 0;
+        right: auto;
+        width: 44px;
+        height: 44px;
+        touch-action: none;
+    }
+    .selector .top-trim-handle { top: -20px; }
+    .selector .bottom-trim-handle { bottom: -20px; }
+    .selector .trim-handle img { transition: none; }
+}

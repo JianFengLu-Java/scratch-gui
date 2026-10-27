@@ -55,3 +55,33 @@
 .conflict .dot {
     background: var(--tw-status-danger, #dc2626);
 }
+
+.mobile-label, .mobile-prefix { display: none; }
+@media (max-width: 1023px) {
+    .desktop-label { display: none; }
+    .status.status {
+        gap: .375rem;
+        border: 0;
+        border-radius: .25rem;
+        background: transparent;
+        color: var(--tw-dialog-foreground, #171717);
+        font-family: inherit;
+    }
+    .mobile-prefix {
+        display: block;
+        flex: none;
+        width: 24px;
+        color: var(--tw-dialog-muted-foreground, #737373);
+        font-size: 11px;
+        font-weight: 500;
+        text-align: start;
+    }
+    .mobile-label { display: block; flex: none; white-space: nowrap; }
+    .dot { display: block; flex: 0 0 6px; width: 6px; height: 6px; }
+    .status.error .mobile-label,
+    .status.conflict .mobile-label {
+        color: var(--tw-status-danger, #dc2626);
+    }
+    .status:not(:disabled):active { background: var(--tw-dialog-accent); }
+    .status:not(:disabled):focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: 0; }
+}

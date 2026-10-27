@@ -86,6 +86,7 @@
     flex: 1;
     flex-direction: column;
     min-width: 0;
+    min-height: 0;
 }
 
 .header {
@@ -201,6 +202,84 @@
         max-height: calc(100vh - 8.25rem);
         max-height: calc(100dvh - 8.25rem);
     }
+}
+
+.backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--tw-dialog-overlay, rgba(0, 0, 0, .3));
+    z-index: calc($z-index-modal - 1);
+    touch-action: none;
+}
+
+.panel.mobile-sheet {
+    left: .5rem;
+    right: .5rem;
+    bottom: var(--dock-panel-mobile-bottom, calc(7.5rem + env(safe-area-inset-bottom)));
+    width: auto;
+    max-width: none;
+    height: min(38rem, var(--dock-panel-mobile-height, calc(100dvh - 9rem)));
+    max-height: var(--dock-panel-mobile-height, calc(100dvh - 9rem));
+    border-radius: 1rem;
+    transform: none !important;
+    will-change: auto;
+    outline: none;
+}
+
+.mobile-sheet .header {
+    min-height: 56px;
+    padding: .375rem .5rem .375rem .875rem;
+}
+
+.mobile-sheet .drag-handle {
+    cursor: default;
+    touch-action: auto;
+    gap: .625rem;
+}
+
+.mobile-sheet .header-copy h2 {
+    font-size: .9375rem;
+    line-height: 1.4;
+}
+
+.mobile-sheet .header-copy p {
+    font-size: .75rem;
+    line-height: 1.4;
+}
+
+.mobile-sheet .header-icon {
+    width: 32px;
+    height: 32px;
+}
+
+.mobile-sheet .header-icon svg {
+    width: 18px;
+    height: 18px;
+}
+
+.mobile-sheet button:not([role="switch"]) {
+    min-height: 44px;
+}
+
+.mobile-sheet .header-actions button {
+    min-width: 44px;
+}
+
+.mobile-sheet input:not([type="checkbox"]):not([type="radio"]),
+.mobile-sheet textarea,
+.mobile-sheet select,
+.mobile-sheet [contenteditable="true"] {
+    font-size: 16px;
+}
+
+.mobile-sheet input:not([type="checkbox"]):not([type="radio"]),
+.mobile-sheet select {
+    min-height: 44px;
+}
+
+.mobile-sheet :focus-visible {
+    outline: 2px solid var(--tw-dialog-ring, #a3a3a3);
+    outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -251,3 +251,104 @@
     /* overridden by JS; this will be used if the browser can't understand that color */
     background-color: white;
 }
+
+@media (max-width: 1023px) {
+    .page-wrapper {
+        box-sizing: border-box;
+        padding-bottom: calc(var(--tw-mobile-dock-height, 113px) + env(safe-area-inset-bottom));
+    }
+}
+
+.mobile-layout {
+    --tw-mobile-dock-height: 113px;
+    width: 100%;
+    height: 100dvh;
+    overflow: hidden;
+}
+
+.mobile-layout[data-read-only="true"] { --tw-mobile-dock-height: 0px; }
+
+.mobile-layout .body-wrapper {
+    min-height: 0;
+}
+
+.mobile-layout .menu-bar-position {
+    width: 1024px;
+    flex-shrink: 0;
+}
+
+.mobile-layout .flex-wrapper {
+    flex-direction: column;
+    min-height: 0;
+}
+
+.mobile-layout .editor-wrapper {
+    flex: 1;
+    min-width: 0;
+}
+
+.mobile-layout .tab-panel {
+    overflow: auto;
+}
+
+.mobile-layout .stage-and-target-wrapper {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: max-content minmax(184px, 1fr);
+    gap: .375rem;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    padding: .5rem;
+    overflow: hidden;
+}
+
+.stage-preview-host,
+.stage-targets-host,
+.stage-preview {
+    display: contents;
+}
+
+.mobile-layout .stage-preview {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.mobile-layout .target-wrapper {
+    flex: none;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    overflow: visible;
+}
+
+@media (min-width: 560px) and (max-height: 540px) {
+    .mobile-layout .stage-and-target-wrapper {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 40%);
+        grid-template-rows: minmax(0, 1fr);
+    }
+}
+
+.mobile-layout[data-stage-fullscreen="false"] .stage-and-target-wrapper {
+    display: none;
+}
+
+.mobile-layout[data-stage-fullscreen="false"] .stage-preview {
+    flex: none;
+    width: 100%;
+    height: 100%;
+}
+
+/* Keep the navigation mounted while the editing pane is hidden. */
+.mobile-layout[data-stage-fullscreen="true"] .editor-wrapper {
+    display: contents;
+}
+
+.mobile-layout[data-stage-fullscreen="true"] .editor-wrapper > :not([data-editor-dock]) {
+    display: none;
+}

@@ -471,3 +471,97 @@
         transition: none;
     }
 }
+
+@media (max-width: 1023px) {
+    .body {
+        padding: .75rem;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        gap: .75rem;
+    }
+
+    .modeSetting {
+        min-height: 56px;
+        padding: .625rem .75rem;
+    }
+
+    .modeCopy strong,
+    .memberCopy strong,
+    .targetCopy strong,
+    .targetHeader strong,
+    .saveButton {
+        font-size: .875rem;
+    }
+
+    .modeCopy small,
+    .memberCopy small,
+    .targetCopy small,
+    .targetHeader small,
+    .readOnlyHint,
+    .alert,
+    .freeState,
+    .empty {
+        font-size: .75rem;
+        line-height: 1.5;
+    }
+
+    .permissionLayout {
+        flex: 1 0 17rem;
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(0, 1fr);
+        min-height: 17rem;
+    }
+
+    .userPane {
+        border-right: 0;
+        border-bottom: 1px solid var(--tw-dialog-border, #e5e5e5);
+        max-height: none;
+    }
+
+    .userList {
+        display: flex;
+        gap: .375rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+    }
+
+    .userList > button {
+        flex: 0 0 auto;
+        max-width: 11rem;
+        min-height: 48px;
+        width: auto;
+        padding: .5rem;
+    }
+
+    .userList > button + button {
+        margin-top: 0;
+    }
+
+    .targetRow {
+        min-height: 52px;
+        padding: .5rem .625rem;
+    }
+
+    .modeSwitch,
+    .switch {
+        position: relative;
+    }
+
+    .modeSwitch::before,
+    .switch::before {
+        content: '';
+        position: absolute;
+        inset: -14px -6px;
+    }
+
+    .footer {
+        flex: 0 0 auto;
+        padding: .625rem .75rem;
+    }
+
+    .saveButton {
+        width: 100%;
+        justify-content: center;
+    }
+}

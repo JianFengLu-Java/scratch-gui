@@ -1,0 +1,211 @@
+.editor {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+}
+
+.settings-toggle { display: none; }
+
+/* Scratch Paint is a dependency with its own CSS modules. Keep the mobile
+   integration here so both costumes and backdrops receive the same layout. */
+@media (max-width: 1023px) {
+    .editor.editor {
+        width: 100%;
+        height: 100%;
+        min-height: 280px;
+        padding: .375rem;
+    }
+
+    .settings-toggle {
+        display: flex;
+        flex: none;
+        align-items: center;
+        gap: .375rem;
+        width: 100%;
+        height: 32px;
+        margin: 0 0 .25rem;
+        padding: 0 .375rem;
+        border: 0;
+        border-radius: .375rem;
+        background: var(--tw-dialog-background);
+        color: var(--tw-dialog-muted-foreground);
+        font: inherit;
+        font-size: 12px;
+        text-align: start;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+
+    .settings-toggle span { flex: 1; }
+    .settings-toggle svg { width: 16px; height: 16px; }
+    .settings-toggle:active { background: var(--tw-dialog-accent); }
+    .settings-toggle:focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: -2px; }
+
+    .editor [data-paint-theme][class*="paint-editor_editor-container_"] {
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        height: auto;
+        padding: 0;
+    }
+
+    .editor.editor :global([class*="paint-editor_editor-container-top_"]) {
+        flex: none;
+        min-width: 0;
+        padding: 0 0 .375rem;
+        border-bottom: 1px solid var(--tw-dialog-border);
+    }
+
+    .settings-collapsed :global([class*="paint-editor_editor-container-top_"]) { display: none; }
+
+    .editor.editor :global([class*="paint-editor_editor-container-top_"]) >
+    :global([class*="paint-editor_row_"]) {
+        min-width: 0;
+        margin: 0;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+    }
+
+    .editor.editor :global([class*="fixed-tools_row_"]) {
+        flex: 1;
+        min-width: 0;
+        min-height: 40px;
+        gap: .375rem;
+        overflow-x: auto;
+    }
+
+    .editor :global([class*="fixed-tools_row_"]) > *,
+    .editor :global([class*="paint-editor_editor-container-top_"]) >
+    :global([class*="paint-editor_row_"]) > * { flex-shrink: 0; }
+
+    .editor.editor :global([class*="input-group_input-group_"]) {
+        gap: .25rem;
+        margin-inline: 0;
+    }
+
+    .editor.editor :global([class*="fixed-tools_costume-input_"]) {
+        width: 120px;
+        height: 32px;
+        padding-inline: .5rem;
+        border-radius: .375rem;
+        font-size: 16px;
+    }
+
+    .editor.editor :global([class*="paint-editor_mod-dashed-border_"]),
+    .editor.editor :global([class*="fixed-tools_mod-dashed-border_"]) {
+        border-inline: 0;
+        padding-inline: 0;
+    }
+
+    .editor.editor :global([class*="paint-editor_mod-mode-tools_"]) { margin-inline-start: .5rem; }
+
+    .editor.editor :global([class*="paint-editor_mod-labeled-icon-height_"]),
+    .editor.editor :global([class*="mode-tools_mode-tools_"]) {
+        min-height: 44px;
+        height: auto;
+    }
+
+    .editor.editor :global([class*="label_input-label_"]) { display: block; font-size: 10px; }
+    .editor.editor :global([class*="label_input-group_"]) { margin-top: 0; }
+    .editor.editor input:not([type="range"]):not([type="color"]) { font-size: 16px; }
+
+    .editor.editor :global([class*="fixed-tools_button-group-button_"]),
+    .editor.editor :global([class*="paint-editor_button-group-button_"]) {
+        min-width: 34px;
+        height: 34px;
+        padding: .375rem;
+    }
+
+    .editor.editor :global([class*="labeled-icon-button_mod-edit-field_"]) {
+        min-width: 40px;
+        min-height: 40px;
+        margin: 0;
+        padding: .25rem;
+    }
+
+    .editor.editor :global([class*="labeled-icon-button_edit-field-icon_"]) { width: 20px; height: 20px; }
+    .editor.editor :global([class*="labeled-icon-button_edit-field-title_"]) {
+        display: block;
+        margin-top: .125rem;
+        font-size: 10px;
+    }
+
+    .editor.editor :global([class*="paint-editor_top-align-row_"]) {
+        flex: 1;
+        flex-direction: column;
+        min-width: 0;
+        min-height: 0;
+        height: auto;
+        padding-top: .25rem;
+    }
+
+    .editor.editor :global([class*="paint-editor_mode-selector_"]) {
+        flex: none;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        gap: .25rem;
+        width: 100%;
+        max-width: none;
+        height: 44px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        touch-action: pan-x;
+    }
+
+    .editor.editor :global([class*="tool-select-base_mod-tool-select_"]) {
+        flex: 0 0 40px;
+        width: 40px;
+        height: 40px;
+        margin: 0;
+        padding: .5rem;
+        transition: none;
+    }
+
+    .editor.editor :global([class*="tool-select-base_tool-select-icon_"]) { width: 24px; height: 24px; }
+
+    .editor.editor :global([class*="paint-editor_controls-container_"]) {
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        width: 100%;
+        margin: .25rem 0 0;
+    }
+
+    .editor.editor :global([class*="paint-editor_canvas-container_"]) {
+        flex: 1;
+        min-width: 0;
+        min-height: 160px;
+        width: 100%;
+    }
+
+    .editor :global([class*="paint-editor_canvas-container_"]) canvas { touch-action: none; }
+
+    .editor.editor :global([class*="paint-editor_canvas-controls_"]) {
+        flex: none;
+        align-items: center;
+        gap: .375rem;
+        height: 38px;
+        margin-top: .25rem;
+        overflow-x: auto;
+    }
+
+    .editor.editor :global([class*="paint-editor_bitmap-button_"]) {
+        flex: none;
+        height: 34px;
+        padding: 0 .5rem;
+        font-size: 11px;
+    }
+
+    .editor.editor :global([class*="paint-editor_bitmap-button-icon_"]) { width: 16px; height: 16px; }
+    .editor.editor :global([class*="paint-editor_zoom-controls_"]) { flex: none; align-self: auto; }
+
+    :global(.Popover-body) {
+        max-width: calc(100vw - 1rem);
+        max-height: calc(100dvh - var(--tw-mobile-dock-height, 113px) - 1rem);
+        overflow: auto;
+        overscroll-behavior: contain;
+    }
+}

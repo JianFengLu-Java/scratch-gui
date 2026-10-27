@@ -90,11 +90,26 @@ class Stage extends React.Component {
         this.attachRectEvents();
         this.attachMouseEvents(this.canvas);
         this.updateRect();
-        this.renderer.resize(this.rect.width, this.rect.height);
+        if (this.rect.width > 0 && this.rect.height > 0) {
+            this.renderer.resize(this.rect.width, this.rect.height);
+        }
+        // Pane switches can change the canvas size without a window resize.
+        // Retain the same renderer and refresh it when its pane becomes visible again.
+        if (typeof ResizeObserver !== 'undefined') {
+            this.canvasResizeObserver = new ResizeObserver(() => {
+                this.updateRect();
+                if (this.rect.width > 0 && this.rect.height > 0) {
+                    this.renderer.resize(this.rect.width, this.rect.height);
+                    this.renderer.draw();
+                }
+            });
+            this.canvasResizeObserver.observe(this.canvas);
+        }
         this.props.vm.runtime.addListener('QUESTION', this.questionListener);
     }
     shouldComponentUpdate (nextProps, nextState) {
         return this.props.stageSize !== nextProps.stageSize ||
+            this.props.availableSize !== nextProps.availableSize ||
             this.props.isColorPicking !== nextProps.isColorPicking ||
             this.state.colorInfo !== nextState.colorInfo ||
             this.props.isFullScreen !== nextProps.isFullScreen ||
@@ -112,9 +127,14 @@ class Stage extends React.Component {
             this.stopColorPickingLoop();
         }
         this.updateRect();
-        this.renderer.resize(this.rect.width, this.rect.height);
+        // Mobile navigation hides the stage with display:none. Preserve its
+        // backing size so rendering and cover snapshots remain available.
+        if (this.rect.width > 0 && this.rect.height > 0) {
+            this.renderer.resize(this.rect.width, this.rect.height);
+        }
     }
     componentWillUnmount () {
+        if (this.canvasResizeObserver) this.canvasResizeObserver.disconnect();
         this.detachMouseEvents(this.canvas);
         this.detachRectEvents();
         this.stopColorPickingLoop();
@@ -465,6 +485,7 @@ class Stage extends React.Component {
 }
 
 Stage.propTypes = {
+    availableSize: PropTypes.shape({width: PropTypes.number, height: PropTypes.number}),
     onHighQualityPenChanged: PropTypes.func,
     highQualityPen: PropTypes.bool,
     customStageSize: PropTypes.shape({

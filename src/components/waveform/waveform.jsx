@@ -44,6 +44,7 @@ class Waveform extends React.PureComponent {
         return (
             <svg
                 className={styles.container}
+                preserveAspectRatio="none"
                 viewBox={`0 0 ${width} ${height}`}
             >
                 <g transform={`scale(1, -1) translate(0, -${height / 2})`}>

@@ -1,0 +1,6 @@
+.mark { display: inline-flex; flex: none; height: 15px; width: 15px; }
+.mark svg { height: 100%; width: 100%; }
+.mark[data-verification="OFFICIAL"] { color: var(--verification-official, #e5484d); }
+.mark[data-verification="OPERATIONS"],
+.mark[data-verification="TEACHER"] { color: var(--verification-professional, #e5a000); }
+.mark[data-verification="PERSONAL"] { color: var(--verification-personal, #0091ff); }

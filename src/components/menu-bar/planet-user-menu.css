@@ -216,6 +216,8 @@
     white-space: nowrap;
 }
 
+.mobile-account-icon, .mobile-account-label { display: none; }
+
 @keyframes popover-enter {
     from {
         opacity: 0;
@@ -256,5 +258,25 @@
     .loading-avatar,
     .loading-name {
         animation: none;
+    }
+}
+
+@media (max-width: 1023px) {
+    .user-menu { height: 40px; }
+    .trigger { width: 36px; min-width: 36px; height: 40px; padding: 0; border-radius: .5rem; color: var(--tw-dialog-foreground); }
+    .avatar { width: 28px; height: 28px; }
+    .caret { display: none; }
+    .signed-out { flex: none; flex-direction: column; justify-content: center; gap: 3px; width: 40px; }
+    .signed-out-label { display: none; }
+    .mobile-account-icon { display: block; width: 18px; height: 18px; stroke-width: 1.75; }
+    .mobile-account-label { display: block; font-size: 10px; line-height: 12px; }
+    .loading-avatar { width: 28px; height: 28px; }
+    .trigger:active { background: var(--tw-dialog-accent); }
+    .trigger:focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: -2px; }
+    .popover {
+        position: fixed; inset-inline: .5rem;
+        top: calc(100dvh - var(--tw-mobile-dock-height, 113px) - 8px - env(safe-area-inset-bottom));
+        width: auto; max-height: calc(100dvh - var(--tw-mobile-dock-height, 113px) - 72px);
+        transform: translateY(-100%); overflow-y: auto; animation: none;
     }
 }

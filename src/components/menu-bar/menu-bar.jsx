@@ -50,6 +50,7 @@ import MenuBarMenu from "./menu-bar-menu.jsx";
 import MenuLabel from "./tw-menu-label.jsx";
 import { MenuItem, MenuSection } from "../menu/menu.jsx";
 import ProjectTitleInput from "./project-title-input.jsx";
+import MobileAccountArea from './mobile-account-area.jsx';
 import AuthorInfo from "./author-info.jsx";
 import SB3Downloader from "../../containers/sb3-downloader.jsx";
 import DeletionRestorer from "../../containers/deletion-restorer.jsx";
@@ -58,7 +59,7 @@ import MenuBarHOC from "../../containers/menu-bar-hoc.jsx";
 import SettingsMenu from "./settings-menu.jsx";
 
 import FramerateChanger from "../../containers/tw-framerate-changer.jsx";
-import TWSaveStatus from "./tw-save-status.jsx";
+import TWSaveStatus, {LocalProjectStatus} from "./tw-save-status.jsx";
 import PlanetUserMenu from "./planet-user-menu.jsx";
 import PlanetAutosaveStatus from "./planet-autosave-status.jsx";
 import PlanetAutosaveManager from "../../containers/planet-autosave-manager.jsx";
@@ -1092,7 +1093,7 @@ class MenuBar extends React.Component {
                     )}
                 </div>
 
-                <div
+                <MobileAccountArea><div
                     aria-label="项目状态与账户"
                     className={styles.accountInfoGroup}
                 >
@@ -1111,13 +1112,16 @@ class MenuBar extends React.Component {
                     {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && <PlanetRemoteCursors />}
                     {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && <PlanetRoleLockOverlay />}
                     {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && (
-                        <Button
+                        <button
+                            aria-label="发布作品"
                             className={styles.publishWorkButton}
+                            type="button"
                             onClick={this.handleOpenWorkPublish}
                         >
-                            <UploadCloudIcon data-icon="inline-start" />
-                            {'发布作品'}
-                        </Button>
+                            <UploadCloudIcon aria-hidden="true" data-icon="inline-start" />
+                            <span className={styles.publishLabel}>{'发布作品'}</span>
+                            <span className={styles.mobilePublishLabel}>{'发布'}</span>
+                        </button>
                     )}
                     {assignmentEntry && <AssignmentControls readOnly={this.props.readOnly} />}
                     {this.props.readOnly && !assignmentEntry && (
@@ -1129,12 +1133,16 @@ class MenuBar extends React.Component {
                     >
                         <PlanetAutosaveStatus />
                         <PlanetCollaborationStatus projectId={this.props.projectId} />
+                        <LocalProjectStatus />
                     </div>}
                     {!this.props.readOnly && !assignmentEntry && (
-                        <TWSaveStatus showSaveFilePicker={this.props.showSaveFilePicker} />
+                        <div className={styles.localSaveControl}>
+                            <TWSaveStatus showSaveFilePicker={this.props.showSaveFilePicker} />
+                        </div>
                     )}
-                    {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry && <PlanetUserMenu />}
-                </div>
+                    {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry &&
+                        <div className={styles.accountProfile}><PlanetUserMenu /></div>}
+                </div></MobileAccountArea>
 
                 {aboutButton}
             </Box>

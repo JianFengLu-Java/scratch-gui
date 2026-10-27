@@ -2,6 +2,7 @@ import bindAll from 'lodash.bindall';
 import debounce from 'lodash.debounce';
 import defaultsDeep from 'lodash.defaultsdeep';
 import makeToolboxXML from '../lib/make-toolbox-xml';
+import {EXTENSION_STATE_CHANGED, getEnabledExtensionCategories} from '../lib/planet-extension-management';
 import PropTypes from 'prop-types';
 import React from 'react';
 import {intlShape, injectIntl, defineMessages} from 'react-intl';
@@ -11,6 +12,7 @@ import VM from 'scratch-vm';
 import log from '../lib/log.js';
 import Prompt from './prompt.jsx';
 import BlocksComponent from '../components/blocks/blocks.jsx';
+import configureMobileBlocksLayout from '../lib/mobile-blocks-layout';
 import ExtensionLibrary from './extension-library.jsx';
 import extensionData from '../lib/libraries/extensions/index.jsx';
 import CustomProcedures from './custom-procedures.jsx';
@@ -117,20 +119,24 @@ class Blocks extends React.Component {
             'handleMonitorsUpdate',
             'handleExtensionAdded',
             'handleBlocksInfoUpdate',
+            'handleExtensionStateChanged',
             'onTargetsUpdate',
             'onVisualReport',
             'onWorkspaceUpdate',
             'onWorkspaceMetricsChange',
             'setBlocks',
             'setLocale',
-            'handleEnableProcedureReturns'
+            'handleEnableProcedureReturns',
+            'handleSelectPalette',
+            'handleTogglePalette'
         ]);
         this.ScratchBlocks.prompt = this.handlePromptStart;
         this.ScratchBlocks.statusButtonCallback = this.handleConnectionModalStart;
         this.ScratchBlocks.recordSoundCallback = this.handleOpenSoundRecorder;
 
         this.state = {
-            prompt: null
+            prompt: null,
+            paletteExpanded: window.innerHeight > 480
         };
         this.onTargetsUpdate = debounce(this.onTargetsUpdate, 100);
         this.toolboxUpdateQueue = [];
@@ -167,6 +173,30 @@ class Blocks extends React.Component {
             Blocks.defaultOptions
         );
         this.workspace = this.ScratchBlocks.inject(this.blocks, workspaceConfig);
+        if (this.props.mobileLayout) {
+            this.setPaletteExpanded = configureMobileBlocksLayout(
+                this.workspace,
+                this.state.paletteExpanded,
+                () => {
+                    this.setState({paletteExpanded: true});
+                    this.props.onSelectMobilePanel('blocks');
+                },
+                this.ScratchBlocks
+            );
+            this.setPaletteExpanded(this.state.paletteExpanded);
+            this.setPaletteExpanded.setPanel(this.props.mobilePanel);
+            this.handleMobileResize = () => {
+                if (!this.unmounted && this.blocks && this.blocks.clientWidth > 0 && this.blocks.clientHeight > 0) {
+                    this.ScratchBlocks.svgResize(this.workspace);
+                    if (this.pendingMobileToolboxUpdate) this.requestToolboxUpdate();
+                }
+            };
+            window.addEventListener('resize', this.handleMobileResize);
+            if (typeof ResizeObserver !== 'undefined') {
+                this.mobileResizeObserver = new ResizeObserver(this.handleMobileResize);
+                this.mobileResizeObserver.observe(this.blocks);
+            }
+        }
         AddonHooks.blocklyWorkspace = this.workspace;
 
         // Register buttons under new callback keys for creating variables,
@@ -246,6 +276,8 @@ class Blocks extends React.Component {
     shouldComponentUpdate (nextProps, nextState) {
         return (
             this.state.prompt !== nextState.prompt ||
+            this.state.paletteExpanded !== nextState.paletteExpanded ||
+            this.props.mobilePanel !== nextProps.mobilePanel ||
             this.props.isVisible !== nextProps.isVisible ||
             this._renderedToolboxXML !== nextProps.toolboxXML ||
             this.props.extensionLibraryVisible !== nextProps.extensionLibraryVisible ||
@@ -256,7 +288,13 @@ class Blocks extends React.Component {
             this.props.customStageSize !== nextProps.customStageSize
         );
     }
-    componentDidUpdate (prevProps) {
+    componentDidUpdate (prevProps, prevState) {
+        if (this.setPaletteExpanded && this.props.mobilePanel !== prevProps.mobilePanel) {
+            this.setPaletteExpanded.setPanel(this.props.mobilePanel);
+        }
+        if (this.setPaletteExpanded && this.state.paletteExpanded !== prevState.paletteExpanded) {
+            this.setPaletteExpanded(this.state.paletteExpanded);
+        }
         // If any modals are open, call hideChaff to close z-indexed field editors
         if (this.props.anyModalVisible && !prevProps.anyModalVisible) {
             this.ScratchBlocks.hideChaff();
@@ -298,6 +336,9 @@ class Blocks extends React.Component {
         }
     }
     componentWillUnmount () {
+        if (this.handleMobileResize) window.removeEventListener('resize', this.handleMobileResize);
+        if (this.mobileResizeObserver) this.mobileResizeObserver.disconnect();
+        if (this.setPaletteExpanded) this.setPaletteExpanded.dispose();
         this.detachVM();
         this.unmounted = true;
         this.workspace.dispose();
@@ -313,6 +354,19 @@ class Blocks extends React.Component {
         this.toolboxUpdateTimeout = setTimeout(() => {
             this.updateToolbox();
         }, 0);
+    }
+    handleTogglePalette () {
+        this.setState(state => ({paletteExpanded: !state.paletteExpanded}));
+    }
+    handleSelectPalette (panel) {
+        this.setState({paletteExpanded: true});
+        this.props.onSelectMobilePanel(panel);
+    }
+    handleExtensionStateChanged () {
+        const toolboxXML = this.getToolboxXML();
+        if (toolboxXML) {
+            this.props.updateToolboxState(toolboxXML);
+        }
     }
     setLocale () {
         this.ScratchBlocks.ScratchMsgs.setLocale(this.props.locale);
@@ -330,6 +384,11 @@ class Blocks extends React.Component {
 
     updateToolbox () {
         this.toolboxUpdateTimeout = false;
+        if (this.props.mobileLayout && (!this.blocks.clientWidth || !this.blocks.clientHeight)) {
+            this.pendingMobileToolboxUpdate = true;
+            return;
+        }
+        this.pendingMobileToolboxUpdate = false;
 
         const categoryId = this.workspace.toolbox_.getSelectedCategoryId();
         const offset = this.workspace.toolbox_.getCategoryScrollOffset();
@@ -343,7 +402,15 @@ class Blocks extends React.Component {
 
         const currentCategoryPos = this.workspace.toolbox_.getCategoryPositionById(categoryId);
         const currentCategoryLen = this.workspace.toolbox_.getCategoryLengthById(categoryId);
-        if (offset < currentCategoryLen) {
+        if (this.props.mobileLayout) {
+            // Extension updates can remove or reorder a category. Restore only
+            // finite offsets against the newly rendered category positions.
+            if (Number.isFinite(currentCategoryPos)) this.workspace.toolbox_.selectCategoryById(categoryId);
+            const start = Number.isFinite(currentCategoryPos) ? currentCategoryPos : 0;
+            const preservedOffset = Number.isFinite(offset) ? Math.max(0, offset) : 0;
+            const limit = currentCategoryLen > 0 ? Math.max(0, currentCategoryLen - 1) : Infinity;
+            this.workspace.toolbox_.setFlyoutScrollPos(start + Math.min(preservedOffset, limit));
+        } else if (offset < currentCategoryLen) {
             this.workspace.toolbox_.setFlyoutScrollPos(currentCategoryPos + offset);
         } else {
             this.workspace.toolbox_.setFlyoutScrollPos(currentCategoryPos);
@@ -356,7 +423,7 @@ class Blocks extends React.Component {
 
     withToolboxUpdates (fn) {
         // if there is a queued toolbox update, we need to wait
-        if (this.toolboxUpdateTimeout) {
+        if (this.toolboxUpdateTimeout || this.pendingMobileToolboxUpdate) {
             this.toolboxUpdateQueue.push(fn);
         } else {
             fn();
@@ -380,6 +447,7 @@ class Blocks extends React.Component {
         this.props.vm.addListener('MONITORS_UPDATE', this.handleMonitorsUpdate);
         this.props.vm.addListener('EXTENSION_ADDED', this.handleExtensionAdded);
         this.props.vm.addListener('BLOCKSINFO_UPDATE', this.handleBlocksInfoUpdate);
+        this.props.vm.addListener(EXTENSION_STATE_CHANGED, this.handleExtensionStateChanged);
         this.props.vm.addListener('PERIPHERAL_CONNECTED', this.handleStatusButtonUpdate);
         this.props.vm.addListener('PERIPHERAL_DISCONNECTED', this.handleStatusButtonUpdate);
     }
@@ -394,6 +462,7 @@ class Blocks extends React.Component {
         this.props.vm.removeListener('MONITORS_UPDATE', this.handleMonitorsUpdate);
         this.props.vm.removeListener('EXTENSION_ADDED', this.handleExtensionAdded);
         this.props.vm.removeListener('BLOCKSINFO_UPDATE', this.handleBlocksInfoUpdate);
+        this.props.vm.removeListener(EXTENSION_STATE_CHANGED, this.handleExtensionStateChanged);
         this.props.vm.removeListener('PERIPHERAL_CONNECTED', this.handleStatusButtonUpdate);
         this.props.vm.removeListener('PERIPHERAL_DISCONNECTED', this.handleStatusButtonUpdate);
     }
@@ -462,7 +531,7 @@ class Blocks extends React.Component {
             const targetCostumes = target.getCostumes();
             const targetSounds = target.getSounds();
             const dynamicBlocksXML = injectExtensionCategoryTheme(
-                this.props.vm.runtime.getBlocksXML(target),
+                getEnabledExtensionCategories(this.props.vm, target),
                 this.props.theme
             );
             return makeToolboxXML(false, target.isStage, target.id, dynamicBlocksXML,
@@ -590,6 +659,10 @@ class Blocks extends React.Component {
         this.handleExtensionAdded(categoryInfo);
     }
     handleCategorySelected (categoryId) {
+        if (this.props.mobileLayout) {
+            this.setPaletteExpanded.setPanel('blocks');
+            this.handleSelectPalette('blocks');
+        }
         const extension = extensionData.find(ext => ext.extensionId === categoryId);
         if (extension && extension.launchPeripheralConnectionFlow) {
             this.handleConnectionModalStart(categoryId);
@@ -688,6 +761,11 @@ class Blocks extends React.Component {
             vm,
             isRtl,
             isVisible,
+            mobileLayout,
+            mobilePanel,
+            onMobilePreviewHost,
+            onMobileTargetsHost,
+            onSelectMobilePanel,
             onActivateColorPicker,
             onOpenConnectionModal,
             onOpenSoundRecorder,
@@ -709,6 +787,13 @@ class Blocks extends React.Component {
             <React.Fragment>
                 <DroppableBlocks
                     componentRef={this.setBlocks}
+                    mobileLayout={mobileLayout}
+                    mobilePanel={mobilePanel}
+                    paletteExpanded={this.state.paletteExpanded}
+                    onMobilePreviewHost={onMobilePreviewHost}
+                    onMobileTargetsHost={onMobileTargetsHost}
+                    onSelectPalette={this.handleSelectPalette}
+                    onTogglePalette={this.handleTogglePalette}
                     onDrop={readOnly ? null : this.handleDrop}
                     readOnly={readOnly}
                     {...props}
@@ -750,6 +835,11 @@ class Blocks extends React.Component {
 }
 
 Blocks.propTypes = {
+    mobileLayout: PropTypes.bool,
+    mobilePanel: PropTypes.oneOf(['blocks', 'preview', 'sprites', 'stage']),
+    onMobilePreviewHost: PropTypes.func,
+    onMobileTargetsHost: PropTypes.func,
+    onSelectMobilePanel: PropTypes.func,
     intl: intlShape,
     anyModalVisible: PropTypes.bool,
     canUseCloud: PropTypes.bool,
@@ -773,6 +863,8 @@ Blocks.propTypes = {
     onRequestCloseExtensionLibrary: PropTypes.func,
     options: PropTypes.shape({
         media: PropTypes.string,
+        horizontalLayout: PropTypes.bool,
+        toolboxPosition: PropTypes.string,
         zoom: PropTypes.shape({
             controls: PropTypes.bool,
             wheel: PropTypes.bool,
@@ -812,6 +904,8 @@ Blocks.defaultOptions = {
 
 Blocks.defaultProps = {
     isVisible: true,
+    mobilePanel: 'blocks',
+    onSelectMobilePanel: () => {},
     options: Blocks.defaultOptions,
     readOnly: false,
     theme: Theme.light

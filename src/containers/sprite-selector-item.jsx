@@ -33,7 +33,9 @@ class SpriteSelectorItem extends React.PureComponent {
 
         this.dragRecognizer = new DragRecognizer({
             onDrag: this.handleDrag,
-            onDragEnd: this.handleDragEnd
+            onDragEnd: this.handleDragEnd,
+            getTouchScrollAxis: () => (this.props.horizontalScroll &&
+                window.matchMedia('(max-width: 1023px)').matches ? 'horizontal' : 'vertical')
         });
     }
     componentDidMount () {
@@ -131,6 +133,7 @@ class SpriteSelectorItem extends React.PureComponent {
             readOnly,
             receivedBlocks,
             costumeURL,
+            horizontalScroll,
             vm,
             /* eslint-enable no-unused-vars */
             ...props
@@ -163,6 +166,7 @@ SpriteSelectorItem.propTypes = {
     dragPayload: PropTypes.any,
     dragType: PropTypes.string,
     dragging: PropTypes.bool,
+    horizontalScroll: PropTypes.bool,
     // eslint-disable-next-line react/forbid-prop-types
     id: PropTypes.any,
     index: PropTypes.number,

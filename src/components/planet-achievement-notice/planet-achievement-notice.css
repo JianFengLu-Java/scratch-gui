@@ -1,0 +1,33 @@
+@import "../../css/colors.css";
+
+.notice {
+    position: fixed;
+    z-index: 1000;
+    top: 1rem;
+    right: 1rem;
+    max-width: min(26rem, calc(100vw - 2rem));
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: .75rem 1rem;
+    border: 1px solid $ui-black-transparent;
+    border-radius: .5rem;
+    background: $ui-white;
+    color: $text-primary;
+    box-shadow: 0 4px 16px $ui-black-transparent;
+    font-size: .875rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+.notice button {
+    flex: none;
+    border: 0;
+    border-radius: .25rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    padding: .25rem .5rem;
+}
+.notice button:hover { background: $ui-black-transparent; }
+.notice button:focus-visible { outline: 2px solid $motion-primary; outline-offset: 2px; }

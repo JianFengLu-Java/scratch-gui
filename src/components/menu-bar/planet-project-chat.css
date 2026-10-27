@@ -350,7 +350,7 @@
     justify-content: center;
     margin-top: calc(var(--message-name-height) + var(--message-content-gap) + var(--message-bubble-top-inset, 0px));
     min-width: var(--message-avatar-size);
-    overflow: hidden;
+    overflow: visible;
 }
 
 .message-avatar > span {
@@ -361,7 +361,7 @@
 }
 
 .own-message .message-avatar {
-    margin-top: var(--message-bubble-top-inset, 0px);
+    margin-top: calc(var(--message-name-height) + var(--message-content-gap) + var(--message-bubble-top-inset, 0px));
 }
 
 .message-content {
@@ -381,11 +381,37 @@
 .message-header {
     align-items: center;
     display: flex;
+    gap: .25rem;
     max-width: 100%;
     height: var(--message-name-height);
     min-width: 0;
     padding-inline: .125rem;
 }
+
+.message-name[data-member="true"] { color: var(--tw-status-danger, #dc2626); font-weight: 700; }
+.member-badge {
+    color: var(--tw-status-danger, #dc2626);
+    flex: none;
+    font-size: .625rem;
+    font-weight: 650;
+    line-height: 1;
+}
+.history-controls { align-items: center; display: flex; flex-direction: column; gap: .2rem; }
+.history-controls span { color: var(--tw-menu-muted-foreground, #737373); font-size: .7rem; }
+.history-controls button {
+    background: transparent;
+    border: 0;
+    border-radius: .4rem;
+    color: var(--tw-menu-muted-foreground, #737373);
+    cursor: pointer;
+    font: inherit;
+    font-size: .7rem;
+    min-height: 44px;
+    padding: .3rem .7rem;
+}
+.history-controls button:focus-visible { outline: 2px solid var(--tw-dialog-ring); }
+.history-controls button:active { background: var(--tw-menu-accent, #f5f5f5); }
+.history-controls button:disabled { cursor: wait; }
 
 .message-name {
     color: var(--tw-menu-muted-foreground, #737373);
@@ -621,5 +647,61 @@
 @media (max-width: 640px) {
     .panel {
         width: calc(100vw - 1rem);
+    }
+}
+
+@media (max-width: 1023px) {
+    .room-tabs {
+        margin: .625rem .75rem 0;
+    }
+
+    .room-tabs button {
+        font-size: .875rem;
+    }
+
+    .messages {
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .bubble,
+    .voice-message,
+    .empty strong {
+        font-size: .875rem;
+        line-height: 1.5;
+    }
+
+    .message-name,
+    .message-time,
+    .empty small,
+    .history-controls,
+    .error {
+        font-size: .75rem;
+    }
+
+    .composer {
+        flex: 0 0 auto;
+        padding: .625rem .75rem;
+    }
+
+    .composer-row {
+        min-width: 0;
+        align-items: flex-end;
+    }
+
+    .mode-button {
+        min-width: 44px;
+        flex: 0 0 auto;
+    }
+
+    .voice-room {
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+    }
+
+    .join-voice-button,
+    .record-button,
+    .voice-room-title {
+        font-size: .875rem;
     }
 }

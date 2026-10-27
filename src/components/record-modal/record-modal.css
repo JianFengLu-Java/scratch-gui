@@ -134,3 +134,29 @@ svg.record-button {
 [dir="rtl"] .rerecord-button img {
     transform: scaleX(-1);
 }
+
+@media (max-width: 1023px) {
+    .modal-content {
+        width: min(600px, calc(100vw - 1rem));
+        max-width: calc(100vw - 1rem);
+        max-height: calc(100dvh - 1rem);
+        margin: .5rem auto;
+    }
+
+    .body {
+        min-width: 0;
+        max-height: calc(100dvh - 80px);
+        padding: .75rem;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    .visualization-container { min-width: 0; }
+    .meter-container { flex: none; }
+    .waveform-container { min-width: 0; }
+    .help-text { font-size: 13px; line-height: 20px; }
+    .main-button-row { margin-top: .75rem; }
+    .button-row { gap: .5rem; margin-top: .5rem; }
+    .button-row button { min-height: 40px; padding: .5rem .75rem; font-size: 13px; }
+    .button-row button + button { margin-inline-start: 0; }
+}

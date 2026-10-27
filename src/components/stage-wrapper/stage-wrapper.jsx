@@ -13,6 +13,7 @@ import styles from './stage-wrapper.css';
 
 const StageWrapperComponent = function (props) {
     const {
+        availableSize,
         isEmbedded,
         isFullScreen,
         isRtl,
@@ -22,6 +23,7 @@ const StageWrapperComponent = function (props) {
         stageSize,
         vm
     } = props;
+    const mobileStage = stageSize === STAGE_DISPLAY_SIZES.mobile && !isFullScreen;
 
     return (
         <Box
@@ -31,6 +33,7 @@ const StageWrapperComponent = function (props) {
                     [styles.embedded]: isEmbedded,
                     [styles.fullScreen]: isFullScreen,
                     [styles.loading]: loading,
+                    [styles.mobile]: mobileStage,
                     [styles.offsetControls]: !(isEmbedded || isFullScreen)
                 }
             )}
@@ -38,6 +41,7 @@ const StageWrapperComponent = function (props) {
         >
             <Box className={styles.stageMenuWrapper}>
                 <StageHeader
+                    availableSize={availableSize}
                     stageSize={stageSize}
                     vm={vm}
                 />
@@ -46,6 +50,7 @@ const StageWrapperComponent = function (props) {
                 {
                     isRendererSupported ?
                         <Stage
+                            availableSize={availableSize}
                             readOnly={readOnly}
                             stageSize={stageSize}
                             vm={vm}
@@ -61,6 +66,8 @@ const StageWrapperComponent = function (props) {
 };
 
 StageWrapperComponent.propTypes = {
+    availableSize: PropTypes.shape({width: PropTypes.number, height: PropTypes.number}),
+    customStageSize: PropTypes.shape({width: PropTypes.number, height: PropTypes.number}),
     isEmbedded: PropTypes.bool,
     isFullScreen: PropTypes.bool,
     isRendererSupported: PropTypes.bool.isRequired,

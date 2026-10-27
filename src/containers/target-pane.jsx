@@ -43,6 +43,7 @@ class TargetPane extends React.Component {
             'handleDrop',
             'handleDuplicateSprite',
             'handleExportSprite',
+            'handleEditStage',
             'handleNewSprite',
             'handleSelectSprite',
             'handleSurpriseSpriteClick',
@@ -114,6 +115,11 @@ class TargetPane extends React.Component {
         if (this.props.stage && id !== this.props.stage.id) {
             this.props.onHighlightTarget(id);
         }
+    }
+    handleEditStage () {
+        if (!this.props.stage || !this.props.stage.id) return;
+        this.handleSelectSprite(this.props.stage.id);
+        this.props.onActivateTab(COSTUMES_TAB_INDEX);
     }
     async handleSurpriseSpriteClick () {
         const spriteLibraryContent = await getSpriteLibrary();
@@ -293,6 +299,7 @@ class TargetPane extends React.Component {
                 onDrop={this.props.readOnly ? null : this.handleDrop}
                 onDuplicateSprite={this.props.readOnly ? null : this.handleDuplicateSprite}
                 onExportSprite={this.props.readOnly ? null : this.handleExportSprite}
+                onEditStage={this.handleEditStage}
                 onFileUploadClick={this.props.readOnly ? null : this.handleFileUploadClick}
                 onPaintSpriteClick={this.props.readOnly ? null : this.handlePaintSpriteClick}
                 onSelectSprite={this.handleSelectSprite}

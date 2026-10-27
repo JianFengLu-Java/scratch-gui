@@ -40,3 +40,15 @@
 .stage-wrapper.embedded {
     background-color: transparent;
 }
+
+.stage-wrapper.mobile {
+    flex: none;
+    width: 100%;
+    min-width: 0;
+}
+
+.mobile.offset-controls .stage-canvas-wrapper {
+    display: flex;
+    justify-content: center;
+    padding-top: 48px;
+}

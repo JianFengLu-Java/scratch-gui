@@ -1,7 +1,7 @@
 import * as Y from 'yjs';
 
 import {openPlanetWriteSession} from './planet-cloud-autosave';
-import {refreshPlanetSession, resolvePlanetAssetUrl} from './planet-session';
+import {clearPlanetSession, readPlanetEnvelope, refreshPlanetSession, resolvePlanetAssetUrl} from './planet-session';
 
 const API_CONTEXT_PATH = '/api/v1';
 const LOCAL_ORIGIN = 'planet-local-project';
@@ -11,7 +11,6 @@ const HEARTBEAT_INTERVAL_MS = 25000;
 const VOICE_ICE_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 const VOICE_ICE_REFRESH_MIN_DELAY_MS = 30 * 1000;
 const SESSION_REPLACED_CLOSE_CODE = 4001;
-const CHAT_HISTORY_LIMIT = 50;
 let latestChatState = null;
 let latestVoiceState = null;
 
@@ -21,6 +20,19 @@ const normalizeCollaborationPerson = person => ({
 });
 
 const normalizeChatMessage = message => normalizeCollaborationPerson(message);
+
+export const mergePlanetChatMessages = (existing, incoming) => {
+    const messages = new Map(existing.map(message => [message.messageId, message]));
+    incoming.forEach(message => messages.set(message.messageId, {...messages.get(message.messageId), ...message}));
+    return [...messages.values()].sort((left, right) => {
+        if (left.cursor && right.cursor) {
+            const a = String(left.cursor);
+            const b = String(right.cursor);
+            return a.length - b.length || a.localeCompare(b);
+        }
+        return new Date(left.sentAt).getTime() - new Date(right.sentAt).getTime();
+    });
+};
 
 const normalizeParticipants = participants => (Array.isArray(participants) ?
     participants.map(normalizeCollaborationPerson) : []);
@@ -64,10 +76,51 @@ export const getPlanetCollaborationChatState = () => {
 const currentChatState = projectId => (latestChatState &&
     latestChatState.projectId === String(projectId) ? latestChatState : {
         connected: false,
+        hasMore: false,
+        historyLoaded: false,
         messages: [],
+        nextCursor: null,
         ownUserId: null,
         projectId: String(projectId)
     });
+
+export const loadPlanetProjectChatHistory = async (projectId, before, signal) => {
+    const params = new URLSearchParams({pageSize: '50'});
+    if (before) params.set('before', before);
+    const request = async retry => {
+        const session = await refreshPlanetSession();
+        const response = await fetch(`/backend-api/projects/${encodeURIComponent(projectId)}/chat-messages?${params}`, {
+            signal,
+            credentials: 'include',
+            cache: 'no-store',
+            headers: {Authorization: `Bearer ${session.accessToken}`}
+        });
+        if (response.status === 401 && retry) {
+            clearPlanetSession();
+            return request(false);
+        }
+        return readPlanetEnvelope(response);
+    };
+    const page = await request(true);
+    if (signal.aborted || (latestChatState && latestChatState.projectId !== String(projectId))) return;
+    const current = currentChatState(projectId);
+    const incoming = Array.isArray(page.messages) ? page.messages.map(normalizeChatMessage) : [];
+    const first = incoming[0];
+    const existingIds = new Set(current.messages.map(message => message.messageId));
+    const overlaps = incoming.some(message => existingIds.has(message.messageId));
+    const keepOlderPage = !before && current.historyLoaded && overlaps && current.messages.some(message =>
+        message.cursor && first && String(message.cursor).padStart(19, '0') < String(first.cursor).padStart(19, '0'));
+    latestChatState = {
+        ...current,
+        historyLoaded: true,
+        messages: mergePlanetChatMessages(current.messages, incoming),
+        hasMore: keepOlderPage ? current.hasMore : Boolean(page.hasMore),
+        nextCursor: keepOlderPage ? current.nextCursor : page.nextCursor
+    };
+    window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_CHAT_EVENT, {
+        detail: {...latestChatState, type: 'chat-history'}
+    }));
+};
 
 const resolveWebSocketUrl = (projectId, ticket) => {
     const origin = new URL(window.location.origin);
@@ -285,23 +338,26 @@ export class PlanetYjsCollaboration {
         } else if (message.type === 'chat-history') {
             const chatState = currentChatState(this.projectId);
             const messages = Array.isArray(message.messages) ?
-                message.messages.slice(-CHAT_HISTORY_LIMIT).map(normalizeChatMessage) : [];
+                message.messages.map(normalizeChatMessage) : [];
+            const existingIds = new Set(chatState.messages.map(item => item.messageId));
+            const lostContinuity = chatState.historyLoaded && messages.length > 0 &&
+                !messages.some(item => existingIds.has(item.messageId));
             latestChatState = {
                 ...chatState,
-                messages
+                // If a long disconnect missed an entire page, restart the
+                // history cursor so the gap remains reachable through REST.
+                ...(lostContinuity ? {historyLoaded: false, hasMore: true, nextCursor: messages[0].cursor} : {}),
+                messages: mergePlanetChatMessages(chatState.messages, messages)
             };
             window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_CHAT_EVENT, {
-                detail: {...message, messages}
+                detail: {...message, ...latestChatState}
             }));
         } else if (message.type === 'chat-message' && message.message) {
             const chatState = currentChatState(this.projectId);
             const normalizedMessage = normalizeChatMessage(message.message);
-            const duplicate = chatState.messages.some(existing =>
-                existing.messageId === normalizedMessage.messageId);
             latestChatState = {
                 ...chatState,
-                messages: duplicate ? chatState.messages :
-                    [...chatState.messages, normalizedMessage].slice(-CHAT_HISTORY_LIMIT)
+                messages: mergePlanetChatMessages(chatState.messages, [normalizedMessage])
             };
             window.dispatchEvent(new CustomEvent(PLANET_COLLABORATION_CHAT_EVENT, {
                 detail: {...message, message: normalizedMessage}
@@ -377,7 +433,9 @@ export class PlanetYjsCollaboration {
     sendChatMessage (content) {
         const value = typeof content === 'string' ? content.trim() : '';
         if (!value || value.length > 500) return;
-        this.sendJson({type: 'chat-message', content: value});
+        const clientMessageId = window.crypto && typeof window.crypto.randomUUID === 'function' ?
+            window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        this.sendJson({type: 'chat-message', content: value, clientMessageId});
     }
 
     sendVoiceCommand (message) {

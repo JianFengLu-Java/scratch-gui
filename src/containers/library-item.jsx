@@ -22,6 +22,7 @@ class LibraryItem extends React.PureComponent {
             'handleBlur',
             'handleClick',
             'handleFavorite',
+            'handleToggleExtension',
             'handleFocus',
             'handleKeyPress',
             'handleMouseEnter',
@@ -71,6 +72,11 @@ class LibraryItem extends React.PureComponent {
     handleFavorite (e) {
         e.stopPropagation();
         this.props.onFavorite(this.props.id);
+    }
+    handleToggleExtension (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.props.onToggleExtension(this.props.id);
     }
     handleFocus (id) {
         if (!this.props.showPlayButton) {
@@ -150,6 +156,9 @@ class LibraryItem extends React.PureComponent {
                 description={this.props.description}
                 disabled={this.props.disabled}
                 extensionId={this.props.extensionId}
+                extensionEnabled={this.props.extensionEnabled}
+                extensionBusy={this.props.extensionBusy}
+                onToggleExtension={this.handleToggleExtension}
                 featured={this.props.featured}
                 hidden={this.props.hidden}
                 iconURL={iconURL}
@@ -189,6 +198,9 @@ LibraryItem.propTypes = {
     ]),
     disabled: PropTypes.bool,
     extensionId: PropTypes.string,
+    extensionEnabled: PropTypes.bool,
+    extensionBusy: PropTypes.bool,
+    onToggleExtension: PropTypes.func,
     href: PropTypes.string,
     featured: PropTypes.bool,
     hidden: PropTypes.bool,

@@ -1,4 +1,5 @@
 export const PLANET_EDITOR_RESOURCE_COMMAND_EVENT = 'planet-editor-resource-command';
+export const PLANET_EDITOR_ACCOUNT_SLOT_EVENT = 'planet-editor-account-slot';
 export const PLANET_PROJECT_CHAT_READY_EVENT = 'planet-project-chat-ready';
 export const PLANET_PROJECT_CHAT_STATE_EVENT = 'planet-project-chat-state';
 export const PLANET_BACKPACK_TOGGLE_EVENT = 'planet-backpack-toggle';

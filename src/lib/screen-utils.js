@@ -4,6 +4,7 @@ import {
     STAGE_DISPLAY_SIZES,
     FIXED_WIDTH
 } from '../lib/layout-constants';
+import fitMobileStage from './mobile-stage-layout';
 
 const maxScaleParam = typeof URLSearchParams !== 'undefined' && new URLSearchParams(location.search).get('scale');
 
@@ -44,9 +45,10 @@ const resolveStageSize = (stageSizeMode, isUnconstrained) => {
  * @param {STAGE_DISPLAY_SIZES} stageSize - the current fully-resolved stage size.
  * @param {{width: number, height: number}} customStageSize Custom stage size
  * @param {boolean} isFullScreen - true if full-screen mode is enabled.
+ * @param {{width: number, height: number}} availableSize - available mobile preview cell, including controls.
  * @return {StageDimensions} - an object describing the dimensions of the stage.
  */
-const getStageDimensions = (stageSize, customStageSize, isFullScreen) => {
+const getStageDimensions = (stageSize, customStageSize, isFullScreen, availableSize) => {
     const stageDimensions = {
         heightDefault: customStageSize.height,
         widthDefault: customStageSize.width,
@@ -71,6 +73,8 @@ const getStageDimensions = (stageSize, customStageSize, isFullScreen) => {
         }
 
         stageDimensions.scale = stageDimensions.width / stageDimensions.widthDefault;
+    } else if (stageSize === STAGE_DISPLAY_SIZES.mobile) {
+        Object.assign(stageDimensions, fitMobileStage(customStageSize, availableSize));
     } else {
         const metadata = STAGE_DISPLAY_SCALE_METADATA[stageSize];
         if (metadata.width) {
@@ -98,6 +102,7 @@ const getStageDimensions = (stageSize, customStageSize, isFullScreen) => {
  * @returns {number} Minimum width to display the stage area of the screen at. May be wider than the stage's actual size
  */
 const getMinWidth = stageSize => {
+    if (stageSize === STAGE_DISPLAY_SIZES.mobile) return 0;
     const metadata = STAGE_DISPLAY_SCALE_METADATA[stageSize];
     if (metadata.width) {
         return metadata.width;

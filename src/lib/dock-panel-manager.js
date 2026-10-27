@@ -75,6 +75,13 @@ export const registerDockPanel = (panelId, element, onClose) => {
     updateEscapeListener();
 
     return Object.freeze({
+        closeOthers: () => {
+            // Preserve the active window when resizing from desktop to mobile.
+            if (!registered || panelStack[panelStack.length - 1] !== panelKey) return;
+            for (const [key, record] of [...panelRecords.entries()]) {
+                if (key !== panelKey) record.onClose();
+            }
+        },
         activate: () => {
             if (!registered || panelStack[panelStack.length - 1] === panelKey) return;
             panelStack = [...panelStack.filter(key => key !== panelKey), panelKey];

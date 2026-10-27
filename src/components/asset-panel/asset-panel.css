@@ -39,3 +39,23 @@
 [dir="rtl"] .detail-area {
     border-right: 1px solid $ui-black-transparent;
 }
+
+@media (max-width: 1023px) {
+    .wrapper {
+        flex-direction: column;
+        width: 100%;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .wrapper .detail-area {
+        flex: 1;
+        width: 100%;
+        min-width: 0;
+        min-height: 0;
+        border-inline: 0;
+        overflow: auto;
+        overscroll-behavior: contain;
+    }
+}

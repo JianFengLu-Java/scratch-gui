@@ -11,3 +11,15 @@
 .close:hover { background: $ui-black-transparent; }
 .trigger:focus-visible, .header button:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
 .body { flex: 1; min-height: 0; width: 100%; border: 0; background: $ui-white; }
+
+@media (max-width: 1023px) {
+    .trigger {
+        justify-content: center;
+        width: 2rem;
+        padding: 0;
+    }
+
+    .trigger > span {
+        display: none;
+    }
+}

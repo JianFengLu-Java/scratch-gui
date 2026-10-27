@@ -2,6 +2,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import bindAll from 'lodash.bindall';
 import VM from 'scratch-vm';
+import classNames from 'classnames';
+import {ChevronDownIcon, ChevronUpIcon, SlidersHorizontalIcon} from 'lucide-react';
 import PaintEditor from '../lib/tw-scratch-paint';
 import {inlineSvgFonts, sanitizeSvg} from '@turbowarp/scratch-svg-renderer';
 import ErrorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
@@ -9,6 +11,7 @@ import {openFontsModal} from '../reducers/modals';
 
 import {connect} from 'react-redux';
 import {Theme} from '../lib/themes/index.js';
+import styles from '../components/paint-editor-wrapper/paint-editor-wrapper.css';
 
 class PaintEditorWrapper extends React.Component {
     constructor (props) {
@@ -17,14 +20,28 @@ class PaintEditorWrapper extends React.Component {
             'handleUpdateImage',
             'handleUpdateName',
             'handleUpdateFonts',
+            'handleToggleSettings',
+            'setEditorRef',
             'fontInlineFn'
         ]);
         this.state = {
-            fonts: this.props.vm.runtime.fontManager.getFonts()
+            fonts: this.props.vm.runtime.fontManager.getFonts(),
+            settingsExpanded: window.innerHeight > 700
         };
     }
     componentDidMount () {
         this.props.vm.runtime.fontManager.on('change', this.handleUpdateFonts);
+        // Paper resizes on window events. Also notify it when the mobile
+        // toolbars or asset strip change the space available to its canvas.
+        if (typeof ResizeObserver !== 'undefined' && this.editor) {
+            this.resizeObserver = new ResizeObserver(() => {
+                cancelAnimationFrame(this.resizeFrame);
+                this.resizeFrame = requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+            });
+            this.resizeObserver.observe(this.editor);
+            const canvas = this.editor.querySelector('[class*="paint-editor_canvas-container_"]');
+            if (canvas) this.resizeObserver.observe(canvas);
+        }
     }
     shouldComponentUpdate (nextProps, nextState) {
         return this.props.imageId !== nextProps.imageId ||
@@ -32,10 +49,19 @@ class PaintEditorWrapper extends React.Component {
             this.props.name !== nextProps.name ||
             this.props.theme !== nextProps.theme ||
             this.props.customStageSize !== nextProps.customStageSize ||
-            this.state.fonts !== nextState.fonts;
+            this.state.fonts !== nextState.fonts ||
+            this.state.settingsExpanded !== nextState.settingsExpanded;
     }
     componentWillUnmount () {
         this.props.vm.runtime.fontManager.off('change', this.handleUpdateFonts);
+        if (this.resizeObserver) this.resizeObserver.disconnect();
+        cancelAnimationFrame(this.resizeFrame);
+    }
+    setEditorRef (element) {
+        this.editor = element;
+    }
+    handleToggleSettings () {
+        this.setState(state => ({settingsExpanded: !state.settingsExpanded}));
     }
     handleUpdateFonts () {
         this.setState({
@@ -73,17 +99,33 @@ class PaintEditorWrapper extends React.Component {
         } = this.props;
         const costume = vm.getCostume(selectedCostumeIndex);
         return (
-            <PaintEditor
-                {...componentProps}
-                image={this.props.imageFormat === 'svg' ? sanitizeSvg.sanitizeSvgText(costume) : costume}
-                onUpdateImage={this.handleUpdateImage}
-                onUpdateName={this.handleUpdateName}
-                fontInlineFn={this.fontInlineFn}
-                theme={this.props.theme.isDark() ? 'dark' : 'light'}
-                customFonts={this.state.fonts}
-                width={this.props.customStageSize.width}
-                height={this.props.customStageSize.height}
-            />
+            <div
+                className={classNames(styles.editor, {[styles.settingsCollapsed]: !this.state.settingsExpanded})}
+                ref={this.setEditorRef}
+            >
+                <button
+                    aria-expanded={this.state.settingsExpanded}
+                    className={styles.settingsToggle}
+                    type="button"
+                    onClick={this.handleToggleSettings}
+                >
+                    <SlidersHorizontalIcon aria-hidden="true" />
+                    <span>{'编辑设置'}</span>
+                    {this.state.settingsExpanded ?
+                        <ChevronUpIcon aria-hidden="true" /> : <ChevronDownIcon aria-hidden="true" />}
+                </button>
+                <PaintEditor
+                    {...componentProps}
+                    image={this.props.imageFormat === 'svg' ? sanitizeSvg.sanitizeSvgText(costume) : costume}
+                    onUpdateImage={this.handleUpdateImage}
+                    onUpdateName={this.handleUpdateName}
+                    fontInlineFn={this.fontInlineFn}
+                    theme={this.props.theme.isDark() ? 'dark' : 'light'}
+                    customFonts={this.state.fonts}
+                    width={this.props.customStageSize.width}
+                    height={this.props.customStageSize.height}
+                />
+            </div>
         );
     }
 }

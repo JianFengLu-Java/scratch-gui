@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import classNames from 'classnames';
 import {defineMessages, injectIntl, intlShape} from 'react-intl';
 
 import Box from '../box/box.jsx';
@@ -23,6 +24,7 @@ const SpriteSelectorComponent = function (props) {
         editingTarget,
         hoveredTarget,
         intl,
+        mobileStandalone,
         onChangeSpriteDirection,
         onChangeSpriteName,
         onChangeSpriteRotationStyle,
@@ -71,7 +73,7 @@ const SpriteSelectorComponent = function (props) {
     return (
         <Box
             aria-label={intl.formatMessage(messages.addSpriteFromLibrary)}
-            className={styles.spriteSelector}
+            className={classNames(styles.spriteSelector, {[styles.standalone]: mobileStandalone})}
             {...componentProps}
         >
 
@@ -126,6 +128,7 @@ SpriteSelectorComponent.propTypes = {
         receivedBlocks: PropTypes.bool
     }),
     intl: intlShape.isRequired,
+    mobileStandalone: PropTypes.bool,
     onChangeSpriteDirection: PropTypes.func,
     onChangeSpriteName: PropTypes.func,
     onChangeSpriteRotationStyle: PropTypes.func,

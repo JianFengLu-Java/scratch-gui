@@ -280,3 +280,157 @@ $border-radius: 0.25rem;
     background-color: rgba(255, 119, 0, 0.3);
     border-color: rgb(255, 119, 0);
 }
+
+@media (max-width: 1023px) {
+    .editor-container.editor-container {
+        flex: 1;
+        gap: .625rem;
+        width: 100%;
+        min-width: 0;
+        min-height: 0;
+        padding: .5rem;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    .editor-container .row {
+        flex: none;
+        min-width: 0;
+        margin-top: 0;
+    }
+
+    .editor-container .toolbar {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: .375rem;
+        align-items: stretch;
+    }
+
+    .editor-container .input-group {
+        min-width: 0;
+        margin-inline: 0;
+        padding-inline: 0;
+        border-inline: 0;
+    }
+
+    .editor-container .name-group {
+        grid-column: 1 / -1;
+        align-items: center;
+        gap: .5rem;
+    }
+
+    .name-group > label {
+        display: flex;
+        flex: 1;
+        align-items: center;
+        gap: .375rem;
+        min-width: 0;
+        margin: 0;
+    }
+
+    .editor-container .name-group > label > span { display: block; flex: none; font-size: 12px; }
+
+    .editor-container .name-input {
+        flex: 1;
+        min-width: 0;
+        width: 100%;
+        height: 32px;
+        padding-inline: .5rem;
+        border-radius: .375rem;
+        font-size: 16px;
+    }
+
+    .editor-container .button-group { flex: none; margin-inline: 0; }
+    .editor-container .button { width: 36px; height: 36px; padding: .375rem; }
+    .editor-container .button img { width: 20px; height: 20px; }
+
+    .editor-container .edit-group {
+        display: grid;
+        grid-column: 1 / span 3;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: .375rem;
+    }
+
+    .editor-container .tool-button,
+    .editor-container .effect-button {
+        justify-content: center;
+        gap: .25rem;
+        width: auto;
+        min-width: 0;
+        min-height: 48px;
+        height: auto;
+        margin: 0;
+        padding: .375rem .125rem;
+        border: 1px solid var(--tw-dialog-border);
+        border-radius: .375rem;
+        background: var(--tw-dialog-background);
+        color: var(--tw-dialog-foreground);
+        font-size: 11px;
+        touch-action: manipulation;
+    }
+
+    .editor-container .delete-tool { grid-column: 4; }
+
+    .editor-container .tool-button img,
+    .editor-container .effect-button img {
+        flex: none;
+        width: 20px;
+        height: 20px;
+        margin: 0;
+    }
+
+    .editor-container .tool-button :global([class*="icon-button_title_"]),
+    .editor-container .effect-button :global([class*="icon-button_title_"]) {
+        display: block;
+        max-width: 100%;
+        margin: 0;
+        font-size: 11px;
+        line-height: 14px;
+        overflow-wrap: anywhere;
+    }
+
+    .editor-container .waveform-container {
+        min-width: 0;
+        height: clamp(100px, 22dvh, 200px);
+        margin: 18px 0;
+    }
+
+    .waveform-container > svg { height: 100%; }
+
+    .editor-container .row-reverse {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr);
+        align-items: start;
+        gap: .5rem;
+    }
+
+    .editor-container .round-button-outer {
+        justify-content: center;
+        height: auto;
+        margin: 0;
+    }
+
+    .editor-container .round-button { width: 44px; height: 44px; padding: .75rem; }
+
+    .editor-container .effects {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: .375rem;
+        min-width: 0;
+    }
+
+    .editor-container .info-row {
+        flex: none;
+        flex-wrap: wrap;
+        gap: .375rem .75rem;
+        margin-top: 0;
+        font-size: 11px;
+        line-height: 16px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .editor-container .advanced-info { color: var(--tw-dialog-muted-foreground); }
+    .editor-container .alert { flex: none; margin: 0; font-size: 12px; line-height: 18px; }
+    .editor-container .tool-button:active,
+    .editor-container .effect-button:active { background: var(--tw-dialog-accent); }
+}

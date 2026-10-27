@@ -17,11 +17,13 @@ class DragRecognizer {
         onDrag = (() => {}),
         onDragEnd = (() => {}),
         touchDragAngle = 70, // Angle and distance thresholds are the same as scratch-blocks
+        getTouchScrollAxis = (() => 'vertical'),
         distanceThreshold = 3
     }) {
         this._onDrag = onDrag;
         this._onDragEnd = onDragEnd;
         this._touchDragAngle = touchDragAngle;
+        this._getTouchScrollAxis = getTouchScrollAxis;
         this._distanceThreshold = distanceThreshold;
 
         this._initialOffset = null;
@@ -62,6 +64,7 @@ class DragRecognizer {
         window.addEventListener('mouseup', this._handleEnd);
         window.addEventListener('mousemove', this._handleMove);
         window.addEventListener('touchend', this._handleEnd);
+        window.addEventListener('touchcancel', this._handleEnd);
         // touchmove must be marked as non-passive, or else it cannot prevent scrolling
         window.addEventListener('touchmove', this._handleMove, {passive: false});
     }
@@ -70,11 +73,12 @@ class DragRecognizer {
         window.removeEventListener('mouseup', this._handleEnd);
         window.removeEventListener('mousemove', this._handleMove);
         window.removeEventListener('touchend', this._handleEnd);
+        window.removeEventListener('touchcancel', this._handleEnd);
         window.removeEventListener('touchmove', this._handleMove, {passive: false});
     }
 
     _handleMove (event) {
-        // For gestures identified as vertical scrolls, do not process movement events
+        // Leave native scrolling gestures to the asset list or page.
         if (this._isScroll()) return;
 
         const currentOffset = getEventXY(event);
@@ -94,7 +98,9 @@ class DragRecognizer {
                 angle = Math.abs(angle);
                 // Fold over vertical axis, range now 0 to 90
                 if (angle > 90) angle = 180 - angle;
-                if (angle > this._touchDragAngle) {
+                const scrolling = this._getTouchScrollAxis() === 'horizontal' ?
+                    angle < this._touchDragAngle : angle > this._touchDragAngle;
+                if (scrolling) {
                     this._gestureState = DragRecognizer.STATE_SCROLL;
                 } else {
                     this._gestureState = DragRecognizer.STATE_DRAG;

@@ -65,7 +65,9 @@ class PlanetCollaborationStatus extends React.Component {
         if (!isPlanetProjectRoute() || !collaborationEnabled()) return null;
         return (
             <button
-                className={`${styles.status} ${styles[this.state.status]}`}
+                aria-label={this.state.message ? `${this.label()}：${this.state.message}` : this.label()}
+                className={`${styles.status} ${styles[this.state.status]} ${this.state.invitation ? styles.invitation : ''}`}
+                disabled={!this.props.projectId && !this.state.invitation}
                 onClick={this.handleClick}
                 title={this.state.message || this.label()}
                 type="button"
@@ -74,7 +76,18 @@ class PlanetCollaborationStatus extends React.Component {
                     aria-hidden="true"
                     className={styles.dot}
                 />
-                {this.label()}
+                <span aria-hidden="true" className={styles.mobilePrefix}>{'协作'}</span>
+                <span className={styles.desktopLabel}>{this.label()}</span>
+                <span className={styles.mobileLabel}>{this.state.invitation ? '收到邀请 · 查看' :
+                    this.state.status === 'connected' && this.state.participantCount > 1 ?
+                        `${this.state.participantCount} 人在线` : ({
+                            applying: '正在同步',
+                            connected: '已连接',
+                            connecting: '正在连接…',
+                            disconnected: '连接已断开',
+                            replaced: '其他窗口已接管',
+                            error: '连接失败'
+                        })[this.state.status] || '连接失败'}</span>
             </button>
         );
     }

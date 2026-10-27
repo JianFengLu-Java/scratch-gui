@@ -54,8 +54,18 @@ import customExtensionIcon from './custom/custom.svg';
 import returnIcon from './custom/return.svg';
 import galleryIcon from './gallery/gallery.svg';
 import {APP_NAME} from '../../brand';
+import {achievementIcon} from '../../planet-achievement-extension';
 
 export default [
+    {
+        name: '游戏成就',
+        extensionId: 'planetachievement',
+        iconURL: achievementIcon,
+        insetIconURL: achievementIcon,
+        description: '创建游戏徽章，在通关、发现彩蛋等事件发生时获得成就。',
+        tags: ['scratch'],
+        featured: true
+    },
     {
         name: (
             <FormattedMessage

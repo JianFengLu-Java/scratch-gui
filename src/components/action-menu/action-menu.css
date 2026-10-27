@@ -90,6 +90,8 @@ button::-moz-focus-inner {
     display: none;
 }
 
+.more-label { display: none; }
+
 .expanded .more-buttons-outer {
     visibility: visible;
     opacity: 1;

@@ -112,3 +112,56 @@ $header-height: calc($stage-menu-height - 2px);
     90% { box-shadow: 0 0 10px #7fff1e; }
     100% { box-shadow: none; }
 }
+
+@media (max-width: 1023px) {
+    .stage-selector {
+        border-radius: .5rem;
+        border-bottom: 1px solid var(--tw-dialog-border);
+        overflow: hidden;
+    }
+
+    .header {
+        flex: none;
+        height: 22px;
+    }
+
+    .header-title,
+    .label,
+    .count {
+        font-size: 12px;
+        line-height: 16px;
+    }
+
+    .label {
+        position: absolute;
+        bottom: 2px;
+        inset-inline-start: 8px;
+        margin: 0;
+    }
+
+    .count {
+        position: absolute;
+        bottom: 2px;
+        inset-inline-end: 8px;
+        padding: 0;
+    }
+
+    .costume-canvas {
+        height: 36px;
+        object-fit: contain;
+    }
+
+    .stage-selector.standalone {
+        flex: none;
+        width: 132px;
+        height: 132px;
+    }
+    .standalone .costume-canvas {
+        width: 120px;
+        height: 80px;
+        max-width: 120px;
+        max-height: 80px;
+    }
+    .standalone:focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: 2px; }
+    .standalone:active { background: var(--tw-dialog-accent); }
+}

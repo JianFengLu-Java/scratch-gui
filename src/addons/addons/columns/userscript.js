@@ -1,5 +1,9 @@
 export default async function ({ addon, msg, console }) {
   const Blockly = await addon.tab.traps.getBlockly();
+  const isMobileToolbox = (toolbox) => {
+    const svg = toolbox && toolbox.workspace_ && toolbox.workspace_.getParentSvg();
+    return Boolean(svg && svg.closest('[data-mobile-blocks="true"]'));
+  };
 
   // https://github.com/scratchfoundation/scratch-blocks/blob/893c7e7ad5bfb416eaed75d9a1c93bdce84e36ab/core/toolbox.js#L235
   const _ToolboxPosition = Blockly.Toolbox.prototype.position;
@@ -9,17 +13,23 @@ export default async function ({ addon, msg, console }) {
     // Update flyout position when category menu height changes.
     if (this.HtmlDiv && !this.HtmlDiv._observer) {
       this.HtmlDiv._observer = new ResizeObserver(() => {
-        this.flyout_.position();
+        if (this.workspace_ && this.flyout_) this.flyout_.position();
       });
       this.HtmlDiv._observer.observe(this.HtmlDiv);
     }
+  };
+
+  const _ToolboxDispose = Blockly.Toolbox.prototype.dispose;
+  Blockly.Toolbox.prototype.dispose = function () {
+    if (this.HtmlDiv && this.HtmlDiv._observer) this.HtmlDiv._observer.disconnect();
+    return _ToolboxDispose.call(this);
   };
 
   // https://github.com/scratchfoundation/scratch-blocks/blob/893c7e7ad5bfb416eaed75d9a1c93bdce84e36ab/core/flyout_vertical.js#L314
   const _VerticalFlyoutPosition = Blockly.VerticalFlyout.prototype.position;
   Blockly.VerticalFlyout.prototype.position = function () {
     _VerticalFlyoutPosition.call(this);
-    if (addon.self.disabled || !this.isVisible()) {
+    if (addon.self.disabled || !this.isVisible() || isMobileToolbox(this.parentToolbox_)) {
       return;
     }
     var targetWorkspaceMetrics = this.targetWorkspace_.getMetrics();
@@ -65,7 +75,7 @@ export default async function ({ addon, msg, console }) {
   Blockly.VerticalFlyout.prototype.getWidth = function () {
     // In RTL, this will be called by Blockly to position blocks inside the flyout.
     let width = _VerticalFlyoutGetWidth.call(this);
-    if (!addon.self.disabled) width += 60;
+    if (!addon.self.disabled && !isMobileToolbox(this.parentToolbox_)) width += 60;
     return width;
   };
 
@@ -73,7 +83,7 @@ export default async function ({ addon, msg, console }) {
   const _CategoryMenuCreateDom = Blockly.Toolbox.CategoryMenu.prototype.createDom;
   Blockly.Toolbox.CategoryMenu.prototype.createDom = function () {
     _CategoryMenuCreateDom.call(this);
-    if (addon.self.disabled) return;
+    if (addon.self.disabled || this.parent_.horizontalLayout_ || isMobileToolbox(this.parent_)) return;
     this.secondTable = document.createElement("div");
     this.secondTable.className =
       "scratchCategorySecondMenu " +
@@ -100,7 +110,7 @@ export default async function ({ addon, msg, console }) {
     ];
     const extensionsNodes = [];
     const extensionTree = domTree.cloneNode(true);
-    if (!addon.self.disabled) {
+    if (!addon.self.disabled && !this.parent_.horizontalLayout_ && !isMobileToolbox(this.parent_)) {
       extensionTree.childNodes.forEach((child) => {
         if (child.tagName === "category" && !Categories.includes(child.id)) {
           extensionsNodes.push(child.cloneNode(true));
@@ -117,7 +127,7 @@ export default async function ({ addon, msg, console }) {
         this.categories_.push(new Blockly.Toolbox.Category(this, row, child));
       }
     }
-    if (!addon.self.disabled) {
+    if (!addon.self.disabled && !this.parent_.horizontalLayout_ && !isMobileToolbox(this.parent_)) {
       this.height_ = this.table.offsetHeight + this.secondTable.offsetHeight;
     }
   };
@@ -136,6 +146,7 @@ export default async function ({ addon, msg, console }) {
     const workspace = Blockly.getMainWorkspace();
     const toolbox = workspace.getToolbox();
     if (!toolbox) return;
+    if (isMobileToolbox(toolbox)) return;
     const categoryMenu = toolbox.categoryMenu_;
     if (!categoryMenu) return;
 

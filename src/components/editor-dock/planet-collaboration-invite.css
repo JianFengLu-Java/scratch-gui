@@ -402,6 +402,57 @@
     }
 }
 
+@media (max-width: 1023px) {
+    .section {
+        flex: 0 0 auto;
+    }
+
+    .body {
+        gap: .75rem;
+        padding: .75rem;
+        overscroll-behavior-y: contain;
+    }
+
+    .sectionHeader {
+        padding: .625rem .75rem;
+    }
+
+    .sectionHeader h3,
+    .personCopy strong {
+        font-size: .875rem;
+    }
+
+    .sectionHeader p,
+    .personCopy small,
+    .empty,
+    .loading,
+    .error,
+    .success {
+        font-size: .8125rem;
+        line-height: 1.5;
+    }
+
+    .rowButton,
+    .secondaryButton,
+    .dangerButton,
+    .inputGroup button {
+        flex-shrink: 0;
+        font-size: .8125rem;
+        padding: .5rem .625rem;
+    }
+
+    .personRow {
+        min-height: 64px;
+        gap: .625rem;
+        padding: .5rem .75rem;
+    }
+
+    .search,
+    .inputGroup {
+        min-width: 0;
+    }
+}
+
 @keyframes collaboration-invite-spin {
     to {
         transform: rotate(360deg);

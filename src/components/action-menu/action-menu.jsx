@@ -179,6 +179,7 @@ class ActionMenu extends React.Component {
                                                 src={img}
                                             />
                                         )}
+                                        <span className={styles.moreLabel}>{title}</span>
                                         {hasFileInput ? (
                                             <input
                                                 accept={fileAccept}

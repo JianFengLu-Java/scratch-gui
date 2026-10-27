@@ -182,8 +182,8 @@ const SoundEditor = props => (
         ref={props.setRef}
         onMouseDown={props.onContainerClick}
     >
-        <div className={styles.row}>
-            <div className={styles.inputGroup}>
+        <div className={classNames(styles.row, styles.toolbar)}>
+            <div className={classNames(styles.inputGroup, styles.nameGroup)}>
                 <Label text={props.intl.formatMessage(messages.sound)}>
                     <BufferedInput
                         tabIndex="1"
@@ -195,6 +195,7 @@ const SoundEditor = props => (
                 </Label>
                 <div className={styles.buttonGroup}>
                     <button
+                        aria-label={props.intl.formatMessage(messages.undo)}
                         className={styles.button}
                         disabled={!props.canUndo}
                         title={props.intl.formatMessage(messages.undo)}
@@ -207,6 +208,7 @@ const SoundEditor = props => (
                         />
                     </button>
                     <button
+                        aria-label={props.intl.formatMessage(messages.redo)}
                         className={styles.button}
                         disabled={!props.canRedo}
                         title={props.intl.formatMessage(messages.redo)}
@@ -220,7 +222,7 @@ const SoundEditor = props => (
                     </button>
                 </div>
             </div>
-            <div className={styles.inputGroup}>
+            <div className={classNames(styles.inputGroup, styles.editGroup)}>
                 <IconButton
                     className={styles.toolButton}
                     img={copyIcon}
@@ -242,14 +244,14 @@ const SoundEditor = props => (
                 />
             </div>
             <IconButton
-                className={styles.toolButton}
+                className={classNames(styles.toolButton, styles.deleteTool)}
                 disabled={props.trimStart === null}
                 img={deleteIcon}
                 title={props.intl.formatMessage(messages.delete)}
                 onClick={props.onDelete}
             />
         </div>
-        <div className={styles.row}>
+        <div className={classNames(styles.row, styles.waveformRow)}>
             <div className={styles.waveformContainer}>
                 <Waveform
                     data={props.chunkLevels}
@@ -270,6 +272,7 @@ const SoundEditor = props => (
             <div className={classNames(styles.roundButtonOuter, styles.inputGroup)}>
                 {props.playhead ? (
                     <button
+                        aria-label={props.intl.formatMessage(messages.stop)}
                         className={classNames(styles.roundButton, styles.stopButtonn)}
                         title={props.intl.formatMessage(messages.stop)}
                         onClick={props.onStop}
@@ -281,6 +284,7 @@ const SoundEditor = props => (
                     </button>
                 ) : (
                     <button
+                        aria-label={props.intl.formatMessage(messages.play)}
                         className={classNames(styles.roundButton, styles.playButton)}
                         title={props.intl.formatMessage(messages.play)}
                         onClick={props.onPlay}

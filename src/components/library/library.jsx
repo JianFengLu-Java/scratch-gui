@@ -44,6 +44,7 @@ class LibraryComponent extends React.Component {
             'handlePlayingEnd',
             'handlePreviewLoaded',
             'handleSelect',
+            'handleToggleExtension',
             'handleFavorite',
             'handleTagClick',
             'setFilteredDataRef'
@@ -84,8 +85,14 @@ class LibraryComponent extends React.Component {
         }
     }
     handleSelect (id) {
-        this.handleClose();
-        this.props.onItemSelected(this.getFilteredData()[id]);
+        const item = this.getFilteredData()[id];
+        if (!item.keepOpen) {
+            this.handleClose();
+        }
+        this.props.onItemSelected(item);
+    }
+    handleToggleExtension (id) {
+        this.props.onToggleExtension(this.getFilteredData()[id]);
     }
     readFavoritesFromStorage () {
         let data;
@@ -274,7 +281,9 @@ class LibraryComponent extends React.Component {
         const filteredData = this.state.canDisplay && this.props.data && this.getFilteredData();
         return (
             <Modal
-                className={styles.modalContent}
+                className={classNames(styles.modalContent, {
+                    [styles.extensionLibrary]: this.props.id === 'extensionLibrary'
+                })}
                 contentLabel={this.props.title}
                 headerClassName={styles.modalHeader}
                 id={this.props.id}
@@ -318,6 +327,14 @@ class LibraryComponent extends React.Component {
                         }
                     </div>
                 )}
+                {this.props.statusMessage && (
+                    <div
+                        className={styles.statusMessage}
+                        role={this.props.statusIsError ? 'alert' : 'status'}
+                    >
+                        {this.props.statusMessage}
+                    </div>
+                )}
                 <div
                     className={classNames(styles.libraryScrollGrid, {
                         [styles.withFilterBar]: this.props.filterable || this.props.tags
@@ -334,6 +351,9 @@ class LibraryComponent extends React.Component {
                                 description={dataItem.description}
                                 disabled={dataItem.disabled}
                                 extensionId={dataItem.extensionId}
+                                extensionEnabled={dataItem.extensionEnabled}
+                                extensionBusy={dataItem.extensionBusy}
+                                onToggleExtension={this.handleToggleExtension}
                                 href={dataItem.href}
                                 featured={dataItem.featured}
                                 hidden={dataItem.hidden}
@@ -412,6 +432,9 @@ LibraryComponent.propTypes = {
     onItemMouseEnter: PropTypes.func,
     onItemMouseLeave: PropTypes.func,
     onItemSelected: PropTypes.func,
+    statusMessage: PropTypes.string,
+    statusIsError: PropTypes.bool,
+    onToggleExtension: PropTypes.func,
     onRequestClose: PropTypes.func,
     setStopHandler: PropTypes.func,
     showPlayButton: PropTypes.bool,

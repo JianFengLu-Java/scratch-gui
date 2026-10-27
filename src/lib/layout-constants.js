@@ -26,6 +26,7 @@ const STAGE_SIZE_MODES = keyMirror({
  * @enum {string}
  */
 const STAGE_DISPLAY_SIZES = keyMirror({
+    mobile: null,
     large: null,
 
     small: null,
@@ -46,6 +47,9 @@ const FIXED_WIDTH = 480;
 const UNCONSTRAINED_NON_STAGE_WIDTH = 1096 - FIXED_WIDTH;
 
 const STAGE_DISPLAY_SCALE_METADATA = {
+    [STAGE_DISPLAY_SIZES.mobile]: {
+        scale: 1
+    },
     [STAGE_DISPLAY_SIZES.large]: {
         width: FIXED_WIDTH
     },

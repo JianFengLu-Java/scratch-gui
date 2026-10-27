@@ -57,6 +57,7 @@ class LibraryItemComponent extends React.PureComponent {
                     typeof this.props.extensionId === 'string' ? styles.libraryItemExtension : null,
                     this.props.hidden ? styles.hidden : null
                 )}
+                data-extension-id={this.props.extensionId}
                 onClick={this.props.onClick}
             >
                 <div className={styles.featuredImageContainer}>
@@ -90,13 +91,21 @@ class LibraryItemComponent extends React.PureComponent {
                         classNames(styles.featuredExtensionText, styles.featuredText) : styles.featuredText
                     }
                 >
-                    <span className={styles.libraryItemName}>{this.props.name}</span>
+                    <span
+                        className={styles.libraryItemName}
+                        id={this.props.extensionId ? `extension-name-${this.props.extensionId}` : null}
+                    >
+                        {this.props.name}
+                    </span>
                     <br />
                     <span className={styles.featuredDescription}>{this.props.description}</span>
                 </div>
 
                 {(this.props.docsURI || this.props.samples) && (
-                    <div className={styles.extensionLinks}>
+                    <div
+                        className={styles.extensionLinks}
+                        data-extension-links="resources"
+                    >
                         {this.props.docsURI && (
                             <a
                                 href={this.props.docsURI}
@@ -130,7 +139,10 @@ class LibraryItemComponent extends React.PureComponent {
                 )}
 
                 {this.props.credits && this.props.credits.length > 0 && (
-                    <div className={styles.extensionLinks}>
+                    <div
+                        className={styles.extensionLinks}
+                        data-extension-links="credits"
+                    >
                         <div>
                             <FormattedMessage
                                 defaultMessage="Created by:"
@@ -202,6 +214,20 @@ class LibraryItemComponent extends React.PureComponent {
                     </div>
                 ) : null}
 
+                {typeof this.props.extensionEnabled === 'boolean' && (
+                    <div className={styles.extensionActions}>
+                        <span>{this.props.extensionEnabled ? '已启用' : '未启用'}</span>
+                        <button
+                            type="button"
+                            className={styles.extensionToggle}
+                            disabled={this.props.extensionBusy}
+                            aria-describedby={`extension-name-${this.props.extensionId}`}
+                            onClick={this.props.onToggleExtension}
+                        >
+                            {this.props.extensionEnabled ? '关闭扩展' : '启用扩展'}
+                        </button>
+                    </div>
+                )}
                 {favorite}
             </div>
         ) : (
@@ -263,6 +289,9 @@ LibraryItemComponent.propTypes = {
     ]),
     disabled: PropTypes.bool,
     extensionId: PropTypes.string,
+    extensionEnabled: PropTypes.bool,
+    extensionBusy: PropTypes.bool,
+    onToggleExtension: PropTypes.func,
     featured: PropTypes.bool,
     hidden: PropTypes.bool,
     iconURL: PropTypes.string,

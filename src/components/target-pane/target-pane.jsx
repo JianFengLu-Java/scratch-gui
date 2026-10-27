@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import {createPortal} from 'react-dom';
 
 import VM from 'scratch-vm';
 
@@ -21,6 +22,7 @@ const TargetPane = ({
     editingTarget,
     fileInputRef,
     hoveredTarget,
+    mobilePanel,
     spriteLibraryVisible,
     assetLoadNotice,
     onActivateBlocksTab,
@@ -35,6 +37,7 @@ const TargetPane = ({
     onDrop,
     onDuplicateSprite,
     onExportSprite,
+    onEditStage,
     onFileUploadClick,
     onNewSpriteClick,
     onPaintSpriteClick,
@@ -52,37 +55,41 @@ const TargetPane = ({
 }) => (
     <div
         className={styles.targetPane}
+        data-mobile-panel={mobilePanel}
         {...componentProps}
     >
-        <AssetLoadingToast notice={assetLoadNotice} />
+        {createPortal(<AssetLoadingToast notice={assetLoadNotice} />, document.body)}
 
-        <SpriteSelectorComponent
-            editingTarget={editingTarget}
-            hoveredTarget={hoveredTarget}
-            raised={raiseSprites}
-            selectedId={editingTarget}
-            readOnly={readOnly}
-            spriteFileInput={fileInputRef}
-            sprites={sprites}
-            stageSize={stageSize}
-            onChangeSpriteDirection={onChangeSpriteDirection}
-            onChangeSpriteName={onChangeSpriteName}
-            onChangeSpriteRotationStyle={onChangeSpriteRotationStyle}
-            onChangeSpriteSize={onChangeSpriteSize}
-            onChangeSpriteVisibility={onChangeSpriteVisibility}
-            onChangeSpriteX={onChangeSpriteX}
-            onChangeSpriteY={onChangeSpriteY}
-            onDeleteSprite={onDeleteSprite}
-            onDrop={onDrop}
-            onDuplicateSprite={onDuplicateSprite}
-            onExportSprite={onExportSprite}
-            onFileUploadClick={onFileUploadClick}
-            onNewSpriteClick={onNewSpriteClick}
-            onPaintSpriteClick={onPaintSpriteClick}
-            onSelectSprite={onSelectSprite}
-            onSpriteUpload={onSpriteUpload}
-            onSurpriseSpriteClick={onSurpriseSpriteClick}
-        />
+        <div className={styles.spriteSection}>
+            <SpriteSelectorComponent
+                editingTarget={editingTarget}
+                hoveredTarget={hoveredTarget}
+                mobileStandalone={mobilePanel === 'sprites'}
+                raised={raiseSprites}
+                selectedId={editingTarget}
+                readOnly={readOnly}
+                spriteFileInput={fileInputRef}
+                sprites={sprites}
+                stageSize={stageSize}
+                onChangeSpriteDirection={onChangeSpriteDirection}
+                onChangeSpriteName={onChangeSpriteName}
+                onChangeSpriteRotationStyle={onChangeSpriteRotationStyle}
+                onChangeSpriteSize={onChangeSpriteSize}
+                onChangeSpriteVisibility={onChangeSpriteVisibility}
+                onChangeSpriteX={onChangeSpriteX}
+                onChangeSpriteY={onChangeSpriteY}
+                onDeleteSprite={onDeleteSprite}
+                onDrop={onDrop}
+                onDuplicateSprite={onDuplicateSprite}
+                onExportSprite={onExportSprite}
+                onFileUploadClick={onFileUploadClick}
+                onNewSpriteClick={onNewSpriteClick}
+                onPaintSpriteClick={onPaintSpriteClick}
+                onSelectSprite={onSelectSprite}
+                onSpriteUpload={onSpriteUpload}
+                onSurpriseSpriteClick={onSurpriseSpriteClick}
+            />
+        </div>
         <div className={styles.stageSelectorWrapper}>
             {stage.id && <StageSelector
                 asset={
@@ -90,11 +97,20 @@ const TargetPane = ({
                     stage.costume.asset
                 }
                 backdropCount={stage.costumeCount}
+                backdropName={stage.costume && stage.costume.name}
                 id={stage.id}
+                standalone={mobilePanel === 'stage'}
                 readOnly={readOnly}
                 selected={stage.id === editingTarget}
                 onSelect={onSelectSprite}
             />}
+            <div className={styles.stageDetails}>
+                <span>{'当前背景'}</span>
+                <strong>{(stage.costume && stage.costume.name) || '暂无背景'}</strong>
+                <button disabled={!stage.id} type="button" onClick={onEditStage}>
+                    {readOnly ? '查看背景' : '编辑背景'}
+                </button>
+            </div>
             <div>
                 {spriteLibraryVisible && !readOnly ? (
                     <SpriteLibrary
@@ -140,6 +156,7 @@ TargetPane.propTypes = {
         total: PropTypes.number.isRequired
     }),
     editingTarget: PropTypes.string,
+    mobilePanel: PropTypes.oneOf(['blocks', 'preview', 'sprites', 'stage']),
     extensionLibraryVisible: PropTypes.bool,
     fileInputRef: PropTypes.func,
     hoveredTarget: PropTypes.shape({
@@ -158,6 +175,7 @@ TargetPane.propTypes = {
     onDrop: PropTypes.func,
     onDuplicateSprite: PropTypes.func,
     onExportSprite: PropTypes.func,
+    onEditStage: PropTypes.func,
     onFileUploadClick: PropTypes.func,
     onNewSpriteClick: PropTypes.func,
     onPaintSpriteClick: PropTypes.func,

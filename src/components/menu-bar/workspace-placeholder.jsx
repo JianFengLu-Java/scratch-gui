@@ -52,6 +52,7 @@ class WorkspacePlaceholder extends React.Component {
                 type="button"
                 className={styles.trigger}
                 aria-expanded={this.state.open}
+                aria-label="课程"
                 onClick={() => this.setState({open: !this.state.open}, this.clamp)}
                 title="选课并在浮窗中观看"
             >

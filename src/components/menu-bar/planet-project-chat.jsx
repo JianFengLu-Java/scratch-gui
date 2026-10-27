@@ -11,6 +11,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 
 import PlanetUserAvatar from '../editor-dock/planet-user-avatar.jsx';
+import PlanetUserVerification from '../editor-dock/planet-user-verification.jsx';
 import DockPanel from '../editor-dock/dock-panel.jsx';
 import PlanetRichMessageComposer from './planet-rich-message-composer.jsx';
 import PlanetBubbleMessage from './planet-bubble-message.jsx';
@@ -21,6 +22,8 @@ import {
 import {
     collaborationEnabled,
     getPlanetCollaborationChatState,
+    loadPlanetProjectChatHistory,
+    mergePlanetChatMessages,
     PLANET_COLLABORATION_CHAT_EVENT,
     PLANET_COLLABORATION_CHAT_SEND_EVENT,
     PLANET_COLLABORATION_STATUS_EVENT
@@ -44,6 +47,10 @@ class PlanetProjectChat extends React.Component {
             connected: Boolean(initialChatState && initialChatState.connected),
             draft: '',
             error: '',
+            historyError: '',
+            historyLoading: false,
+            hasMore: Boolean(initialChatState && initialChatState.hasMore),
+            nextCursor: initialChatState ? initialChatState.nextCursor : null,
             messages: initialChatState ? initialChatState.messages : [],
             open: false,
             ownUserId: initialChatState ? initialChatState.ownUserId : null,
@@ -62,8 +69,10 @@ class PlanetProjectChat extends React.Component {
         this.handleClose = this.handleClose.bind(this);
         this.handleToggleOpen = this.handleToggleOpen.bind(this);
         this.publishDockState = this.publishDockState.bind(this);
+        this.handleLoadEarlier = this.handleLoadEarlier.bind(this);
     }
     componentDidMount () {
+        this.mounted = true;
         window.addEventListener(PLANET_COLLABORATION_CHAT_EVENT, this.handleChatEvent);
         window.addEventListener(PLANET_COLLABORATION_STATUS_EVENT, this.handleStatus);
         this.projectChatApi = Object.freeze({
@@ -78,6 +87,11 @@ class PlanetProjectChat extends React.Component {
         this.publishDockState();
     }
     componentDidUpdate (previousProps, previousState) {
+        if (this.state.open && this.state.projectId &&
+            (!previousState.open || previousState.projectId !== this.state.projectId ||
+                (!previousState.connected && this.state.connected))) {
+            this.loadHistory(false);
+        }
         if (previousState.connected !== this.state.connected ||
             previousState.open !== this.state.open ||
             previousState.unread !== this.state.unread) {
@@ -85,6 +99,8 @@ class PlanetProjectChat extends React.Component {
         }
     }
     componentWillUnmount () {
+        this.mounted = false;
+        if (this.historyRequest) this.historyRequest.abort();
         window.removeEventListener(PLANET_COLLABORATION_CHAT_EVENT, this.handleChatEvent);
         window.removeEventListener(PLANET_COLLABORATION_STATUS_EVENT, this.handleStatus);
         if (window.PlanetProjectChat === this.projectChatApi) delete window.PlanetProjectChat;
@@ -105,27 +121,60 @@ class PlanetProjectChat extends React.Component {
                 projectId: detail.projectId || null
             });
         } else if (detail.type === 'chat-history') {
-            this.setState({messages: Array.isArray(detail.messages) ? detail.messages : []});
+            this.setState({
+                messages: Array.isArray(detail.messages) ? detail.messages : [],
+                hasMore: Boolean(detail.hasMore),
+                nextCursor: detail.nextCursor || null
+            });
         } else if (detail.type === 'chat-message' && detail.message) {
             this.setState(previous => {
-                if (previous.messages.some(message => message.messageId === detail.message.messageId)) return null;
+                const duplicate = previous.messages.some(message => message.messageId === detail.message.messageId);
                 return {
                     error: '',
-                    messages: [...previous.messages, detail.message].slice(-50),
-                    unread: previous.open ? 0 : Math.min(99, previous.unread + 1)
+                    messages: mergePlanetChatMessages(previous.messages, [detail.message]),
+                    unread: previous.open ? 0 : Math.min(99, previous.unread + (duplicate ? 0 : 1))
                 };
             });
         } else if (detail.type === 'chat-error') {
             this.setState({error: detail.message || '消息发送失败'});
         } else if (detail.type === 'collaboration-destroyed') {
+            if (this.historyRequest) this.historyRequest.abort();
             this.setState({
                 connected: false,
+                hasMore: false,
+                nextCursor: null,
+                historyLoading: false,
+                historyError: '',
                 messages: [],
                 ownUserId: null,
                 projectId: null,
                 unread: 0
             });
         }
+    }
+    async loadHistory (older) {
+        if (!this.state.projectId || (older && (!this.state.nextCursor || this.historyRequest))) return;
+        if (this.historyRequest) this.historyRequest.abort();
+        const request = new AbortController();
+        this.historyRequest = request;
+        this.setState({historyLoading: true, historyError: ''});
+        try {
+            await loadPlanetProjectChatHistory(this.state.projectId,
+                older ? this.state.nextCursor : null, request.signal);
+        } catch (error) {
+            if (this.mounted && !request.signal.aborted) {
+                this.failedHistoryWasOlder = older;
+                this.setState({historyError: error.message || '聊天记录加载失败'});
+            }
+        } finally {
+            if (this.historyRequest === request) {
+                this.historyRequest = null;
+                if (this.mounted) this.setState({historyLoading: false});
+            }
+        }
+    }
+    handleLoadEarlier () {
+        this.loadHistory(this.state.historyError ? this.failedHistoryWasOlder : true);
     }
     handleDraftChange (value) {
         this.setState({draft: value, error: ''});
@@ -170,7 +219,13 @@ class PlanetProjectChat extends React.Component {
     formatTime (value) {
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) return '';
-        return date.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+        const today = new Date();
+        const time = {hour: '2-digit', minute: '2-digit'};
+        if (date.toDateString() === today.toDateString()) return date.toLocaleTimeString([], time);
+        return date.toLocaleString([], {
+            ...time, month: '2-digit', day: '2-digit',
+            ...(date.getFullYear() !== today.getFullYear() ? {year: 'numeric'} : {})
+        });
     }
     renderPanel () {
         if (!this.state.open) return null;
@@ -235,6 +290,19 @@ class PlanetProjectChat extends React.Component {
                                         aria-live="polite"
                                         className={styles.messageScrollerContent}
                                     >
+                                        {(this.state.hasMore || this.state.historyLoading || this.state.historyError) && (
+                                            <div className={styles.historyControls}>
+                                                {this.state.historyError && <span role="status">{this.state.historyError}</span>}
+                                                <button
+                                                    disabled={this.state.historyLoading}
+                                                    type="button"
+                                                    onClick={this.handleLoadEarlier}
+                                                >
+                                                    {this.state.historyLoading ? '正在加载聊天记录…' :
+                                                        (this.state.historyError ? '重新加载' : '加载更早消息')}
+                                                </button>
+                                            </div>
+                                        )}
                                         {this.state.messages.length === 0 ? (
                                             <div className={styles.empty}>
                                                 <span><MessageCircleIcon aria-hidden="true" /></span>
@@ -265,6 +333,7 @@ class PlanetProjectChat extends React.Component {
                                                             <PlanetUserAvatar
                                                                 member={{
                                                                     avatarUrl: message.avatarUrl,
+                                                                    avatarFrame: message.avatarFrame,
                                                                     nickname
                                                                 }}
                                                             />
@@ -273,19 +342,20 @@ class PlanetProjectChat extends React.Component {
                                                             className={styles.messageContent}
                                                             data-slot="message-content"
                                                         >
-                                                            {!own && (
-                                                                <div
-                                                                    className={styles.messageHeader}
-                                                                    data-slot="message-header"
+                                                            <div
+                                                                className={styles.messageHeader}
+                                                                data-slot="message-header"
+                                                            >
+                                                                <span
+                                                                    className={styles.messageName}
+                                                                    data-member={message.member ? 'true' : undefined}
+                                                                    title={nickname}
                                                                 >
-                                                                    <span
-                                                                        className={styles.messageName}
-                                                                        title={nickname}
-                                                                    >
-                                                                        {nickname}
-                                                                    </span>
-                                                                </div>
-                                                            )}
+                                                                    {nickname}
+                                                                </span>
+                                                                {message.member && <span className={styles.memberBadge}>会员</span>}
+                                                                <PlanetUserVerification verification={message.verification} />
+                                                            </div>
                                                             {message.messageType === 'VOICE' ? <div
                                                                 className={`${styles.bubble} ${own ?
                                                                     styles.bubbleDefault : styles.bubbleOutline}`}

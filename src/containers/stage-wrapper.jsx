@@ -3,6 +3,7 @@ import React from 'react';
 import VM from 'scratch-vm';
 import {STAGE_DISPLAY_SIZES} from '../lib/layout-constants.js';
 import StageWrapperComponent from '../components/stage-wrapper/stage-wrapper.jsx';
+import {connect} from 'react-redux';
 
 const StageWrapper = props => <StageWrapperComponent {...props} />;
 
@@ -17,4 +18,4 @@ StageWrapper.defaultProps = {
     readOnly: false
 };
 
-export default StageWrapper;
+export default connect(state => ({customStageSize: state.scratchGui.customStageSize}))(StageWrapper);

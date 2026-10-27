@@ -16,6 +16,7 @@ import styles from './stage.css';
 
 const StageComponent = props => {
     const {
+        availableSize,
         canvas,
         customStageSize,
         dragRef,
@@ -36,7 +37,7 @@ const StageComponent = props => {
         ...boxProps
     } = props;
 
-    const stageDimensions = getStageDimensions(stageSize, customStageSize, isFullScreen);
+    const stageDimensions = getStageDimensions(stageSize, customStageSize, isFullScreen, availableSize);
     const minWidth = getMinWidth(stageSize);
     const transformStyle = stageDimensions.width < minWidth && !isFullScreen ? {
         transform: `translateX(${(minWidth - stageDimensions.width) / (isRtl ? -2 : 2)}px)`
@@ -153,6 +154,7 @@ const StageComponent = props => {
     );
 };
 StageComponent.propTypes = {
+    availableSize: PropTypes.shape({width: PropTypes.number, height: PropTypes.number}),
     canvas: PropTypes.instanceOf(Element).isRequired,
     customStageSize: PropTypes.shape({
         width: PropTypes.number,

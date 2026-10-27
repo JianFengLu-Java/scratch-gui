@@ -42,8 +42,11 @@ class PlanetAutosaveStatus extends React.Component {
     render () {
         if (!isPlanetProjectRoute()) return null;
         const interactive = ['conflict', 'error', 'pending'].includes(this.state.status);
+        const label = labels[this.state.status] || labels.error;
         return (
             <button
+                aria-busy={this.state.status === 'saving'}
+                aria-label={this.state.message ? `${label}：${this.state.message}` : label}
                 className={
                     `${styles.status} ${styles[this.state.status]}`
                 }
@@ -56,7 +59,15 @@ class PlanetAutosaveStatus extends React.Component {
                     aria-hidden="true"
                     className={styles.dot}
                 />
-                {labels[this.state.status] || labels.error}
+                <span aria-hidden="true" className={styles.mobilePrefix}>{'保存'}</span>
+                <span className={styles.desktopLabel}>{labels[this.state.status] || labels.error}</span>
+                <span className={styles.mobileLabel}>{({
+                    conflict: '云端更新 · 重载',
+                    error: '保存失败 · 重试',
+                    pending: '等待保存',
+                    saved: '云端已保存',
+                    saving: '正在保存…'
+                })[this.state.status] || '保存失败'}</span>
             </button>
         );
     }

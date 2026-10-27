@@ -82,3 +82,88 @@ $fade-out-distance: 100px;
     background: white;
     filter: opacity(15%) brightness(0%);
 }
+
+@media (max-width: 1023px) {
+    .wrapper {
+        z-index: 2;
+        flex: none;
+        flex-direction: row;
+        width: 100%;
+        min-width: 0;
+        height: 84px;
+        border-bottom: 1px solid var(--tw-dialog-border);
+        background: var(--tw-dialog-background);
+    }
+
+    .list-area {
+        flex-direction: row;
+        align-items: stretch;
+        gap: .5rem;
+        min-width: 0;
+        height: 100%;
+        padding: .625rem .5rem .5rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        touch-action: pan-x;
+        scroll-padding-inline: .5rem;
+        scrollbar-width: none;
+    }
+
+    .list-area::-webkit-scrollbar { display: none; }
+    .list-area > div { flex: none; }
+    .list-area:after { display: none; }
+
+    .list-item {
+        width: 64px;
+        height: 64px;
+        margin: 0;
+    }
+
+    .new-buttons {
+        position: relative;
+        flex: 0 0 52px;
+        width: 52px;
+        padding: .5rem .25rem;
+        border-inline-start: 1px solid var(--tw-dialog-border);
+    }
+
+    .add-menu :global([class*="action-menu_main-button_"]) {
+        width: 44px;
+        height: 44px;
+    }
+
+    .add-menu :global([class*="action-menu_more-buttons-outer_"]) {
+        top: calc(100% + .375rem);
+        bottom: auto;
+        inset-inline-end: 0;
+        width: 220px;
+        max-width: calc(100vw - 1rem);
+        max-height: calc(100dvh - var(--tw-mobile-dock-height, 113px) - 200px);
+        overflow-y: auto;
+        margin: 0;
+        background: var(--tw-dialog-background);
+        color: var(--tw-dialog-foreground);
+        z-index: 3;
+    }
+
+    .add-menu :global([class*="action-menu_more-button_"]) {
+        justify-content: flex-start;
+        gap: .625rem;
+        width: 100%;
+        min-height: 44px;
+        padding: .5rem .75rem;
+        color: inherit;
+    }
+
+    .add-menu :global([class*="action-menu_more-label_"]) {
+        display: block;
+        font-size: 13px;
+        text-align: start;
+    }
+
+    .add-menu :global([class*="action-menu_more-icon_"]) { filter: var(--filter-icon-gray); }
+    .add-menu :global([class*="action-menu_more-button_"]):active { background: var(--tw-dialog-accent); }
+
+    .add-menu :global([class*="action-menu_tooltip_"]) { display: none; }
+}

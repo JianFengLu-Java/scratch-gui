@@ -3,6 +3,7 @@ import classNames from 'classnames';
 import omit from 'lodash.omit';
 import PropTypes from 'prop-types';
 import React from 'react';
+import {createPortal} from 'react-dom';
 import {
     BrushIcon,
     Code2Icon,
@@ -49,7 +50,9 @@ import EditorDock from '../editor-dock/editor-dock.jsx';
 import PlanetCollaborationInvite from '../editor-dock/planet-collaboration-invite.jsx';
 import PlanetCollaborationPermissions from '../editor-dock/planet-collaboration-permissions.jsx';
 
-import {STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH} from '../../lib/layout-constants';
+import {
+    STAGE_DISPLAY_SIZES, STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH
+} from '../../lib/layout-constants';
 import {resolveStageSize} from '../../lib/screen-utils';
 import {Theme} from '../../lib/themes';
 
@@ -71,6 +74,90 @@ const getFullscreenBackgroundColor = () => {
 const fullscreenBackgroundColor = getFullscreenBackgroundColor();
 
 const GUIComponent = props => {
+    const [mobileLayout, setMobileLayout] = React.useState(() =>
+        window.matchMedia('(max-width: 1023px)').matches
+    );
+    const [mobilePanel, setMobilePanel] = React.useState('blocks');
+    const [previewSize, setPreviewSize] = React.useState(null);
+    const [stagePreviewHost, setStagePreviewHost] = React.useState(null);
+    const [mobilePreviewHost, setMobilePreviewHost] = React.useState(null);
+    const [stageTargetsHost, setStageTargetsHost] = React.useState(null);
+    const [mobileTargetsHost, setMobileTargetsHost] = React.useState(null);
+    const [previewMount] = React.useState(() => {
+        const node = document.createElement('div');
+        node.className = styles.stagePreview;
+        return node;
+    });
+    const [targetsMount] = React.useState(() => {
+        const node = document.createElement('div');
+        node.className = styles.targetWrapper;
+        return node;
+    });
+    const previewInLibrary = mobileLayout && !props.isFullScreen;
+    const handleSelectMobilePanel = React.useCallback(panel => {
+        setMobilePanel(panel);
+        if (panel === 'stage') {
+            const stage = props.vm.runtime.getTargetForStage();
+            if (stage) props.vm.setEditingTarget(stage.id);
+        }
+    }, [props.vm]);
+    React.useLayoutEffect(() => {
+        const host = previewInLibrary ? mobilePreviewHost : stagePreviewHost;
+        // Move a stable portal container, retaining the stage canvas and its
+        // listeners when opening fullscreen or changing the responsive layout.
+        if (host) host.appendChild(previewMount);
+        return () => {
+            if (previewMount.parentNode) previewMount.parentNode.removeChild(previewMount);
+        };
+    }, [previewInLibrary, mobilePreviewHost, stagePreviewHost, previewMount]);
+    React.useLayoutEffect(() => {
+        const host = previewInLibrary ? mobileTargetsHost : stageTargetsHost;
+        if (host) host.appendChild(targetsMount);
+        return () => {
+            if (targetsMount.parentNode) targetsMount.parentNode.removeChild(targetsMount);
+        };
+    }, [previewInLibrary, mobileTargetsHost, stageTargetsHost, targetsMount]);
+    React.useLayoutEffect(() => {
+        if (mobileTargetsHost) mobileTargetsHost.scrollTop = 0;
+    }, [mobilePanel, mobileTargetsHost]);
+    React.useLayoutEffect(() => {
+        const preview = previewMount;
+        if (!previewInLibrary || !mobilePreviewHost) return () => {};
+        const measure = () => {
+            if (mobilePanel !== 'preview') return;
+            const previewStyle = window.getComputedStyle(preview);
+            const width = preview.clientWidth -
+                parseFloat(previewStyle.paddingLeft) - parseFloat(previewStyle.paddingRight);
+            if (width <= 0) return;
+            const height = preview.clientHeight -
+                parseFloat(previewStyle.paddingTop) - parseFloat(previewStyle.paddingBottom);
+            if (height <= 0) return;
+            setPreviewSize(previous => (previous && previous.width === width && previous.height === height ?
+                previous : {width, height}));
+        };
+        measure();
+        const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
+        if (observer) {
+            observer.observe(preview);
+            observer.observe(mobilePreviewHost);
+        }
+        window.addEventListener('resize', measure);
+        return () => {
+            if (observer) observer.disconnect();
+            window.removeEventListener('resize', measure);
+        };
+    }, [previewInLibrary, mobilePanel, previewMount, mobilePreviewHost]);
+    React.useEffect(() => {
+        const resize = () => {
+            setMobileLayout(window.matchMedia('(max-width: 1023px)').matches);
+        };
+        window.addEventListener('resize', resize);
+        return () => window.removeEventListener('resize', resize);
+    }, []);
+    React.useEffect(() => {
+        const frame = requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+        return () => cancelAnimationFrame(frame);
+    }, [mobileLayout, mobilePanel]);
     const {
         accountNavOpen,
         activeTabIndex,
@@ -182,7 +269,8 @@ const GUIComponent = props => {
         Math.max(0, customStageSize.width - FIXED_WIDTH)
     );
     return (<MediaQuery minWidth={unconstrainedWidth}>{isUnconstrained => {
-        const stageSize = resolveStageSize(stageSizeMode, isUnconstrained);
+        const stageSize = mobileLayout && !isPlayerOnly ? STAGE_DISPLAY_SIZES.mobile :
+            resolveStageSize(stageSizeMode, isUnconstrained);
 
         const alwaysEnabledModals = (
             <React.Fragment>
@@ -227,11 +315,13 @@ const GUIComponent = props => {
             </React.Fragment>
         ) : (
             <Box
-                className={styles.pageWrapper}
+                className={classNames(styles.pageWrapper, {[styles.mobileLayout]: mobileLayout})}
+                data-stage-fullscreen={isFullScreen ? 'true' : 'false'}
+                data-read-only={readOnly ? 'true' : undefined}
                 dir={isRtl ? 'rtl' : 'ltr'}
                 style={{
-                    minWidth: 1024 + Math.max(0, customStageSize.width - 480),
-                    minHeight: 640 + Math.max(0, customStageSize.height - 360)
+                    minWidth: mobileLayout ? 0 : 1024 + Math.max(0, customStageSize.width - 480),
+                    minHeight: mobileLayout ? 0 : 640 + Math.max(0, customStageSize.height - 360)
                 }}
                 {...componentProps}
             >
@@ -391,12 +481,19 @@ const GUIComponent = props => {
                                 <TabPanel className={tabClassNames.tabPanel}>
                                     <Box className={styles.blocksWrapper}>
                                         <Blocks
-                                            key={`${blocksId}/${theme.id}`}
+                                            key={`${blocksId}/${theme.id}/${mobileLayout ? 'mobile-vertical' : 'desktop'}`}
                                             canUseCloud={canUseCloud}
                                             grow={1}
                                             isVisible={blocksTabVisible}
+                                            mobileLayout={mobileLayout}
+                                            mobilePanel={mobilePanel}
+                                            onMobilePreviewHost={setMobilePreviewHost}
+                                            onMobileTargetsHost={setMobileTargetsHost}
+                                            onSelectMobilePanel={handleSelectMobilePanel}
                                             options={{
-                                                media: `${basePath}static/${theme.getBlocksMediaFolder()}/`
+                                                media: `${basePath}static/${theme.getBlocksMediaFolder()}/`,
+                                                horizontalLayout: false,
+                                                toolboxPosition: 'start'
                                             }}
                                             readOnly={readOnly}
                                             stageSize={stageSize}
@@ -429,6 +526,7 @@ const GUIComponent = props => {
                                 <EditorDock
                                     hasBackpack={backpackVisible && Boolean(backpackHost)}
                                     key={intl.locale}
+                                    readOnly={readOnly}
                                     onOpenBackdropLibrary={onOpenBackdropLibrary}
                                     onOpenExtensionLibrary={onOpenExtensionLibrary}
                                     onOpenSpriteLibrary={onOpenSpriteLibrary}
@@ -437,21 +535,35 @@ const GUIComponent = props => {
                         </Box>
 
                         <Box className={classNames(styles.stageAndTargetWrapper, styles[stageSize])}>
-                            <StageWrapper
-                                isFullScreen={isFullScreen}
-                                isRendererSupported={isRendererSupported()}
-                                isRtl={isRtl}
-                                readOnly={readOnly}
-                                stageSize={stageSize}
-                                vm={vm}
+                            <Box
+                                className={styles.stagePreviewHost}
+                                componentRef={setStagePreviewHost}
                             />
-                            <Box className={styles.targetWrapper}>
-                                <TargetPane
+                            {createPortal(
+                                <StageWrapper
+                                    availableSize={mobileLayout ? previewSize : null}
+                                    isFullScreen={isFullScreen}
+                                    isRendererSupported={isRendererSupported()}
+                                    isRtl={isRtl}
                                     readOnly={readOnly}
                                     stageSize={stageSize}
                                     vm={vm}
-                                />
-                            </Box>
+                                />,
+                                previewMount
+                            )}
+                            <Box
+                                className={styles.stageTargetsHost}
+                                componentRef={setStageTargetsHost}
+                            />
+                            {createPortal(
+                                <TargetPane
+                                    mobilePanel={mobileLayout ? mobilePanel : undefined}
+                                    readOnly={readOnly}
+                                    stageSize={stageSize}
+                                    vm={vm}
+                                />,
+                                targetsMount
+                            )}
                         </Box>
                     </Box>
                 </Box>
