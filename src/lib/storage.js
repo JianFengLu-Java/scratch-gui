@@ -1,6 +1,7 @@
 import ScratchStorage from '@turbowarp/scratch-storage';
 
 import defaultProject from './default-project';
+import {emptyCostumeAsset} from './empty-assets';
 
 /**
  * Wrapper for ScratchStorage which adds default web sources.
@@ -9,6 +10,12 @@ import defaultProject from './default-project';
 class Storage extends ScratchStorage {
     constructor () {
         super();
+        this.builtinHelper._store(
+            this.AssetType.ImageVector,
+            this.DataFormat.SVG,
+            emptyCostumeAsset.data,
+            emptyCostumeAsset.id
+        );
         this.cacheDefaultProject();
     }
     addOfficialScratchWebStores () {
@@ -57,7 +64,9 @@ class Storage extends ScratchStorage {
     getAssetGetConfig (asset) {
         // Next.js normalizes trailing slashes before applying the backend rewrite. Avoid an extra
         // 308 round trip for every editor asset, which is particularly noticeable for previews.
-        return `${this.assetHost}/internalapi/asset/${asset.assetId}.${asset.dataFormat}/get`;
+        const path = `${this.assetHost}/internalapi/asset/${asset.assetId}.${asset.dataFormat}/get`;
+        // Assets are fetched in a blob worker, where relative URLs have no HTTP base.
+        return new URL(path, window.location.href).href;
     }
     getAssetCreateConfig (asset) {
         return {

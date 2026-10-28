@@ -139,7 +139,7 @@ $fade-out-distance: 100px;
         inset-inline-end: 0;
         width: 220px;
         max-width: calc(100vw - 1rem);
-        max-height: calc(100dvh - var(--tw-mobile-dock-height, 113px) - 200px);
+        max-height: calc(100dvh - var(--tw-mobile-dock-height, 64px) - 200px);
         overflow-y: auto;
         margin: 0;
         background: var(--tw-dialog-background);

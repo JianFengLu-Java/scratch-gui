@@ -23,15 +23,35 @@ const ThrottledPropertyHOC = function (propName, throttleTime) {
                     }
                 }
 
-                // If only that prop has changed, allow update to go to render based
-                // on _lastRenderedTime and _lastRenderTime are updated in render
-                if (nextProps[propName] !== this._lastRenderedValue &&
-                    Date.now() - this._lastRenderTime > throttleTime
-                ) {
-                    return true; // Allow this update to go to render
+                if (nextProps[propName] === this._lastRenderedValue) {
+                    this.clearPendingUpdate();
+                    return false;
+                }
+
+                const remainingTime = throttleTime - (Date.now() - this._lastRenderTime);
+                if (remainingTime <= 0) {
+                    return true;
+                }
+
+                // A final asset update must still render when no further updates arrive.
+                if (!this._updateTimeout) {
+                    this._updateTimeout = setTimeout(() => {
+                        this._updateTimeout = null;
+                        this.forceUpdate();
+                    }, remainingTime);
                 }
 
                 return false;
+            }
+            componentDidUpdate () {
+                this.clearPendingUpdate();
+            }
+            componentWillUnmount () {
+                this.clearPendingUpdate();
+            }
+            clearPendingUpdate () {
+                clearTimeout(this._updateTimeout);
+                this._updateTimeout = null;
             }
             render () {
                 this._lastRenderTime = Date.now();

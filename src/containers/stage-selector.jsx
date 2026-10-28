@@ -16,6 +16,8 @@ import {emptyCostume} from '../lib/empty-assets';
 import sharedMessages from '../lib/shared-messages';
 import {fetchCode} from '../lib/backpack-api';
 import {getEventXY} from '../lib/touch-utils';
+import {finishAssetLoad, loadAssetWithFeedback, startAssetLoad} from '../lib/asset-load-feedback';
+import log from '../lib/log';
 
 import StageSelectorComponent from '../components/stage-selector/stage-selector.jsx';
 
@@ -35,7 +37,7 @@ const DroppableThrottledStage = DropAreaHOC(dragTypes)(
     ThrottledPropertyHOC('url', 500)(StageSelectorComponent)
 );
 
-class StageSelector extends React.Component {
+export class StageSelector extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
@@ -76,7 +78,7 @@ class StageSelector extends React.Component {
             bitmapResolution: item.bitmapResolution,
             skinId: null
         };
-        this.handleNewBackdrop(vmBackdrop, shouldActivateTab);
+        return this.handleNewBackdrop(vmBackdrop, shouldActivateTab);
     }
     handleClick () {
         this.props.onSelect(this.props.id);
@@ -91,17 +93,41 @@ class StageSelector extends React.Component {
             }
         });
     }
-    async handleSurpriseBackdrop (e) {
+    handleSurpriseBackdrop (e) {
         e.stopPropagation(); // Prevent click from falling through to selecting stage.
-        const backdropLibraryContent = await getBackdropLibrary();
-        // @todo should this not add a backdrop you already have?
-        const item = backdropLibraryContent[Math.floor(Math.random() * backdropLibraryContent.length)];
-        this.addBackdropFromLibraryItem(item, false);
+        if (this.surpriseBackdropPromise) return this.surpriseBackdropPromise;
+        this.surpriseBackdropPromise = loadAssetWithFeedback(this.props.vm, 'backdrop', '随机背景', async setName => {
+            const library = await getBackdropLibrary();
+            if (!library.length) throw new Error('背景素材库为空');
+            const item = library[Math.floor(Math.random() * library.length)];
+            setName(item.name);
+            await this.addBackdropFromLibraryItem(item, false);
+        })
+            .catch(error => log.error(error))
+            .finally(() => {
+                this.surpriseBackdropPromise = null;
+            });
+        return this.surpriseBackdropPromise;
     }
     handleEmptyBackdrop (e) {
         e.stopPropagation(); // Prevent click from falling through to stage selector, select it manually below
-        this.props.vm.setEditingTarget(this.props.id);
-        this.handleNewBackdrop(emptyCostume(this.props.intl.formatMessage(sharedMessages.backdrop, {index: 1})));
+        if (this.emptyBackdropPromise) return this.emptyBackdropPromise;
+        const backdrop = emptyCostume(this.props.intl.formatMessage(sharedMessages.backdrop, {index: 1}));
+        const loadId = startAssetLoad('backdrop', backdrop.name);
+        this.emptyBackdropPromise = Promise.resolve()
+            .then(() => {
+                this.props.vm.setEditingTarget(this.props.id);
+                return this.handleNewBackdrop(backdrop);
+            })
+            .then(() => finishAssetLoad(loadId, backdrop.name, 'success'))
+            .catch(error => {
+                log.error(error);
+                finishAssetLoad(loadId, backdrop.name, 'error');
+            })
+            .finally(() => {
+                this.emptyBackdropPromise = null;
+            });
+        return this.emptyBackdropPromise;
     }
     handleBackdropUpload (e) {
         const vm = this.props.vm;

@@ -1,4 +1,7 @@
 import {readPlanetEnvelope, refreshPlanetSession} from './planet-session';
+import sha256PlanetBlob from './sha256-blob';
+
+export {sha256PlanetBlob};
 
 const API_ROOT = '/backend-api';
 const cloudStates = new Map();
@@ -23,17 +26,6 @@ const publicUploadUrl = value => (value.startsWith('/api/v1/') ?
 const externalUrl = value => /^https?:\/\//i.test(value);
 
 const normalizeEtag = value => value && value.replace(/^W\//i, '').replace(/^"|"$/g, '');
-
-const hex = buffer => Array.from(new Uint8Array(buffer))
-    .map(value => value.toString(16).padStart(2, '0'))
-    .join('');
-
-export const sha256PlanetBlob = async blob => {
-    if (!window.crypto || !window.crypto.subtle) {
-        throw new Error('当前浏览器环境不支持安全文件校验，请使用 HTTPS 或本机地址打开编辑器。');
-    }
-    return hex(await window.crypto.subtle.digest('SHA-256', await blob.arrayBuffer()));
-};
 
 export const abortPlanetUpload = (session, objectId) => authorizedRequest(session,
     `/uploads/${encodeURIComponent(objectId)}`, {method: 'DELETE'});

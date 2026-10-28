@@ -1132,13 +1132,15 @@ class MenuBar extends React.Component {
                         className={styles.statusGroup}
                     >
                         <PlanetAutosaveStatus />
-                        <PlanetCollaborationStatus projectId={this.props.projectId} />
+                        <MobileAccountArea area="secondary"><div className={styles.collaborationControl}>
+                            <PlanetCollaborationStatus projectId={this.props.projectId} />
+                        </div></MobileAccountArea>
                         <LocalProjectStatus />
                     </div>}
                     {!this.props.readOnly && !assignmentEntry && (
-                        <div className={styles.localSaveControl}>
+                        <MobileAccountArea area="secondary"><div className={styles.localSaveControl}>
                             <TWSaveStatus showSaveFilePicker={this.props.showSaveFilePicker} />
-                        </div>
+                        </div></MobileAccountArea>
                     )}
                     {!this.props.isPlayerOnly && !this.props.readOnly && !assignmentEntry &&
                         <div className={styles.accountProfile}><PlanetUserMenu /></div>}

@@ -1,4 +1,5 @@
 import React from 'react';
+import {CloudIcon} from 'lucide-react';
 
 import {
     PLANET_AUTOSAVE_REQUEST_EVENT,
@@ -55,18 +56,25 @@ class PlanetAutosaveStatus extends React.Component {
                 type="button"
                 onClick={this.handleClick}
             >
+                <CloudIcon
+                    aria-hidden="true"
+                    className={styles.mobileIcon}
+                />
                 <span
                     aria-hidden="true"
                     className={styles.dot}
                 />
-                <span aria-hidden="true" className={styles.mobilePrefix}>{'保存'}</span>
+                <span
+                    aria-hidden="true"
+                    className={styles.mobilePrefix}
+                >{'保存'}</span>
                 <span className={styles.desktopLabel}>{labels[this.state.status] || labels.error}</span>
                 <span className={styles.mobileLabel}>{({
-                    conflict: '云端更新 · 重载',
-                    error: '保存失败 · 重试',
-                    pending: '等待保存',
-                    saved: '云端已保存',
-                    saving: '正在保存…'
+                    conflict: '云端更新',
+                    error: '保存失败',
+                    pending: '待保存',
+                    saved: '已保存',
+                    saving: '保存中'
                 })[this.state.status] || '保存失败'}</span>
             </button>
         );

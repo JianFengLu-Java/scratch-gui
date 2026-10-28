@@ -3,6 +3,15 @@
  * Utility functions to return json corresponding to default empty assets.
  */
 
+// Painting starts from a local asset, including when the project uses a custom default archive.
+const emptyCostumeSVG = '<svg version="1.1" width="2" height="2" viewBox="-1 -1 2 2" ' +
+    'xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">\n' +
+    '  <!-- Exported by Scratch - http://scratch.mit.edu/ -->\n</svg>';
+const emptyCostumeAsset = {
+    id: 'cd21514d0531fdffb22204e0ec5ed84a',
+    data: new Uint8Array(Array.from(emptyCostumeSVG, character => character.charCodeAt(0)))
+};
+
 /**
  * Generate a blank costume object for vm.addCostume with the provided name.
  * @param {string} name the name to use for the costume, caller should localize
@@ -10,7 +19,7 @@
  */
 const emptyCostume = name => ({
     name: name,
-    md5: 'cd21514d0531fdffb22204e0ec5ed84a.svg',
+    md5: `${emptyCostumeAsset.id}.svg`,
     rotationCenterX: 0,
     rotationCenterY: 0,
     bitmapResolution: 1,
@@ -32,7 +41,7 @@ const emptySprite = (name, soundName, costumeName) => ({
         {
             costumeName: costumeName,
             baseLayerID: -1,
-            baseLayerMD5: 'cd21514d0531fdffb22204e0ec5ed84a.svg',
+            baseLayerMD5: `${emptyCostumeAsset.id}.svg`,
             bitmapResolution: 1,
             rotationCenterX: 0,
             rotationCenterY: 0
@@ -51,5 +60,6 @@ const emptySprite = (name, soundName, costumeName) => ({
 
 export {
     emptyCostume,
+    emptyCostumeAsset,
     emptySprite
 };

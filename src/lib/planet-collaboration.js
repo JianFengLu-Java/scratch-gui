@@ -122,12 +122,10 @@ export const loadPlanetProjectChatHistory = async (projectId, before, signal) =>
     }));
 };
 
-const resolveWebSocketUrl = (projectId, ticket) => {
+export const resolvePlanetCollaborationWebSocketUrl = (projectId, ticket) => {
     const origin = new URL(window.location.origin);
-    if (
-        ['localhost', '127.0.0.1', '::1'].includes(origin.hostname) &&
-        ['3000', '5173', '5174'].includes(origin.port)
-    ) {
+    // Development pages use the API port on the same host, including LAN addresses.
+    if (['3000', '5173', '5174'].includes(origin.port)) {
         origin.port = '8080';
     }
     origin.protocol = origin.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -184,7 +182,9 @@ export class PlanetYjsCollaboration {
         const session = await refreshPlanetSession();
         const editorSession = await openPlanetWriteSession(session, this.projectId);
         if (this.destroyed) return;
-        const socket = new WebSocket(resolveWebSocketUrl(this.projectId, editorSession.sessionToken));
+        const socket = new WebSocket(resolvePlanetCollaborationWebSocketUrl(
+            this.projectId, editorSession.sessionToken
+        ));
         this.socket = socket;
         socket.binaryType = 'arraybuffer';
         socket.addEventListener('open', () => this.startHeartbeat(socket));
@@ -434,7 +434,8 @@ export class PlanetYjsCollaboration {
         const value = typeof content === 'string' ? content.trim() : '';
         if (!value || value.length > 500) return;
         const clientMessageId = window.crypto && typeof window.crypto.randomUUID === 'function' ?
-            window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+            window.crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36)
+                .slice(2)}`;
         this.sendJson({type: 'chat-message', content: value, clientMessageId});
     }
 

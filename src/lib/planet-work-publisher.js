@@ -1,4 +1,5 @@
 import {readPlanetEnvelope, refreshPlanetSession} from './planet-session';
+import sha256 from './sha256-blob';
 
 const API_ROOT = '/backend-api';
 
@@ -17,17 +18,6 @@ const publicRequest = path => fetch(`${API_ROOT}${path}`, {
     credentials: 'include',
     headers: {Accept: 'application/json'}
 }).then(readPlanetEnvelope);
-
-const hex = buffer => Array.from(new Uint8Array(buffer))
-    .map(value => value.toString(16).padStart(2, '0'))
-    .join('');
-
-const sha256 = async blob => {
-    if (!window.crypto || !window.crypto.subtle) {
-        throw new Error('当前浏览器环境不支持安全文件校验，请使用 HTTPS 或本机地址打开编辑器。');
-    }
-    return hex(await window.crypto.subtle.digest('SHA-256', await blob.arrayBuffer()));
-};
 
 const normalizeUploadUrl = value => {
     if (value.startsWith('/api/v1/')) return `${API_ROOT}/${value.slice('/api/v1/'.length)}`;

@@ -24,9 +24,14 @@ import randomizeSpritePosition from '../lib/randomize-sprite-position';
 import downloadBlob from '../lib/download-blob';
 import log from '../lib/log';
 import {placeInViewport} from '../lib/backpack/code-payload.js';
-import {subscribeAssetLoadFeedback} from '../lib/asset-load-feedback';
+import {
+    finishAssetLoad,
+    loadAssetWithFeedback,
+    startAssetLoad,
+    subscribeAssetLoadFeedback
+} from '../lib/asset-load-feedback';
 
-class TargetPane extends React.Component {
+export class TargetPane extends React.Component {
     constructor (props) {
         super(props);
         bindAll(this, [
@@ -121,28 +126,51 @@ class TargetPane extends React.Component {
         this.handleSelectSprite(this.props.stage.id);
         this.props.onActivateTab(COSTUMES_TAB_INDEX);
     }
-    async handleSurpriseSpriteClick () {
-        const spriteLibraryContent = await getSpriteLibrary();
-        const surpriseSprites = spriteLibraryContent.filter(sprite =>
-            (sprite.tags.indexOf('letters') === -1) && (sprite.tags.indexOf('numbers') === -1)
-        );
-        const item = surpriseSprites[Math.floor(Math.random() * surpriseSprites.length)];
-        randomizeSpritePosition(item);
-        this.props.vm.addSprite(JSON.stringify(item))
-            .then(this.handleActivateBlocksTab);
+    handleSurpriseSpriteClick () {
+        if (this.surpriseSpritePromise) return this.surpriseSpritePromise;
+        this.surpriseSpritePromise = loadAssetWithFeedback(this.props.vm, 'sprite', '随机角色', async setName => {
+            const library = await getSpriteLibrary();
+            const sprites = library.filter(sprite =>
+                !(sprite.tags || []).includes('letters') && !(sprite.tags || []).includes('numbers')
+            );
+            if (!sprites.length) throw new Error('角色素材库为空');
+            const item = JSON.parse(JSON.stringify(sprites[Math.floor(Math.random() * sprites.length)]));
+            setName(item.name);
+            randomizeSpritePosition(item);
+            await this.props.vm.addSprite(JSON.stringify(item));
+            this.handleActivateBlocksTab();
+        })
+            .catch(error => log.error(error))
+            .finally(() => {
+                this.surpriseSpritePromise = null;
+            });
+        return this.surpriseSpritePromise;
     }
     handlePaintSpriteClick () {
+        if (this.paintSpritePromise) return this.paintSpritePromise;
         const formatMessage = this.props.intl.formatMessage;
         const emptyItem = emptySprite(
             formatMessage(sharedMessages.sprite, {index: 1}),
             formatMessage(sharedMessages.pop),
             formatMessage(sharedMessages.costume, {index: 1})
         );
-        this.props.vm.addSprite(JSON.stringify(emptyItem)).then(() => {
-            setTimeout(() => { // Wait for targets update to propagate before tab switching
+        const loadId = startAssetLoad('sprite', emptyItem.objName);
+        this.paintSpritePromise = Promise.resolve()
+            .then(() => this.props.vm.addSprite(JSON.stringify(emptyItem)))
+            // Wait for targets update to propagate before tab switching.
+            .then(() => new Promise(resolve => setTimeout(resolve)))
+            .then(() => {
                 this.props.onActivateTab(COSTUMES_TAB_INDEX);
+                finishAssetLoad(loadId, emptyItem.objName, 'success');
+            })
+            .catch(error => {
+                log.error(error);
+                finishAssetLoad(loadId, emptyItem.objName, 'error');
+            })
+            .finally(() => {
+                this.paintSpritePromise = null;
             });
-        });
+        return this.paintSpritePromise;
     }
     handleActivateBlocksTab () {
         this.props.onActivateTab(BLOCKS_TAB_INDEX);
@@ -173,6 +201,7 @@ class TargetPane extends React.Component {
             this.setState(state => (state.assetLoadNotice && state.assetLoadNotice.loadId === event.loadId ? {
                 assetLoadNotice: Object.assign({}, state.assetLoadNotice, {
                     finished: event.finished,
+                    name: event.name || state.assetLoadNotice.name,
                     total: event.total
                 })
             } : null));

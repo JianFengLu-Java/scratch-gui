@@ -3,11 +3,12 @@ import React from 'react';
 import bindAll from 'lodash.bindall';
 import VM from 'scratch-vm';
 import classNames from 'classnames';
-import {ChevronDownIcon, ChevronUpIcon, SlidersHorizontalIcon} from 'lucide-react';
+import {ChevronDownIcon, ChevronUpIcon, HandIcon, PencilIcon, SlidersHorizontalIcon} from 'lucide-react';
 import PaintEditor from '../lib/tw-scratch-paint';
 import {inlineSvgFonts, sanitizeSvg} from '@turbowarp/scratch-svg-renderer';
 import ErrorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
 import {openFontsModal} from '../reducers/modals';
+import attachMobilePaintPan from '../lib/mobile-paint-pan';
 
 import {connect} from 'react-redux';
 import {Theme} from '../lib/themes/index.js';
@@ -21,16 +22,19 @@ class PaintEditorWrapper extends React.Component {
             'handleUpdateName',
             'handleUpdateFonts',
             'handleToggleSettings',
+            'handleTogglePan',
             'setEditorRef',
             'fontInlineFn'
         ]);
         this.state = {
             fonts: this.props.vm.runtime.fontManager.getFonts(),
+            panMode: false,
             settingsExpanded: window.innerHeight > 700
         };
     }
     componentDidMount () {
         this.props.vm.runtime.fontManager.on('change', this.handleUpdateFonts);
+        this.updatePanCanvas();
         // Paper resizes on window events. Also notify it when the mobile
         // toolbars or asset strip change the space available to its canvas.
         if (typeof ResizeObserver !== 'undefined' && this.editor) {
@@ -50,15 +54,32 @@ class PaintEditorWrapper extends React.Component {
             this.props.theme !== nextProps.theme ||
             this.props.customStageSize !== nextProps.customStageSize ||
             this.state.fonts !== nextState.fonts ||
+            this.state.panMode !== nextState.panMode ||
             this.state.settingsExpanded !== nextState.settingsExpanded;
+    }
+    componentDidUpdate () {
+        this.updatePanCanvas();
     }
     componentWillUnmount () {
         this.props.vm.runtime.fontManager.off('change', this.handleUpdateFonts);
+        if (this.panController) this.panController.dispose();
         if (this.resizeObserver) this.resizeObserver.disconnect();
         cancelAnimationFrame(this.resizeFrame);
     }
     setEditorRef (element) {
         this.editor = element;
+    }
+    updatePanCanvas () {
+        const canvas = this.editor && this.editor.querySelector('[class*="paint-editor_canvas-container_"] canvas');
+        if (canvas !== this.panCanvas) {
+            if (this.panController) this.panController.dispose();
+            this.panCanvas = canvas;
+            this.panController = canvas ? attachMobilePaintPan(canvas) : null;
+        }
+        if (this.panController) this.panController.setEnabled(this.state.panMode);
+    }
+    handleTogglePan () {
+        this.setState(state => ({panMode: !state.panMode}));
     }
     handleToggleSettings () {
         this.setState(state => ({settingsExpanded: !state.settingsExpanded}));
@@ -103,17 +124,30 @@ class PaintEditorWrapper extends React.Component {
                 className={classNames(styles.editor, {[styles.settingsCollapsed]: !this.state.settingsExpanded})}
                 ref={this.setEditorRef}
             >
-                <button
-                    aria-expanded={this.state.settingsExpanded}
-                    className={styles.settingsToggle}
-                    type="button"
-                    onClick={this.handleToggleSettings}
-                >
-                    <SlidersHorizontalIcon aria-hidden="true" />
-                    <span>{'编辑设置'}</span>
-                    {this.state.settingsExpanded ?
-                        <ChevronUpIcon aria-hidden="true" /> : <ChevronDownIcon aria-hidden="true" />}
-                </button>
+                <div className={styles.mobileToolbar}>
+                    <button
+                        aria-expanded={this.state.settingsExpanded}
+                        className={styles.settingsToggle}
+                        type="button"
+                        onClick={this.handleToggleSettings}
+                    >
+                        <SlidersHorizontalIcon aria-hidden="true" />
+                        <span>{'编辑设置'}</span>
+                        {this.state.settingsExpanded ?
+                            <ChevronUpIcon aria-hidden="true" /> : <ChevronDownIcon aria-hidden="true" />}
+                    </button>
+                    <button
+                        aria-label="平移画布"
+                        aria-pressed={this.state.panMode}
+                        className={styles.panToggle}
+                        title={this.state.panMode ? '拖动任意位置平移，点击返回绘图' : '切换为手形工具，拖动画布平移'}
+                        type="button"
+                        onClick={this.handleTogglePan}
+                    >
+                        {this.state.panMode ? <PencilIcon aria-hidden="true" /> : <HandIcon aria-hidden="true" />}
+                        <span>{this.state.panMode ? '返回绘图' : '平移画布'}</span>
+                    </button>
+                </div>
                 <PaintEditor
                     {...componentProps}
                     image={this.props.imageFormat === 'svg' ? sanitizeSvg.sanitizeSvgText(costume) : costume}

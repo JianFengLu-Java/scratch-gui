@@ -4,12 +4,13 @@ import {createPortal} from 'react-dom';
 import {PLANET_EDITOR_ACCOUNT_SLOT_EVENT} from '../../lib/editor-dock-events';
 
 // The same account controls and autosave managers have one mounted home at a time.
-const MobileAccountArea = ({children}) => {
+const MobileAccountArea = ({children, area = 'primary'}) => {
     const [destination, setDestination] = React.useState({ready: false, target: null});
     React.useLayoutEffect(() => {
         const update = () => {
             const target = window.matchMedia('(max-width: 1023px)').matches ?
-                document.querySelector('[data-editor-account-slot]') : null;
+                document.querySelector(area === 'secondary' ?
+                    '[data-editor-secondary-account-slot]' : '[data-editor-account-slot]') : null;
             setDestination(previous => (previous.ready && previous.target === target ?
                 previous : {ready: true, target}));
         };
@@ -20,11 +21,14 @@ const MobileAccountArea = ({children}) => {
             window.removeEventListener('resize', update);
             window.removeEventListener(PLANET_EDITOR_ACCOUNT_SLOT_EVENT, update);
         };
-    }, []);
+    }, [area]);
     if (!destination.ready) return null;
     return destination.target ? createPortal(children, destination.target) : children;
 };
 
-MobileAccountArea.propTypes = {children: PropTypes.node};
+MobileAccountArea.propTypes = {
+    area: PropTypes.oneOf(['primary', 'secondary']),
+    children: PropTypes.node
+};
 
 export default MobileAccountArea;

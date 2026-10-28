@@ -1,8 +1,10 @@
 
 .sprite-image {
+    display: block;
     margin: auto;
     user-select: none;
-    max-width: 48px;
-    max-height: 48px;
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
     opacity: 0.35;
 }

@@ -5,15 +5,12 @@ import {useGSAP} from '@gsap/react';
 import {
     BriefcaseIcon,
     CatIcon,
-    DicesIcon,
+    EllipsisIcon,
     ImageIcon,
     MessageCircleIcon,
-    PaintbrushIcon,
     PuzzleIcon,
-    SearchIcon,
     ShieldCheckIcon,
     SparklesIcon,
-    UploadIcon,
     UserPlusIcon
 } from 'lucide-react';
 import PropTypes from 'prop-types';
@@ -34,34 +31,24 @@ import {
 } from '../../lib/editor-dock-events';
 import {collaborationEnabled} from '../../lib/planet-collaboration';
 import {isPlanetProjectRoute} from '../../lib/planet-project-loader';
+import EditorResourceMenu from './editor-resource-menu.jsx';
+import EditorMoreMenu from './editor-more-menu.jsx';
 
 import styles from './editor-dock.css';
 
 gsap.registerPlugin(useGSAP);
 
-const resourceMenus = {
-    sprite: [
-        {command: 'sprite-library', icon: SearchIcon, label: '从素材库选择'},
-        {command: 'sprite-paint', icon: PaintbrushIcon, label: '绘制角色'},
-        {command: 'sprite-surprise', icon: DicesIcon, label: '随机角色'},
-        {command: 'sprite-upload', icon: UploadIcon, label: '上传角色'}
-    ],
-    backdrop: [
-        {command: 'backdrop-library', icon: SearchIcon, label: '从素材库选择'},
-        {command: 'backdrop-paint', icon: PaintbrushIcon, label: '绘制背景'},
-        {command: 'backdrop-surprise', icon: DicesIcon, label: '随机背景'},
-        {command: 'backdrop-upload', icon: UploadIcon, label: '上传背景'}
-    ]
-};
-
 const EditorDock = ({
     hasBackpack,
+    isRtl,
+    mobileLayout,
     readOnly,
     onOpenBackdropLibrary,
     onOpenExtensionLibrary,
     onOpenSpriteLibrary
 }) => {
     const dockRef = React.useRef(null);
+    const moreButtonRef = React.useRef(null);
     const [openMenu, setOpenMenu] = React.useState(null);
     const [chatState, setChatState] = React.useState({connected: false, open: false, unread: 0});
     const [aiOpen, setAiOpen] = React.useState(false);
@@ -120,9 +107,9 @@ const EditorDock = ({
 
             let workspaceLeft = Math.max(containerRect.left, workspace.rect.left);
             let workspaceRight = Math.min(containerRect.right, workspace.rect.right);
-            const isRtl = window.getComputedStyle(container).direction === 'rtl';
+            const containerIsRtl = window.getComputedStyle(container).direction === 'rtl';
 
-            if (isRtl) {
+            if (containerIsRtl) {
                 if (toolbox) workspaceRight = Math.min(workspaceRight, toolbox.rect.left);
                 if (flyout) workspaceRight = Math.min(workspaceRight, flyout.rect.left);
             } else {
@@ -197,10 +184,12 @@ const EditorDock = ({
         const handleInviteState = event => setInviteOpen(Boolean(event.detail && event.detail.open));
         const handlePermissionsState = event => setPermissionsOpen(Boolean(event.detail && event.detail.open));
         const handleOutsidePointer = event => {
-            if (openMenu && dockRef.current && !dockRef.current.contains(event.target)) setOpenMenu(null);
+            if (!mobileLayout && openMenu && dockRef.current && !dockRef.current.contains(event.target)) {
+                setOpenMenu(null);
+            }
         };
         const handleEscape = event => {
-            if (event.key === 'Escape' && openMenu) {
+            if (!mobileLayout && event.key === 'Escape' && openMenu) {
                 event.preventDefault();
                 setOpenMenu(null);
             }
@@ -221,7 +210,7 @@ const EditorDock = ({
             document.removeEventListener('pointerdown', handleOutsidePointer);
             document.removeEventListener('keydown', handleEscape, true);
         };
-    }, [openMenu]);
+    }, [openMenu, mobileLayout]);
 
     const animateIn = contextSafe(event => {
         if (reducedMotion || event.currentTarget.disabled || window.matchMedia('(max-width: 1023px)').matches) return;
@@ -317,22 +306,28 @@ const EditorDock = ({
 
     const renderDockButton = ({
         active = false,
+        buttonRef,
+        controls,
         badge = 0,
         disabled = false,
         expanded,
         icon: Icon,
         label,
         mobileLabel = label,
+        popup,
         onClick
     }) => (
         <button
+            aria-controls={controls}
             aria-expanded={expanded}
+            aria-haspopup={popup}
             aria-label={badge ? `${label}，${badge} 条未读消息` : label}
             aria-pressed={active}
             className={classNames(styles.item, {[styles.active]: active})}
             data-dock-item
             disabled={disabled}
             key={label}
+            ref={buttonRef}
             title={label}
             type="button"
             onBlur={animateOut}
@@ -358,29 +353,76 @@ const EditorDock = ({
                 expanded: openMenu === kind,
                 icon: Icon,
                 label,
+                popup: mobileLayout ? 'dialog' : 'menu',
                 onClick: () => toggleResourceMenu(kind)
             })}
             {openMenu === kind && (
-                <div aria-label={`${label}选项`} className={styles.resourceMenu} role="menu">
-                    <div className={styles.resourceMenuLabel}>{`添加${label}`}</div>
-                    {resourceMenus[kind].map(item => {
-                        const ItemIcon = item.icon;
-                        return (
-                            <button
-                                className={styles.resourceMenuItem}
-                                key={item.command}
-                                role="menuitem"
-                                type="button"
-                                onClick={() => runResourceCommand(item.command)}
-                            >
-                                <ItemIcon aria-hidden="true" />
-                                <span>{item.label}</span>
-                            </button>
-                        );
-                    })}
-                </div>
+                <EditorResourceMenu
+                    isRtl={isRtl}
+                    kind={kind}
+                    mobileLayout={mobileLayout}
+                    onClose={() => setOpenMenu(null)}
+                    onSelect={runResourceCommand}
+                />
             )}
         </div>
+    );
+
+    const closeMenu = React.useCallback(() => setOpenMenu(null), []);
+    const renderSecondaryTools = () => (
+        <React.Fragment>
+            <span aria-hidden="true" className={styles.separator} role="separator" />
+            {renderDockButton({
+                active: inviteOpen,
+                disabled: !chatAvailable,
+                expanded: inviteOpen,
+                icon: UserPlusIcon,
+                label: chatAvailable ? '邀请协作' : '邀请协作（需协作模式）',
+                mobileLabel: '邀请',
+                onClick: toggleInvite
+            })}
+            {renderDockButton({
+                active: chatState.open,
+                badge: chatState.unread,
+                disabled: !chatAvailable,
+                expanded: chatState.open,
+                icon: MessageCircleIcon,
+                label: chatAvailable ? '项目聊天' : '项目聊天（需协作模式）',
+                mobileLabel: '聊天',
+                onClick: toggleChat
+            })}
+            {renderDockButton({
+                active: permissionsOpen,
+                disabled: !chatAvailable,
+                expanded: permissionsOpen,
+                icon: ShieldCheckIcon,
+                label: chatAvailable ? '角色权限' : '角色权限（需协作模式）',
+                mobileLabel: '权限',
+                onClick: togglePermissions
+            })}
+            {renderDockButton({
+                icon: PuzzleIcon,
+                label: '扩展',
+                onClick: openExtensionLibrary
+            })}
+            {renderDockButton({
+                active: aiOpen,
+                expanded: aiOpen,
+                icon: SparklesIcon,
+                label: 'AI 助手',
+                onClick: toggleAi
+            })}
+            <span aria-hidden="true" className={styles.separator} role="separator" />
+            {renderDockButton({
+                active: backpackOpen,
+                disabled: !hasBackpack,
+                expanded: backpackOpen,
+                icon: BriefcaseIcon,
+                label: hasBackpack ? '书包' : '书包暂不可用',
+                mobileLabel: '书包',
+                onClick: toggleBackpack
+            })}
+        </React.Fragment>
     );
 
     return (
@@ -389,66 +431,37 @@ const EditorDock = ({
                 {!readOnly && <div className={styles.tools}>
                     {renderResource('sprite', '角色', CatIcon)}
                     {renderResource('backdrop', '背景', ImageIcon)}
-                    <span aria-hidden="true" className={styles.separator} role="separator" />
-                    {renderDockButton({
-                        active: inviteOpen,
-                        disabled: !chatAvailable,
-                        expanded: inviteOpen,
-                        icon: UserPlusIcon,
-                        label: chatAvailable ? '邀请协作' : '邀请协作（需协作模式）',
-                        mobileLabel: '邀请',
-                        onClick: toggleInvite
-                    })}
-                    {renderDockButton({
-                        active: chatState.open,
+                    {mobileLayout ? renderDockButton({
+                        active: openMenu === 'more',
                         badge: chatState.unread,
-                        disabled: !chatAvailable,
-                        expanded: chatState.open,
-                        icon: MessageCircleIcon,
-                        label: chatAvailable ? '项目聊天' : '项目聊天（需协作模式）',
-                        mobileLabel: '聊天',
-                        onClick: toggleChat
-                    })}
-                    {renderDockButton({
-                        active: permissionsOpen,
-                        disabled: !chatAvailable,
-                        expanded: permissionsOpen,
-                        icon: ShieldCheckIcon,
-                        label: chatAvailable ? '角色权限' : '角色权限（需协作模式）',
-                        mobileLabel: '权限',
-                        onClick: togglePermissions
-                    })}
-                    {renderDockButton({
-                        icon: PuzzleIcon,
-                        label: '扩展',
-                        onClick: openExtensionLibrary
-                    })}
-                    {renderDockButton({
-                        active: aiOpen,
-                        expanded: aiOpen,
-                        icon: SparklesIcon,
-                        label: 'AI 助手',
-                        onClick: toggleAi
-                    })}
-                    <span aria-hidden="true" className={styles.separator} role="separator" />
-                    {renderDockButton({
-                        active: backpackOpen,
-                        disabled: !hasBackpack,
-                        expanded: backpackOpen,
-                        icon: BriefcaseIcon,
-                        label: hasBackpack ? '书包' : '书包暂不可用',
-                        mobileLabel: '书包',
-                        onClick: toggleBackpack
-                    })}
+                        buttonRef: moreButtonRef,
+                        controls: 'editor-more-menu',
+                        expanded: openMenu === 'more',
+                        icon: EllipsisIcon,
+                        label: '更多',
+                        popup: 'dialog',
+                        onClick: () => toggleResourceMenu('more')
+                    }) : <React.Fragment>
+                        {renderSecondaryTools()}
+                    </React.Fragment>}
                 </div>}
+                <div className={styles.accountRow} data-editor-account-slot />
+                {mobileLayout && !readOnly && <EditorMoreMenu
+                    open={openMenu === 'more'}
+                    triggerRef={moreButtonRef}
+                    onClose={closeMenu}
+                >
+                    {renderSecondaryTools()}
+                </EditorMoreMenu>}
             </div>
-            <div className={styles.accountRow} data-editor-account-slot />
         </nav>
     );
 };
 
 EditorDock.propTypes = {
     hasBackpack: PropTypes.bool,
+    isRtl: PropTypes.bool,
+    mobileLayout: PropTypes.bool,
     readOnly: PropTypes.bool,
     onOpenBackdropLibrary: PropTypes.func.isRequired,
     onOpenExtensionLibrary: PropTypes.func.isRequired,
@@ -457,6 +470,7 @@ EditorDock.propTypes = {
 
 EditorDock.defaultProps = {
     hasBackpack: false,
+    mobileLayout: false,
     readOnly: false
 };
 

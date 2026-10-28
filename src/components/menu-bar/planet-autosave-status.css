@@ -56,10 +56,11 @@
     background: var(--tw-status-danger, #dc2626);
 }
 
-.mobile-label, .mobile-prefix { display: none; }
+.mobile-label, .mobile-prefix, .mobile-icon { display: none; }
 @media (max-width: 1023px) {
     .desktop-label { display: none; }
     .status.status {
+        position: relative;
         gap: .375rem;
         border: 0;
         border-radius: .25rem;
@@ -67,17 +68,9 @@
         color: var(--tw-dialog-foreground, #171717);
         font-family: inherit;
     }
-    .mobile-prefix {
-        display: block;
-        flex: none;
-        width: 24px;
-        color: var(--tw-dialog-muted-foreground, #737373);
-        font-size: 11px;
-        font-weight: 500;
-        text-align: start;
-    }
-    .mobile-label { display: block; flex: none; white-space: nowrap; }
-    .dot { display: block; flex: 0 0 6px; width: 6px; height: 6px; }
+    .mobile-icon { display: block; flex: none; width: 18px; height: 18px; }
+    .mobile-label { display: block; max-width: 44px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dot { display: block; position: absolute; top: 6px; right: 7px; width: 6px; height: 6px; }
     .status.error .mobile-label,
     .status.conflict .mobile-label {
         color: var(--tw-status-danger, #dc2626);

@@ -12,6 +12,9 @@ const configureMobileBlocksLayout = (workspace, expanded, onExpand, Blockly) => 
     const toolbox = workspace.getToolbox();
     const host = workspace.getParentSvg().closest('[data-mobile-blocks]');
     const splitter = host && host.querySelector('[data-mobile-blocks-splitter]');
+    flyout.svgGroup_.setAttribute('id', 'mobile-blocks-library');
+    flyout.svgGroup_.setAttribute('role', 'tabpanel');
+    flyout.svgGroup_.setAttribute('aria-labelledby', 'mobile-blocks-tab-blocks');
     const getMetrics = workspace.getMetrics;
     const getContentBounds = flyout.getContentBoundingBox_;
     const setVisible = flyout.setVisible;

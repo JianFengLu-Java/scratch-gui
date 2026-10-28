@@ -524,45 +524,58 @@
     }
 }
 
-.account-profile, .local-save-control { display: contents; }
+.account-profile, .local-save-control, .collaboration-control { display: contents; }
 @media (max-width: 1023px) {
     .account-info-group {
+        flex: 1;
+        justify-content: space-around;
         width: 100%;
-        height: 47px;
-        gap: .25rem;
-        padding-inline: .125rem;
+        height: 56px;
+        gap: 2px;
+        padding-inline: 0;
         color: var(--tw-dialog-foreground);
         font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         font-size: 12px;
     }
 
     .account-profile { display: flex; flex: none; align-items: center; order: -1; }
-    .local-save-control { display: flex; flex: none; align-items: center; order: 1; }
+    .local-save-control, .collaboration-control { display: contents; }
+    :global([data-editor-secondary-account-slot]) .local-save-control > button {
+        width: 100%;
+        min-height: 48px;
+        height: auto;
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 12px;
+        padding: 12px;
+        font-size: 13px;
+    }
 
     .account-info-group .status-group {
-        flex: 1;
-        flex-direction: column;
-        align-items: stretch;
+        flex: none;
+        flex-direction: row;
+        align-items: center;
         justify-content: center;
-        gap: 2px;
+        gap: 0;
         min-width: 0;
-        height: 44px;
+        height: 56px;
         padding: 0;
         background: transparent;
     }
 
     .account-info-group .status-group button {
         flex: none;
-        justify-content: flex-start;
-        width: 100%;
-        min-width: 0;
-        max-width: 100%;
-        height: 21px;
-        min-height: 21px;
-        padding-inline: .125rem;
-        font-size: 13px;
-        line-height: 21px;
-        font-weight: 600;
+        flex-direction: column;
+        justify-content: center;
+        width: 44px;
+        min-width: 44px;
+        max-width: 44px;
+        height: 56px;
+        min-height: 56px;
+        padding: 4px 0;
+        font-size: 10px;
+        line-height: 12px;
+        font-weight: 500;
         letter-spacing: 0;
     }
 
@@ -573,8 +586,8 @@
         gap: 3px;
         width: 44px;
         min-width: 44px;
-        height: 40px;
-        min-height: 40px;
+        height: 48px;
+        min-height: 48px;
         padding: .25rem 0;
         border-color: var(--tw-dialog-foreground);
         border-radius: .5rem;

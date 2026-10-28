@@ -6,11 +6,12 @@ import Box from '../box/box.jsx';
 import styles from './blocks.css';
 
 const panels = {
-    blocks: {icon: Code2Icon, label: '积木库'},
-    preview: {icon: MonitorIcon, label: '舞台预览'},
-    sprites: {icon: CatIcon, label: '角色'},
-    stage: {icon: ImageIcon, label: '舞台'}
+    blocks: {icon: Code2Icon, label: '积木库', panelId: 'mobile-blocks-library'},
+    preview: {icon: MonitorIcon, label: '舞台预览', panelId: 'mobile-blocks-preview'},
+    sprites: {icon: CatIcon, label: '角色', panelId: 'mobile-blocks-targets'},
+    stage: {icon: ImageIcon, label: '舞台', panelId: 'mobile-blocks-targets'}
 };
+const panelIds = Object.keys(panels);
 
 const BlocksComponent = props => {
     const {
@@ -26,8 +27,23 @@ const BlocksComponent = props => {
         readOnly,
         ...componentProps
     } = props;
-    const selectedPanel = panels[mobilePanel];
-    const PanelIcon = selectedPanel.icon;
+    const handleTabKeyDown = event => {
+        const tabs = Array.from(event.currentTarget.querySelectorAll('[role="tab"]'));
+        const index = tabs.indexOf(event.target);
+        if (index < 0) return;
+        let nextIndex;
+        if (event.key === 'Home') nextIndex = 0;
+        else if (event.key === 'End') nextIndex = tabs.length - 1;
+        else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            const rtl = window.getComputedStyle(event.currentTarget).direction === 'rtl';
+            const step = (event.key === 'ArrowRight' ? 1 : -1) * (rtl ? -1 : 1);
+            nextIndex = (index + step + tabs.length) % tabs.length;
+        } else return;
+        event.preventDefault();
+        event.stopPropagation();
+        tabs[nextIndex].focus({preventScroll: true});
+        onSelectPalette(panelIds[nextIndex]);
+    };
     return (
         <Box
             className={classNames(styles.blocks, {
@@ -44,23 +60,37 @@ const BlocksComponent = props => {
             {mobileLayout ? (
                 <React.Fragment>
                     <div className={styles.paletteHeader}>
-                        <label className={styles.paletteSelect}>
-                            <PanelIcon aria-hidden="true" />
-                            <span>{selectedPanel.label}</span>
-                            <ChevronDownIcon aria-hidden="true" />
-                            <select
-                                aria-label="切换上方区域内容"
-                                value={mobilePanel}
-                                onChange={event => onSelectPalette(event.target.value)}
-                            >
-                                {Object.keys(panels).map(id => <option key={id} value={id}>
-                                    {panels[id].label}
-                                </option>)}
-                            </select>
-                        </label>
-                        {mobilePanel === 'blocks' && <span className={styles.paletteHint}>
-                            {'上下滑动 · 按住拖出'}
-                        </span>}
+                        {/* react-tabs uses this boundary to ignore tabs owned by a nested container. */}
+                        <div
+                            aria-label="上方区域内容"
+                            aria-orientation="horizontal"
+                            className={styles.paletteTabs}
+                            data-tabs="true"
+                            role="tablist"
+                            onKeyDown={handleTabKeyDown}
+                        >
+                            {panelIds.map(id => {
+                                const panel = panels[id];
+                                const Icon = panel.icon;
+                                return (
+                                    <button
+                                        key={id}
+                                        aria-controls={panel.panelId}
+                                        aria-selected={mobilePanel === id}
+                                        className={styles.paletteTab}
+                                        id={`mobile-blocks-tab-${id}`}
+                                        role="tab"
+                                        tabIndex={mobilePanel === id ? 0 : -1}
+                                        title={id === 'blocks' ? '积木库：上下滑动，按住拖出积木' : panel.label}
+                                        type="button"
+                                        onClick={() => onSelectPalette(id)}
+                                    >
+                                        <Icon aria-hidden="true" />
+                                        <span>{panel.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
                         <button
                             aria-expanded={paletteExpanded}
                             aria-label={paletteExpanded ? '收起上方区域' : '展开上方区域'}
@@ -75,16 +105,17 @@ const BlocksComponent = props => {
                     </div>
                     <div
                         ref={onMobilePreviewHost}
-                        aria-label="舞台预览"
+                        aria-labelledby="mobile-blocks-tab-preview"
                         className={styles.palettePreview}
                         id="mobile-blocks-preview"
-                        role="region"
+                        role="tabpanel"
                     />
                     <div
                         ref={onMobileTargetsHost}
-                        aria-label={mobilePanel === 'stage' ? '舞台与背景' : '角色与属性'}
+                        aria-labelledby={`mobile-blocks-tab-${mobilePanel === 'stage' ? 'stage' : 'sprites'}`}
                         className={styles.paletteTargets}
-                        role="region"
+                        id="mobile-blocks-targets"
+                        role="tabpanel"
                     />
                     <div
                         aria-label="调整上方区域与工作画布的高度"

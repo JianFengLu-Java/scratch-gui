@@ -525,7 +525,9 @@ const GUIComponent = props => {
                             {!isPlayerOnly && !readOnly && (
                                 <EditorDock
                                     hasBackpack={backpackVisible && Boolean(backpackHost)}
+                                    isRtl={isRtl}
                                     key={intl.locale}
+                                    mobileLayout={mobileLayout}
                                     readOnly={readOnly}
                                     onOpenBackdropLibrary={onOpenBackdropLibrary}
                                     onOpenExtensionLibrary={onOpenExtensionLibrary}

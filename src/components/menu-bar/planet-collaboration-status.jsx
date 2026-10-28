@@ -1,4 +1,5 @@
 import React from 'react';
+import {UsersIcon} from 'lucide-react';
 import PropTypes from 'prop-types';
 
 import {
@@ -66,26 +67,35 @@ class PlanetCollaborationStatus extends React.Component {
         return (
             <button
                 aria-label={this.state.message ? `${this.label()}：${this.state.message}` : this.label()}
-                className={`${styles.status} ${styles[this.state.status]} ${this.state.invitation ? styles.invitation : ''}`}
+                className={[
+                    styles.status, styles[this.state.status], this.state.invitation ? styles.invitation : ''
+                ].join(' ')}
                 disabled={!this.props.projectId && !this.state.invitation}
                 onClick={this.handleClick}
                 title={this.state.message || this.label()}
                 type="button"
             >
+                <UsersIcon
+                    aria-hidden="true"
+                    className={styles.mobileIcon}
+                />
                 <span
                     aria-hidden="true"
                     className={styles.dot}
                 />
-                <span aria-hidden="true" className={styles.mobilePrefix}>{'协作'}</span>
+                <span
+                    aria-hidden="true"
+                    className={styles.mobilePrefix}
+                >{'协作'}</span>
                 <span className={styles.desktopLabel}>{this.label()}</span>
-                <span className={styles.mobileLabel}>{this.state.invitation ? '收到邀请 · 查看' :
+                <span className={styles.mobileLabel}>{this.state.invitation ? '新邀请' :
                     this.state.status === 'connected' && this.state.participantCount > 1 ?
-                        `${this.state.participantCount} 人在线` : ({
-                            applying: '正在同步',
+                        `${this.state.participantCount}人` : ({
+                            applying: '同步中',
                             connected: '已连接',
-                            connecting: '正在连接…',
-                            disconnected: '连接已断开',
-                            replaced: '其他窗口已接管',
+                            connecting: '连接中',
+                            disconnected: '已断开',
+                            replaced: '已接管',
                             error: '连接失败'
                         })[this.state.status] || '连接失败'}</span>
             </button>

@@ -262,8 +262,8 @@
 }
 
 @media (max-width: 1023px) {
-    .user-menu { height: 40px; }
-    .trigger { width: 36px; min-width: 36px; height: 40px; padding: 0; border-radius: .5rem; color: var(--tw-dialog-foreground); }
+    .user-menu { height: 56px; }
+    .trigger { width: 44px; min-width: 44px; height: 56px; padding: 0; border-radius: .5rem; color: var(--tw-dialog-foreground); }
     .avatar { width: 28px; height: 28px; }
     .caret { display: none; }
     .signed-out { flex: none; flex-direction: column; justify-content: center; gap: 3px; width: 40px; }
@@ -275,8 +275,8 @@
     .trigger:focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: -2px; }
     .popover {
         position: fixed; inset-inline: .5rem;
-        top: calc(100dvh - var(--tw-mobile-dock-height, 113px) - 8px - env(safe-area-inset-bottom));
-        width: auto; max-height: calc(100dvh - var(--tw-mobile-dock-height, 113px) - 72px);
+        top: calc(100dvh - var(--tw-mobile-dock-height, 64px) - 8px - env(safe-area-inset-bottom));
+        width: auto; max-height: calc(100dvh - var(--tw-mobile-dock-height, 64px) - 72px);
         transform: translateY(-100%); overflow-y: auto; animation: none;
     }
 }
