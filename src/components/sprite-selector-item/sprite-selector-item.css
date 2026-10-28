@@ -121,3 +121,25 @@
 [dir="rtl"] .number {
     right: 0.15rem;
 }
+
+@media (max-width: 1023px) {
+    :global([data-mobile-panel="scene"]) .sprite-selector-item {
+        border: 1px solid transparent;
+        border-radius: 4px;
+        background: transparent;
+        box-shadow: none;
+    }
+    :global([data-mobile-panel="scene"]) .sprite-info { padding: 2px; border-radius: 0; background: transparent; }
+    :global([data-mobile-panel="scene"]) .sprite-image-outer { flex: none; height: 26px; }
+    :global([data-mobile-panel="scene"]) .sprite-image { max-width: 36px; max-height: 24px; object-fit: contain; }
+    :global([data-mobile-panel="scene"]) .is-selected .sprite-info {
+        background: transparent;
+        font-weight: 600;
+        box-shadow: none;
+    }
+    :global([data-mobile-panel="scene"]) .sprite-selector-item.is-selected {
+        border-color: var(--tw-dialog-border);
+        background: var(--tw-dialog-accent);
+    }
+    :global([data-mobile-panel="scene"]) .delete-button { top: 0; inset-inline-end: 0; }
+}

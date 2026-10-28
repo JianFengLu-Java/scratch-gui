@@ -33,6 +33,7 @@ import {collaborationEnabled} from '../../lib/planet-collaboration';
 import {isPlanetProjectRoute} from '../../lib/planet-project-loader';
 import EditorResourceMenu from './editor-resource-menu.jsx';
 import EditorMoreMenu from './editor-more-menu.jsx';
+import EditorFullscreenButton from './editor-fullscreen-button.jsx';
 
 import styles from './editor-dock.css';
 
@@ -371,6 +372,11 @@ const EditorDock = ({
     const closeMenu = React.useCallback(() => setOpenMenu(null), []);
     const renderSecondaryTools = () => (
         <React.Fragment>
+            {mobileLayout && <EditorFullscreenButton
+                className={styles.item}
+                labelClassName={styles.mobileLabel}
+                onComplete={closeMenu}
+            />}
             <span aria-hidden="true" className={styles.separator} role="separator" />
             {renderDockButton({
                 active: inviteOpen,

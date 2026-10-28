@@ -77,7 +77,7 @@ const SpriteSelectorComponent = function (props) {
             {...componentProps}
         >
 
-            <SpriteInfo
+            {(!mobileStandalone || !spriteInfoDisabled) && <SpriteInfo
                 direction={selectedSprite.direction}
                 disabled={spriteInfoDisabled || readOnly}
                 name={selectedSprite.name}
@@ -94,7 +94,7 @@ const SpriteSelectorComponent = function (props) {
                 onChangeVisibility={onChangeSpriteVisibility}
                 onChangeX={onChangeSpriteX}
                 onChangeY={onChangeSpriteY}
-            />
+            />}
 
             <SpriteList
                 editingTarget={editingTarget}

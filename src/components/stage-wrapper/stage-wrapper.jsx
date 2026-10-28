@@ -14,6 +14,7 @@ import styles from './stage-wrapper.css';
 const StageWrapperComponent = function (props) {
     const {
         availableSize,
+        inScenePanel,
         isEmbedded,
         isFullScreen,
         isRtl,
@@ -34,19 +35,26 @@ const StageWrapperComponent = function (props) {
                     [styles.fullScreen]: isFullScreen,
                     [styles.loading]: loading,
                     [styles.mobile]: mobileStage,
+                    [styles.scene]: mobileStage && inScenePanel,
                     [styles.offsetControls]: !(isEmbedded || isFullScreen)
                 }
             )}
             dir={isRtl ? 'rtl' : 'ltr'}
         >
-            <Box className={styles.stageMenuWrapper}>
+            <Box
+                className={styles.stageMenuWrapper}
+                data-scene-controls={mobileStage && inScenePanel ? 'true' : null}
+            >
                 <StageHeader
                     availableSize={availableSize}
                     stageSize={stageSize}
                     vm={vm}
                 />
             </Box>
-            <Box className={styles.stageCanvasWrapper}>
+            <Box
+                className={styles.stageCanvasWrapper}
+                data-stage-canvas-area
+            >
                 {
                     isRendererSupported ?
                         <Stage
@@ -68,6 +76,7 @@ const StageWrapperComponent = function (props) {
 StageWrapperComponent.propTypes = {
     availableSize: PropTypes.shape({width: PropTypes.number, height: PropTypes.number}),
     customStageSize: PropTypes.shape({width: PropTypes.number, height: PropTypes.number}),
+    inScenePanel: PropTypes.bool,
     isEmbedded: PropTypes.bool,
     isFullScreen: PropTypes.bool,
     isRendererSupported: PropTypes.bool.isRequired,

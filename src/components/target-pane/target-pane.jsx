@@ -1,5 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import {PencilIcon} from 'lucide-react';
 import {createPortal} from 'react-dom';
 
 import VM from 'scratch-vm';
@@ -56,6 +57,7 @@ const TargetPane = ({
     <div
         className={styles.targetPane}
         data-mobile-panel={mobilePanel}
+        data-stage-selected={stage.id === editingTarget ? 'true' : 'false'}
         {...componentProps}
     >
         {createPortal(<AssetLoadingToast notice={assetLoadNotice} />, document.body)}
@@ -64,7 +66,7 @@ const TargetPane = ({
             <SpriteSelectorComponent
                 editingTarget={editingTarget}
                 hoveredTarget={hoveredTarget}
-                mobileStandalone={mobilePanel === 'sprites'}
+                mobileStandalone={mobilePanel === 'scene'}
                 raised={raiseSprites}
                 selectedId={editingTarget}
                 readOnly={readOnly}
@@ -90,7 +92,10 @@ const TargetPane = ({
                 onSurpriseSpriteClick={onSurpriseSpriteClick}
             />
         </div>
-        <div className={styles.stageSelectorWrapper}>
+        <div
+            className={styles.stageSelectorWrapper}
+            data-stage-info-area
+        >
             {stage.id && <StageSelector
                 asset={
                     stage.costume &&
@@ -99,7 +104,7 @@ const TargetPane = ({
                 backdropCount={stage.costumeCount}
                 backdropName={stage.costume && stage.costume.name}
                 id={stage.id}
-                standalone={mobilePanel === 'stage'}
+                standalone={mobilePanel === 'scene'}
                 readOnly={readOnly}
                 selected={stage.id === editingTarget}
                 onSelect={onSelectSprite}
@@ -107,19 +112,25 @@ const TargetPane = ({
             <div className={styles.stageDetails}>
                 <span>{'当前背景'}</span>
                 <strong>{(stage.costume && stage.costume.name) || '暂无背景'}</strong>
-                <button disabled={!stage.id} type="button" onClick={onEditStage}>
-                    {readOnly ? '查看背景' : '编辑背景'}
+                <span>{`${stage.costumeCount || 0} 个背景`}</span>
+                <button
+                    aria-label={readOnly ? '查看背景' : '编辑背景'}
+                    disabled={!stage.id}
+                    title={readOnly ? '查看背景' : '编辑背景'}
+                    type="button"
+                    onClick={onEditStage}
+                >
+                    <PencilIcon aria-hidden="true" />
+                    <span>{readOnly ? '查看背景' : '编辑背景'}</span>
                 </button>
             </div>
-            <div>
-                {spriteLibraryVisible && !readOnly ? (
-                    <SpriteLibrary
-                        vm={vm}
-                        onActivateBlocksTab={onActivateBlocksTab}
-                        onRequestClose={onRequestCloseSpriteLibrary}
-                    />
-                ) : null}
-            </div>
+            {spriteLibraryVisible && !readOnly ? (
+                <SpriteLibrary
+                    vm={vm}
+                    onActivateBlocksTab={onActivateBlocksTab}
+                    onRequestClose={onRequestCloseSpriteLibrary}
+                />
+            ) : null}
         </div>
     </div>
 );
@@ -156,7 +167,7 @@ TargetPane.propTypes = {
         total: PropTypes.number.isRequired
     }),
     editingTarget: PropTypes.string,
-    mobilePanel: PropTypes.oneOf(['blocks', 'preview', 'sprites', 'stage']),
+    mobilePanel: PropTypes.oneOf(['blocks', 'scene']),
     extensionLibraryVisible: PropTypes.bool,
     fileInputRef: PropTypes.func,
     hoveredTarget: PropTypes.shape({

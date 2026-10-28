@@ -165,3 +165,51 @@ $header-height: calc($stage-menu-height - 2px);
     .standalone:focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: 2px; }
     .standalone:active { background: var(--tw-dialog-accent); }
 }
+
+@media (max-width: 1023px) {
+    :global([data-mobile-panel="scene"]) .stage-selector.standalone {
+        grid-column: 1;
+        grid-row: 3;
+        width: 72px;
+        height: 48px;
+        border: 0;
+        border-top: 1px solid var(--tw-dialog-border);
+        border-radius: 0;
+        background: transparent;
+        box-shadow: none;
+    }
+    :global([data-mobile-panel="scene"]) .standalone .header {
+        position: absolute;
+        bottom: 0;
+        height: 14px;
+        border: 0;
+        border-radius: 3px;
+        background: transparent;
+    }
+    :global([data-mobile-panel="scene"]) .standalone .header-title { font-size: 10px; line-height: 12px; }
+    :global([data-mobile-panel="scene"]) .standalone .label,
+    :global([data-mobile-panel="scene"]) .standalone .count { display: none; }
+    :global([data-mobile-panel="scene"]) .standalone .costume-canvas {
+        display: block;
+        width: 40px;
+        height: 26px;
+        max-width: 40px;
+        max-height: 26px;
+        margin-top: 4px;
+        border: 1px solid var(--tw-dialog-border);
+        border-radius: 2px;
+        box-shadow: none;
+    }
+    :global([data-mobile-panel="scene"]) .standalone.is-selected .header {
+        font-weight: 600;
+        background: var(--tw-dialog-accent);
+    }
+    .mobile-count {
+        position: absolute;
+        top: 4px;
+        inset-inline-end: 3px;
+        color: var(--tw-dialog-muted-foreground);
+        font-size: 9px;
+        line-height: 12px;
+    }
+}

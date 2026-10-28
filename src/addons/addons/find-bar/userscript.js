@@ -76,6 +76,17 @@ export default async function ({ addon, msg, console }) {
 
       this.searchIcon = this.dropdownOut.appendChild(createSearchIcon());
 
+      this.mobileToggle = document.createElement("button");
+      this.mobileToggle.type = "button";
+      this.mobileToggle.className = "sa-find-toggle";
+      this.mobileToggle.setAttribute("aria-label", searchLabel || placeholder);
+      this.mobileToggle.setAttribute("aria-expanded", "false");
+      this.mobileToggle.setAttribute("aria-controls", this.findInput.id);
+      this.mobileToggle.title = searchLabel || placeholder;
+      this.mobileToggle.appendChild(createSearchIcon());
+      this.mobileToggle.addEventListener("click", () => this.focusInput(true));
+      this.findBarOuter.insertBefore(this.mobileToggle, this.findWrapper);
+
       this.findShortcut = this.dropdownOut.appendChild(document.createElement("kbd"));
       this.findShortcut.className = "sa-find-shortcut";
       this.findShortcut.textContent = shortcutMatch ? shortcutMatch[1] : "";
@@ -92,6 +103,13 @@ export default async function ({ addon, msg, console }) {
       this.findInput.addEventListener("keydown", (e) => this.inputKeyDown(e));
       this.findInput.addEventListener("keyup", () => this.inputChange());
       this.findInput.addEventListener("focusout", () => this.hideDropDown());
+    }
+
+    focusInput(select = false) {
+      this.findBarOuter.classList.add("sa-find-open");
+      this.mobileToggle.setAttribute("aria-expanded", "true");
+      this.findInput.focus();
+      if (select) this.findInput.select();
     }
 
     tabChanged() {
@@ -170,8 +188,7 @@ export default async function ({ addon, msg, console }) {
 
       if (e.key.toLowerCase() === "f" && ctrlKey && !e.shiftKey) {
         // Ctrl + F (Override default Ctrl+F find)
-        this.findInput.focus();
-        this.findInput.select();
+        this.focusInput(true);
         e.cancelBubble = true;
         e.preventDefault();
         return true;
@@ -214,6 +231,8 @@ export default async function ({ addon, msg, console }) {
       // special '' vs null... - null forces a reevaluation
       this.prevValue = focusID ? "" : null; // Clear the previous value of the input search
 
+      this.findBarOuter.classList.add("sa-find-open");
+      this.mobileToggle.setAttribute("aria-expanded", "true");
       this.dropdownOut.classList.add("visible");
       let scratchBlocks =
         this.selectedTab === 0
@@ -244,6 +263,8 @@ export default async function ({ addon, msg, console }) {
 
     hideDropDown() {
       this.dropdownOut.classList.remove("visible");
+      this.findBarOuter.classList.remove("sa-find-open");
+      this.mobileToggle.setAttribute("aria-expanded", "false");
     }
 
     get selectedTab() {
@@ -816,7 +837,7 @@ export default async function ({ addon, msg, console }) {
         if (block.type === "procedures_definition" || (!this.jumpToDef && block.type === "procedures_call")) {
           let id = block.id ? block.id : block.getId ? block.getId() : null;
 
-          findBar.findInput.focus();
+          findBar.focusInput();
           findBar.showDropDown(id);
 
           return;
@@ -829,7 +850,7 @@ export default async function ({ addon, msg, console }) {
         ) {
           let id = block.getVars()[0];
 
-          findBar.findInput.focus();
+          findBar.focusInput();
           findBar.showDropDown(id, block);
 
           findBar.selVarID = id;
@@ -845,7 +866,7 @@ export default async function ({ addon, msg, console }) {
           // todo: actually index the broadcasts...!
           let id = block.id;
 
-          findBar.findInput.focus();
+          findBar.focusInput();
           findBar.showDropDown(id, block);
 
           findBar.selVarID = id;

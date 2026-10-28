@@ -115,7 +115,7 @@
 
 .blocks.mobile :global(.blocklyToolboxDiv) {
     box-sizing: border-box;
-    top: 44px !important;
+    top: 32px !important;
     width: 64px !important;
     height: var(--tw-mobile-palette-height, 0px) !important;
     border-left: 0;
@@ -142,7 +142,7 @@
     align-items: center;
     gap: 0;
     width: 100%;
-    height: 44px;
+    height: 32px;
     padding: 0 4px;
     border: 0;
     border-bottom: 1px solid $ui-black-transparent;
@@ -163,18 +163,18 @@
     align-items: center;
     justify-content: center;
     gap: 4px;
-    min-height: 44px;
+    min-height: 32px;
     padding: 0 4px;
     border: 0;
     background: transparent;
     color: var(--tw-dialog-muted-foreground);
     font: inherit;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
     cursor: pointer;
     touch-action: manipulation;
 }
-.palette-header svg { flex: none; width: 16px; height: 16px; }
+.palette-header svg { flex: none; width: 14px; height: 14px; }
 .palette-tab {
     position: relative;
     flex: 1 1 auto;
@@ -188,53 +188,55 @@
 .palette-tab[aria-selected="true"]::after {
     content: '';
     position: absolute;
-    inset-inline: 8px;
+    left: calc(50% - 14px);
+    width: 28px;
     bottom: 1px;
     height: 2px;
     border-radius: 2px;
     background: currentColor;
 }
-.palette-toggle { flex: none; width: 44px; margin-inline-start: auto; }
+.palette-toggle { flex: none; width: 32px; margin-inline-start: auto; }
 .palette-header button:active { background: var(--tw-dialog-accent); }
 .palette-header button:focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: -3px; }
 
-.palette-preview,
-.palette-targets {
+.palette-scene {
+    box-sizing: border-box;
     position: absolute;
-    z-index: 41;
-    top: 44px;
+    /* Object menus must remain above the resize grip (72). */
+    z-index: 73;
+    top: 32px;
     left: 0;
     right: 0;
     display: none;
     height: var(--tw-mobile-palette-height, 0px);
-    padding: 0 8px 4px;
-    overflow: hidden;
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+    grid-template-rows: 32px minmax(0, 1fr) 48px;
+    column-gap: 8px;
+    row-gap: 4px;
+    padding: 0 6px 4px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
     background: var(--tw-dialog-background);
 }
 
-.mobile[data-palette-expanded="true"][data-palette-panel="preview"] .palette-preview,
-.mobile[data-palette-expanded="true"][data-palette-panel="sprites"] .palette-targets,
-.mobile[data-palette-expanded="true"][data-palette-panel="stage"] .palette-targets {
-    display: flex;
+.mobile[data-palette-expanded="true"][data-palette-panel="scene"] .palette-scene {
+    display: grid;
 }
 
-.palette-targets {
-    padding: 6px 8px;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    touch-action: pan-y;
-}
+.palette-preview,
+.palette-targets { display: contents; }
 
 .palette-splitter {
     position: absolute;
     z-index: 72;
-    top: calc(44px + var(--tw-mobile-palette-height, 0px));
+    top: calc(32px + var(--tw-mobile-palette-height, 0px));
     left: 0;
     right: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 24px;
+    height: 16px;
     border-top: 1px solid $ui-black-transparent;
     border-bottom: 1px solid $ui-black-transparent;
     background: var(--tw-dialog-background);
@@ -243,8 +245,8 @@
     user-select: none;
 }
 .palette-splitter span {
-    width: 36px;
-    height: 4px;
+    width: 28px;
+    height: 3px;
     border-radius: 2px;
     background: var(--tw-dialog-muted-foreground);
     opacity: .5;
@@ -255,7 +257,7 @@
     content: '';
     position: absolute;
     width: 64px;
-    height: 44px;
+    height: 32px;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);

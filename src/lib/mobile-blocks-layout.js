@@ -1,12 +1,15 @@
 // Keep a native vertical flyout in the upper pane. The main workspace starts
 // below it, with its full width available for scripts and native drag coordinates.
-const HEADER_HEIGHT = 44;
-const SPLITTER_HEIGHT = 24;
+import {getMobileSceneDefaultHeight} from './mobile-stage-layout';
+
+const HEADER_HEIGHT = 32;
+const SPLITTER_HEIGHT = 16;
 const CATEGORY_WIDTH = 64;
 const TOUCH_DRAG_HOLD_MS = 220;
 const SPLIT_STORAGE_KEY = 'tw:mobile-palette-ratio';
+const SCENE_SPLIT_STORAGE_KEY = 'tw:mobile-scene-ratio';
 
-const configureMobileBlocksLayout = (workspace, expanded, onExpand, Blockly) => {
+const configureMobileBlocksLayout = (workspace, expanded, onExpand, Blockly, getStageSize) => {
     const flyout = workspace.getFlyout();
     const flyoutWorkspace = flyout.getWorkspace();
     const toolbox = workspace.getToolbox();
@@ -28,6 +31,7 @@ const configureMobileBlocksLayout = (workspace, expanded, onExpand, Blockly) => 
     let minimumHeight = 0;
     let maximumHeight = 0;
     let splitRatio = null;
+    let sceneSplitRatio = null;
     let libraryVisible = true;
     let resizeFrame = null;
     let drag = null;
@@ -41,6 +45,8 @@ const configureMobileBlocksLayout = (workspace, expanded, onExpand, Blockly) => 
     try {
         const savedRatio = Number(window.localStorage.getItem(SPLIT_STORAGE_KEY));
         if (savedRatio > 0 && savedRatio < 1) splitRatio = savedRatio;
+        const savedSceneRatio = Number(window.localStorage.getItem(SCENE_SPLIT_STORAGE_KEY));
+        if (savedSceneRatio > 0 && savedSceneRatio < 1) sceneSplitRatio = savedSceneRatio;
     } catch (e) { /* Storage may be unavailable in embedded editors. */ }
 
     const invalidateBounds = event => {
@@ -51,10 +57,12 @@ const configureMobileBlocksLayout = (workspace, expanded, onExpand, Blockly) => 
         if (rect.width <= 0 || rect.height <= 0) return;
         width = rect.width;
         availableHeight = Math.max(0, rect.height - HEADER_HEIGHT - SPLITTER_HEIGHT);
-        minimumHeight = Math.min(96, availableHeight * 0.35);
+        minimumHeight = Math.min(libraryVisible ? 96 : 180, availableHeight * 0.35);
         maximumHeight = Math.max(minimumHeight, availableHeight - Math.min(140, availableHeight * 0.45));
-        const requestedHeight = splitRatio === null ? Math.min(224, availableHeight * 0.38) :
-            availableHeight * splitRatio;
+        const ratio = libraryVisible ? splitRatio : sceneSplitRatio;
+        const defaultHeight = libraryVisible ? Math.min(224, availableHeight * 0.38) :
+            getMobileSceneDefaultHeight(getStageSize ? getStageSize() : {width: 480, height: 360}, width);
+        const requestedHeight = ratio === null ? defaultHeight : availableHeight * ratio;
         const nextHeight = expanded || populating ?
             Math.round(Math.max(minimumHeight, Math.min(maximumHeight, requestedHeight))) : 0;
         if (host && nextHeight !== paletteHeight) {
@@ -260,9 +268,10 @@ const configureMobileBlocksLayout = (workspace, expanded, onExpand, Blockly) => 
     toolbox.HtmlDiv.addEventListener('touchcancel', handleCategoryEnd, touchOptions);
 
     const saveSplit = () => {
-        if (splitRatio === null) return;
+        const ratio = libraryVisible ? splitRatio : sceneSplitRatio;
+        if (ratio === null) return;
         try {
-            window.localStorage.setItem(SPLIT_STORAGE_KEY, String(splitRatio));
+            window.localStorage.setItem(libraryVisible ? SPLIT_STORAGE_KEY : SCENE_SPLIT_STORAGE_KEY, String(ratio));
         } catch (e) { /* Keep the current session's split even without storage. */ }
     };
     const flushResize = () => {
@@ -272,7 +281,9 @@ const configureMobileBlocksLayout = (workspace, expanded, onExpand, Blockly) => 
     };
     const resizePalette = height => {
         if (!availableHeight) return;
-        splitRatio = Math.max(minimumHeight, Math.min(maximumHeight, height)) / availableHeight;
+        const ratio = Math.max(minimumHeight, Math.min(maximumHeight, height)) / availableHeight;
+        if (libraryVisible) splitRatio = ratio;
+        else sceneSplitRatio = ratio;
         if (resizeFrame === null) resizeFrame = requestAnimationFrame(flushResize);
     };
     const handleSplitStart = event => {

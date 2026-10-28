@@ -164,3 +164,29 @@
         overflow: visible;
     }
 }
+
+@media (max-width: 1023px) {
+    :global([data-mobile-panel="scene"]) .sprite-selector.standalone { display: contents; }
+    :global([data-mobile-panel="scene"]) .scroll-wrapper {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        height: 48px;
+        margin-inline-start: 78px;
+        border: 0;
+        border-top: 1px solid var(--tw-dialog-border);
+        border-radius: 0;
+        background: transparent;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        scrollbar-width: thin;
+    }
+    :global([data-mobile-panel="scene"]) .items-wrapper {
+        display: flex;
+        flex-wrap: nowrap;
+        height: 100%;
+        padding: 3px 2px 0;
+        gap: 6px;
+    }
+    :global([data-mobile-panel="scene"]) .sprite-wrapper { flex: 0 0 48px; min-height: 44px; height: 44px; }
+}

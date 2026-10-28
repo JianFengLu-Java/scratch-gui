@@ -54,6 +54,7 @@ import {
     STAGE_DISPLAY_SIZES, STAGE_SIZE_MODES, FIXED_WIDTH, UNCONSTRAINED_NON_STAGE_WIDTH
 } from '../../lib/layout-constants';
 import {resolveStageSize} from '../../lib/screen-utils';
+import lockMobileEditorViewport from '../../lib/mobile-editor-viewport';
 import {Theme} from '../../lib/themes';
 
 import {isRendererSupported, isBrowserSupported} from '../../lib/tw-environment-support-prober';
@@ -74,6 +75,10 @@ const getFullscreenBackgroundColor = () => {
 const fullscreenBackgroundColor = getFullscreenBackgroundColor();
 
 const GUIComponent = props => {
+    React.useLayoutEffect(() => {
+        if (!props.isPlayerOnly && !props.children) return lockMobileEditorViewport();
+        return () => {};
+    }, [props.isPlayerOnly, props.children]);
     const [mobileLayout, setMobileLayout] = React.useState(() =>
         window.matchMedia('(max-width: 1023px)').matches
     );
@@ -94,13 +99,6 @@ const GUIComponent = props => {
         return node;
     });
     const previewInLibrary = mobileLayout && !props.isFullScreen;
-    const handleSelectMobilePanel = React.useCallback(panel => {
-        setMobilePanel(panel);
-        if (panel === 'stage') {
-            const stage = props.vm.runtime.getTargetForStage();
-            if (stage) props.vm.setEditingTarget(stage.id);
-        }
-    }, [props.vm]);
     React.useLayoutEffect(() => {
         const host = previewInLibrary ? mobilePreviewHost : stagePreviewHost;
         // Move a stable portal container, retaining the stage canvas and its
@@ -118,28 +116,28 @@ const GUIComponent = props => {
         };
     }, [previewInLibrary, mobileTargetsHost, stageTargetsHost, targetsMount]);
     React.useLayoutEffect(() => {
-        if (mobileTargetsHost) mobileTargetsHost.scrollTop = 0;
+        if (mobileTargetsHost) mobileTargetsHost.parentElement.scrollTop = 0;
     }, [mobilePanel, mobileTargetsHost]);
     React.useLayoutEffect(() => {
-        const preview = previewMount;
         if (!previewInLibrary || !mobilePreviewHost) return () => {};
+        const preview = mobilePreviewHost.parentElement;
         const measure = () => {
-            if (mobilePanel !== 'preview') return;
-            const previewStyle = window.getComputedStyle(preview);
-            const width = preview.clientWidth -
-                parseFloat(previewStyle.paddingLeft) - parseFloat(previewStyle.paddingRight);
+            if (mobilePanel !== 'scene') return;
+            const canvasArea = mobilePreviewHost.querySelector('[data-stage-canvas-area]');
+            const width = canvasArea ? canvasArea.clientWidth : 0;
             if (width <= 0) return;
-            const height = preview.clientHeight -
-                parseFloat(previewStyle.paddingTop) - parseFloat(previewStyle.paddingBottom);
+            const controlsHeight = 0;
+            const height = canvasArea.clientHeight;
             if (height <= 0) return;
-            setPreviewSize(previous => (previous && previous.width === width && previous.height === height ?
-                previous : {width, height}));
+            setPreviewSize(previous => (previous && previous.width === width && previous.height === height &&
+                previous.controlsHeight === controlsHeight ? previous : {width, height, controlsHeight}));
         };
         measure();
         const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure);
         if (observer) {
             observer.observe(preview);
-            observer.observe(mobilePreviewHost);
+            const canvasArea = mobilePreviewHost.querySelector('[data-stage-canvas-area]');
+            if (canvasArea) observer.observe(canvasArea);
         }
         window.addEventListener('resize', measure);
         return () => {
@@ -430,26 +428,34 @@ const GUIComponent = props => {
                                 onSelect={onActivateTab}
                             >
                                 <TabList className={tabClassNames.tabList}>
-                                    <Tab className={tabClassNames.tab}>
+                                    <Tab
+                                        className={tabClassNames.tab}
+                                        title={intl.formatMessage({id: 'gui.gui.codeTab', defaultMessage: 'Code'})}
+                                    >
                                         <Code2Icon
                                             aria-hidden="true"
                                             data-icon="inline-start"
                                         />
-                                        <FormattedMessage
-                                            defaultMessage="Code"
-                                            description="Button to get to the code panel"
-                                            id="gui.gui.codeTab"
-                                        />
+                                        <span className={styles.tabLabel}>
+                                            <FormattedMessage
+                                                defaultMessage="Code"
+                                                description="Button to get to the code panel"
+                                                id="gui.gui.codeTab"
+                                            />
+                                        </span>
                                     </Tab>
                                     <Tab
                                         className={tabClassNames.tab}
+                                        title={intl.formatMessage(targetIsStage ?
+                                            {id: 'gui.gui.backdropsTab', defaultMessage: 'Backdrops'} :
+                                            {id: 'gui.gui.costumesTab', defaultMessage: 'Costumes'})}
                                         onClick={onActivateCostumesTab}
                                     >
                                         <BrushIcon
                                             aria-hidden="true"
                                             data-icon="inline-start"
                                         />
-                                        {targetIsStage ? (
+                                        <span className={styles.tabLabel}>{targetIsStage ? (
                                             <FormattedMessage
                                                 defaultMessage="Backdrops"
                                                 description="Button to get to the backdrops panel"
@@ -461,21 +467,24 @@ const GUIComponent = props => {
                                                 description="Button to get to the costumes panel"
                                                 id="gui.gui.costumesTab"
                                             />
-                                        )}
+                                        )}</span>
                                     </Tab>
                                     <Tab
                                         className={tabClassNames.tab}
+                                        title={intl.formatMessage({id: 'gui.gui.soundsTab', defaultMessage: 'Sounds'})}
                                         onClick={onActivateSoundsTab}
                                     >
                                         <Volume2Icon
                                             aria-hidden="true"
                                             data-icon="inline-start"
                                         />
-                                        <FormattedMessage
-                                            defaultMessage="Sounds"
-                                            description="Button to get to the sounds panel"
-                                            id="gui.gui.soundsTab"
-                                        />
+                                        <span className={styles.tabLabel}>
+                                            <FormattedMessage
+                                                defaultMessage="Sounds"
+                                                description="Button to get to the sounds panel"
+                                                id="gui.gui.soundsTab"
+                                            />
+                                        </span>
                                     </Tab>
                                 </TabList>
                                 <TabPanel className={tabClassNames.tabPanel}>
@@ -489,7 +498,7 @@ const GUIComponent = props => {
                                             mobilePanel={mobilePanel}
                                             onMobilePreviewHost={setMobilePreviewHost}
                                             onMobileTargetsHost={setMobileTargetsHost}
-                                            onSelectMobilePanel={handleSelectMobilePanel}
+                                            onSelectMobilePanel={setMobilePanel}
                                             options={{
                                                 media: `${basePath}static/${theme.getBlocksMediaFolder()}/`,
                                                 horizontalLayout: false,
@@ -544,6 +553,7 @@ const GUIComponent = props => {
                             {createPortal(
                                 <StageWrapper
                                     availableSize={mobileLayout ? previewSize : null}
+                                    inScenePanel={previewInLibrary}
                                     isFullScreen={isFullScreen}
                                     isRendererSupported={isRendererSupported()}
                                     isRtl={isRtl}

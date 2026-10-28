@@ -3,12 +3,13 @@ import React from 'react';
 import bindAll from 'lodash.bindall';
 import VM from 'scratch-vm';
 import classNames from 'classnames';
-import {ChevronDownIcon, ChevronUpIcon, HandIcon, PencilIcon, SlidersHorizontalIcon} from 'lucide-react';
-import PaintEditor from '../lib/tw-scratch-paint';
+import {ChevronDownIcon, ChevronUpIcon, SlidersHorizontalIcon} from 'lucide-react';
+import PaintEditor, {getPaintZoom, initializeMobilePaintView} from '../lib/tw-scratch-paint';
 import {inlineSvgFonts, sanitizeSvg} from '@turbowarp/scratch-svg-renderer';
 import ErrorBoundaryHOC from '../lib/error-boundary-hoc.jsx';
 import {openFontsModal} from '../reducers/modals';
 import attachMobilePaintPan from '../lib/mobile-paint-pan';
+import EditorFullscreenButton from '../components/editor-dock/editor-fullscreen-button.jsx';
 
 import {connect} from 'react-redux';
 import {Theme} from '../lib/themes/index.js';
@@ -22,14 +23,12 @@ class PaintEditorWrapper extends React.Component {
             'handleUpdateName',
             'handleUpdateFonts',
             'handleToggleSettings',
-            'handleTogglePan',
             'setEditorRef',
             'fontInlineFn'
         ]);
         this.state = {
             fonts: this.props.vm.runtime.fontManager.getFonts(),
-            panMode: false,
-            settingsExpanded: window.innerHeight > 700
+            settingsExpanded: !window.matchMedia('(max-width: 1023px)').matches
         };
     }
     componentDidMount () {
@@ -54,7 +53,6 @@ class PaintEditorWrapper extends React.Component {
             this.props.theme !== nextProps.theme ||
             this.props.customStageSize !== nextProps.customStageSize ||
             this.state.fonts !== nextState.fonts ||
-            this.state.panMode !== nextState.panMode ||
             this.state.settingsExpanded !== nextState.settingsExpanded;
     }
     componentDidUpdate () {
@@ -63,6 +61,7 @@ class PaintEditorWrapper extends React.Component {
     componentWillUnmount () {
         this.props.vm.runtime.fontManager.off('change', this.handleUpdateFonts);
         if (this.panController) this.panController.dispose();
+        if (this.disposePaintView) this.disposePaintView();
         if (this.resizeObserver) this.resizeObserver.disconnect();
         cancelAnimationFrame(this.resizeFrame);
     }
@@ -73,13 +72,11 @@ class PaintEditorWrapper extends React.Component {
         const canvas = this.editor && this.editor.querySelector('[class*="paint-editor_canvas-container_"] canvas');
         if (canvas !== this.panCanvas) {
             if (this.panController) this.panController.dispose();
+            if (this.disposePaintView) this.disposePaintView();
             this.panCanvas = canvas;
-            this.panController = canvas ? attachMobilePaintPan(canvas) : null;
+            this.disposePaintView = canvas ? initializeMobilePaintView(canvas, this.props.customStageSize) : null;
+            this.panController = canvas ? attachMobilePaintPan(canvas, getPaintZoom) : null;
         }
-        if (this.panController) this.panController.setEnabled(this.state.panMode);
-    }
-    handleTogglePan () {
-        this.setState(state => ({panMode: !state.panMode}));
     }
     handleToggleSettings () {
         this.setState(state => ({settingsExpanded: !state.settingsExpanded}));
@@ -136,17 +133,8 @@ class PaintEditorWrapper extends React.Component {
                         {this.state.settingsExpanded ?
                             <ChevronUpIcon aria-hidden="true" /> : <ChevronDownIcon aria-hidden="true" />}
                     </button>
-                    <button
-                        aria-label="平移画布"
-                        aria-pressed={this.state.panMode}
-                        className={styles.panToggle}
-                        title={this.state.panMode ? '拖动任意位置平移，点击返回绘图' : '切换为手形工具，拖动画布平移'}
-                        type="button"
-                        onClick={this.handleTogglePan}
-                    >
-                        {this.state.panMode ? <PencilIcon aria-hidden="true" /> : <HandIcon aria-hidden="true" />}
-                        <span>{this.state.panMode ? '返回绘图' : '平移画布'}</span>
-                    </button>
+                    <span className={styles.gestureHint}>{'双指平移 · 捏合缩放'}</span>
+                    <EditorFullscreenButton className={styles.fullscreenToggle} />
                 </div>
                 <PaintEditor
                     {...componentProps}

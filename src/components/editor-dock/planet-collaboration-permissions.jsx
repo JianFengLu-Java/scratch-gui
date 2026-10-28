@@ -159,6 +159,7 @@ const PlanetCollaborationPermissions = ({projectId, targets}) => {
             description="按用户设置"
             dragLabel="拖动协作权限窗口"
             icon={ShieldCheckIcon}
+            mobileFullScreen
             onClose={() => setOpen(false)}
             panelId="permissions"
             title="协作权限"

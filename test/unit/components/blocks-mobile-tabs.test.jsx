@@ -42,7 +42,7 @@ describe('mobile palette tabs nested in the main editor tabs', () => {
 
     afterEach(() => wrapper.unmount());
 
-    test.each(['blocks', 'preview', 'sprites', 'stage'])(
+    test.each(['blocks', 'scene'])(
         'clicking %s only changes the upper panel', panel => {
             const button = wrapper.find(`#mobile-blocks-tab-${panel}`);
             const target = paletteButtons.find(node => node.getAttribute('id') === button.prop('id'));
@@ -58,7 +58,7 @@ describe('mobile palette tabs nested in the main editor tabs', () => {
         const event = {
             key,
             keyCode,
-            target: paletteButtons[2],
+            target: paletteButtons[1],
             currentTarget: paletteList,
             preventDefault: jest.fn(),
             stopPropagation: jest.fn()

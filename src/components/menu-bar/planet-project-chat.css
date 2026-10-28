@@ -651,6 +651,10 @@
 }
 
 @media (max-width: 1023px) {
+    .message-scroller {
+        min-height: 0;
+    }
+
     .room-tabs {
         margin: .625rem .75rem 0;
     }

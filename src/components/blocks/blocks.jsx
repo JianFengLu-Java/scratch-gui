@@ -1,15 +1,13 @@
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import React from 'react';
-import {CatIcon, ChevronDownIcon, ChevronUpIcon, Code2Icon, ImageIcon, MonitorIcon} from 'lucide-react';
+import {ChevronDownIcon, ChevronUpIcon, Code2Icon, MonitorIcon} from 'lucide-react';
 import Box from '../box/box.jsx';
 import styles from './blocks.css';
 
 const panels = {
     blocks: {icon: Code2Icon, label: '积木库', panelId: 'mobile-blocks-library'},
-    preview: {icon: MonitorIcon, label: '舞台预览', panelId: 'mobile-blocks-preview'},
-    sprites: {icon: CatIcon, label: '角色', panelId: 'mobile-blocks-targets'},
-    stage: {icon: ImageIcon, label: '舞台', panelId: 'mobile-blocks-targets'}
+    scene: {icon: MonitorIcon, label: '舞台与角色', panelId: 'mobile-blocks-scene'}
 };
 const panelIds = Object.keys(panels);
 
@@ -104,19 +102,20 @@ const BlocksComponent = props => {
                         </button>
                     </div>
                     <div
-                        ref={onMobilePreviewHost}
-                        aria-labelledby="mobile-blocks-tab-preview"
-                        className={styles.palettePreview}
-                        id="mobile-blocks-preview"
+                        aria-labelledby="mobile-blocks-tab-scene"
+                        className={styles.paletteScene}
+                        id="mobile-blocks-scene"
                         role="tabpanel"
-                    />
-                    <div
-                        ref={onMobileTargetsHost}
-                        aria-labelledby={`mobile-blocks-tab-${mobilePanel === 'stage' ? 'stage' : 'sprites'}`}
-                        className={styles.paletteTargets}
-                        id="mobile-blocks-targets"
-                        role="tabpanel"
-                    />
+                    >
+                        <div
+                            className={styles.palettePreview}
+                            ref={onMobilePreviewHost}
+                        />
+                        <div
+                            className={styles.paletteTargets}
+                            ref={onMobileTargetsHost}
+                        />
+                    </div>
                     <div
                         aria-label="调整上方区域与工作画布的高度"
                         aria-orientation="horizontal"
@@ -140,7 +139,7 @@ BlocksComponent.propTypes = {
     containerRef: PropTypes.func,
     dragOver: PropTypes.bool,
     mobileLayout: PropTypes.bool,
-    mobilePanel: PropTypes.oneOf(['blocks', 'preview', 'sprites', 'stage']),
+    mobilePanel: PropTypes.oneOf(['blocks', 'scene']),
     paletteExpanded: PropTypes.bool,
     onMobilePreviewHost: PropTypes.func,
     onMobileTargetsHost: PropTypes.func,

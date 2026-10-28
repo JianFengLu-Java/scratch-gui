@@ -237,6 +237,7 @@ class PlanetProjectChat extends React.Component {
                 description={this.state.connected ? '实时消息' : '正在连接'}
                 dragLabel="拖动项目聊天窗口"
                 icon={MessageCircleIcon}
+                mobileFullScreen
                 onClose={this.handleClose}
                 panelId="chat"
                 title="项目聊天"

@@ -14,7 +14,7 @@
     .editor.editor {
         width: 100%;
         height: 100%;
-        min-height: 280px;
+        min-height: 0;
         padding: .375rem;
     }
 
@@ -28,11 +28,11 @@
 
     .settings-toggle {
         display: flex;
-        flex: 1;
+        flex: none;
         align-items: center;
         gap: .375rem;
         min-width: 0;
-        height: 44px;
+        height: 34px;
         margin: 0;
         padding: 0 .375rem;
         border: 0;
@@ -51,29 +51,34 @@
     .settings-toggle:active { background: var(--tw-dialog-accent); }
     .settings-toggle:focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: -2px; }
 
-    .pan-toggle {
+    .gesture-hint {
+        flex: 1;
+        color: var(--tw-dialog-muted-foreground);
+        font-size: 10px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .fullscreen-toggle {
         display: flex;
         flex: none;
         align-items: center;
         justify-content: center;
         gap: 6px;
-        height: 44px;
-        padding: 0 10px;
+        height: 34px;
+        padding: 0 6px;
         border: 1px solid var(--tw-dialog-border);
         border-radius: 6px;
         background: var(--tw-dialog-background);
         color: var(--tw-dialog-foreground);
         font: inherit;
-        font-size: 12px;
+        font-size: 11px;
         cursor: pointer;
         touch-action: manipulation;
     }
-    .pan-toggle svg { width: 16px; height: 16px; }
-    .pan-toggle[aria-pressed="true"], .pan-toggle:active { background: var(--tw-dialog-accent); }
-    .pan-toggle[aria-pressed="true"] { border-color: var(--tw-dialog-ring); }
-    .pan-toggle:focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: -3px; }
-    .editor canvas[data-paint-pan-mode="true"] { cursor: grab !important; }
-    .editor canvas[data-paint-pan-dragging="true"] { cursor: grabbing !important; }
+    .fullscreen-toggle svg { width: 14px; height: 14px; }
+    .fullscreen-toggle[aria-pressed="true"] { border-color: var(--tw-dialog-ring); }
+    .editor canvas[data-paint-navigating="true"] { cursor: grabbing !important; }
 
     .editor [data-paint-theme][class*="paint-editor_editor-container_"] {
         flex: 1;
@@ -86,8 +91,10 @@
     .editor.editor :global([class*="paint-editor_editor-container-top_"]) {
         flex: none;
         min-width: 0;
+        max-height: min(160px, 30dvh);
         padding: 0 0 .375rem;
         border-bottom: 1px solid var(--tw-dialog-border);
+        overflow: auto;
     }
 
     .settings-collapsed :global([class*="paint-editor_editor-container-top_"]) { display: none; }
@@ -209,7 +216,7 @@
     .editor.editor :global([class*="paint-editor_canvas-container_"]) {
         flex: 1;
         min-width: 0;
-        min-height: 160px;
+        min-height: 0;
         width: 100%;
     }
 

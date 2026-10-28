@@ -1,9 +1,16 @@
+// A scene starts at its useful content height, independently of the block library split.
+export const getMobileSceneDefaultHeight = (stage, viewportWidth) => {
+    const canvasWidth = Math.max(1, Math.min(stage.width, 480, ((viewportWidth - 20) * 0.6) - 2));
+    return Math.ceil(92 + Math.max(140, canvasWidth * stage.height / stage.width));
+};
+
 // Fit the project's original aspect ratio into the preview cell, including controls and borders.
-// Property controls and the target list get their own cells and never affect the canvas aspect ratio.
+// Use the available column space without changing the project's original aspect ratio.
 const fitMobileStage = (stage, availableSize) => {
     const bounds = availableSize || {width: 0, height: 0};
     const width = Math.max(1, Math.min(480, bounds.width - 2));
-    const height = Math.max(1, bounds.height - 50);
+    const controlsHeight = Number.isFinite(bounds.controlsHeight) ? Math.max(0, bounds.controlsHeight) : 48;
+    const height = Math.max(1, bounds.height - controlsHeight - 2);
     const scale = Math.min(1, width / stage.width, height / stage.height);
     return {width: stage.width * scale, height: stage.height * scale, scale};
 };

@@ -115,6 +115,40 @@ describe('mobile dock panel interactions', () => {
         expect(document.activeElement).toBe(last);
     });
 
+    test.each(['invite', 'permissions', 'chat'])('%s fills the visible viewport and returns to the editor', panelId => {
+        act(() => renderer.update(
+            <DockPanel mobileFullScreen panelId={panelId} title="协作" dragLabel="移动窗口" onClose={close}>
+                <button>操作</button>
+            </DockPanel>
+        ));
+        expect(panel.style.getPropertyValue('--dock-panel-mobile-bottom')).toBe('0px');
+        expect(panel.style.getPropertyValue('--dock-panel-mobile-height')).toBe('844px');
+        viewport.height = 400;
+        viewport.offsetTop = 90;
+        viewportListeners.get('resize')();
+        expect(panel.style.getPropertyValue('--dock-panel-mobile-bottom')).toBe('354px');
+        expect(panel.style.getPropertyValue('--dock-panel-mobile-height')).toBe('400px');
+        renderer.root.findByProps({'aria-label': '返回编辑器'}).props.onClick();
+        expect(close).toHaveBeenCalledTimes(1);
+    });
+
+    test('keeps desktop panels non-modal even when mobile full screen is requested', () => {
+        act(() => renderer.unmount());
+        window.matchMedia = () => ({matches: false, addEventListener: jest.fn(), removeEventListener: jest.fn()});
+        act(() => {
+            renderer = TestRenderer.create(
+                <DockPanel mobileFullScreen panelId="chat" title="项目聊天" dragLabel="移动聊天" onClose={close}>
+                    <button>发送</button>
+                </DockPanel>,
+                {createNodeMock: element => element.type === 'section' ? panel : {}}
+            );
+        });
+        expect(renderer.root.findByType('section').props['aria-modal']).toBe('false');
+        expect(panel.style.getPropertyValue('--dock-panel-mobile-height')).toBeUndefined();
+        expect(document.body.style.overflow).toBe('auto');
+        expect(renderer.root.findByProps({'aria-label': '关闭项目聊天'})).toBeTruthy();
+    });
+
     test('leaves nested modal keyboard interactions alone', () => {
         document.activeElement = {closest: () => ({hasAttribute: () => false})};
         expect(keydown('Tab').preventDefault).not.toHaveBeenCalled();

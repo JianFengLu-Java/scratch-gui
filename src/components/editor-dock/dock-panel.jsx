@@ -2,7 +2,7 @@ import classNames from 'classnames';
 import {gsap} from 'gsap';
 import {Draggable} from 'gsap/Draggable';
 import {useGSAP} from '@gsap/react';
-import {XIcon} from 'lucide-react';
+import {ArrowLeftIcon, XIcon} from 'lucide-react';
 import PropTypes from 'prop-types';
 import React from 'react';
 
@@ -39,6 +39,7 @@ const DockPanel = ({
     dragLabel,
     icon: Icon,
     leading,
+    mobileFullScreen,
     onClose,
     panelId,
     title
@@ -91,7 +92,8 @@ const DockPanel = ({
                 height: window.innerHeight,
                 viewportHeight: viewport ? viewport.height : window.innerHeight,
                 viewportTop: viewport ? viewport.offsetTop : 0,
-                dockTop: dock ? dock.getBoundingClientRect().top : window.innerHeight
+                dockTop: dock ? dock.getBoundingClientRect().top : window.innerHeight,
+                fullScreen: mobileFullScreen
             });
             panel.style.setProperty('--dock-panel-mobile-bottom', `${bounds.bottom}px`);
             panel.style.setProperty('--dock-panel-mobile-height', `${bounds.availableHeight}px`);
@@ -154,7 +156,7 @@ const DockPanel = ({
                 trigger.focus({preventScroll: true});
             }
         };
-    }, [mobileLayout]);
+    }, [mobileLayout, mobileFullScreen]);
 
     useGSAP(() => {
         if (mobileLayout) return;
@@ -209,6 +211,18 @@ const DockPanel = ({
 
     const titleId = `planet-dock-panel-${panelId}-title`;
     const descriptionId = description ? `planet-dock-panel-${panelId}-description` : null;
+    const fullScreen = mobileLayout && mobileFullScreen;
+    const closeButton = (
+        <button
+            aria-label={fullScreen ? '返回编辑器' : `关闭${title}`}
+            className={styles.iconButton}
+            title={fullScreen ? '返回编辑器' : '关闭'}
+            type="button"
+            onClick={onClose}
+        >
+            {fullScreen ? <ArrowLeftIcon aria-hidden="true" /> : <XIcon aria-hidden="true" />}
+        </button>
+    );
 
     return (
         <React.Fragment>
@@ -225,7 +239,8 @@ const DockPanel = ({
                 aria-modal={mobileLayout ? 'true' : 'false'}
                 className={classNames(styles.panel, {
                     [styles.conversation]: appearance === 'conversation',
-                    [styles.mobileSheet]: mobileLayout
+                    [styles.mobileSheet]: mobileLayout,
+                    [styles.mobileFullScreen]: fullScreen
                 }, className)}
                 data-dock-panel={panelId}
                 ref={panelRef}
@@ -238,12 +253,13 @@ const DockPanel = ({
                 {leading}
                 <div className={styles.column}>
                     <header className={styles.header}>
+                        {fullScreen ? closeButton : null}
                         <div
-                            aria-label={dragLabel}
+                            aria-label={mobileLayout ? null : dragLabel}
                             className={styles.dragHandle}
                             ref={dragHandleRef}
                         >
-                            {Icon ? (
+                            {Icon && !fullScreen ? (
                                 <span className={styles.headerIcon}><Icon aria-hidden="true" /></span>
                             ) : null}
                             <div className={styles.headerCopy}>
@@ -253,15 +269,7 @@ const DockPanel = ({
                         </div>
                         <div className={styles.headerActions}>
                             {actions}
-                            <button
-                                aria-label={`关闭${title}`}
-                                className={styles.iconButton}
-                                title="关闭"
-                                type="button"
-                                onClick={onClose}
-                            >
-                                <XIcon aria-hidden="true" />
-                            </button>
+                            {fullScreen ? null : closeButton}
                         </div>
                     </header>
                     {children}
@@ -280,6 +288,7 @@ DockPanel.propTypes = {
     dragLabel: PropTypes.string.isRequired,
     icon: PropTypes.elementType,
     leading: PropTypes.node,
+    mobileFullScreen: PropTypes.bool,
     onClose: PropTypes.func.isRequired,
     panelId: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired
@@ -291,7 +300,8 @@ DockPanel.defaultProps = {
     className: null,
     description: null,
     icon: null,
-    leading: null
+    leading: null,
+    mobileFullScreen: false
 };
 
 export default DockPanel;

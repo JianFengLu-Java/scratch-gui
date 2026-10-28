@@ -181,7 +181,8 @@ class Blocks extends React.Component {
                     this.setState({paletteExpanded: true});
                     this.props.onSelectMobilePanel('blocks');
                 },
-                this.ScratchBlocks
+                this.ScratchBlocks,
+                () => this.props.customStageSize
             );
             this.setPaletteExpanded(this.state.paletteExpanded);
             this.setPaletteExpanded.setPanel(this.props.mobilePanel);
@@ -836,7 +837,7 @@ class Blocks extends React.Component {
 
 Blocks.propTypes = {
     mobileLayout: PropTypes.bool,
-    mobilePanel: PropTypes.oneOf(['blocks', 'preview', 'sprites', 'stage']),
+    mobilePanel: PropTypes.oneOf(['blocks', 'scene']),
     onMobilePreviewHost: PropTypes.func,
     onMobileTargetsHost: PropTypes.func,
     onSelectMobilePanel: PropTypes.func,

@@ -48,13 +48,13 @@ describe('mobile IM message layout', () => {
         delete global.window;
     });
 
-    test('keeps incoming names but removes the redundant own-message heading', () => {
+    test('keeps collaborator identity on incoming and own messages', () => {
         const incoming = wrapper.find('[data-slot="message"]').at(0);
         const outgoing = wrapper.find('[data-slot="message"]').at(1);
         expect(incoming.prop('data-align')).toBe('start');
-        expect(incoming.find('[data-slot="message-header"]').text()).toBe('星球创作者');
+        expect(incoming.find('[data-slot="message-header"] span').first().text()).toBe('星球创作者');
         expect(outgoing.prop('data-align')).toBe('end');
-        expect(outgoing.find('[data-slot="message-header"]')).toHaveLength(0);
+        expect(outgoing.find('[data-slot="message-header"] span').first().text()).toBe('自己');
         expect(outgoing.prop('aria-label')).toBe('我的消息');
         expect(wrapper.find('PlanetUserAvatar')).toHaveLength(2);
     });
@@ -76,7 +76,7 @@ describe('mobile IM message layout', () => {
             messageId: '3', userId: 'friend', nickname: '', messageType: 'VOICE',
             sentAt: '2026-08-30T09:30:00+08:00'
         }]});
-        expect(wrapper.find('[data-slot="message-header"]').text()).toBe('协作者');
+        expect(wrapper.find('[data-slot="message-header"] span').first().text()).toBe('协作者');
         expect(wrapper.find('[data-slot="bubble-content"]').find('VoiceMessage')).toHaveLength(1);
         expect(wrapper.find('[data-slot="message-time"]')).toHaveLength(1);
     });
@@ -93,6 +93,7 @@ describe('mobile IM message layout', () => {
         expect(imageRule).toContain('width: var(--message-avatar-size);');
         expect(avatarRule).toContain('margin-top: calc(var(--message-name-height) + var(--message-content-gap) + ' +
             'var(--message-bubble-top-inset, 0px));');
-        expect(ownAvatarRule).toContain('margin-top: var(--message-bubble-top-inset, 0px);');
+        expect(ownAvatarRule).toContain('margin-top: calc(var(--message-name-height) + var(--message-content-gap) + ' +
+            'var(--message-bubble-top-inset, 0px));');
     });
 });

@@ -1,3 +1,5 @@
 .controls-container {
     display: flex;
 }
+
+:global([data-scene-controls="true"]) .controls-container > img { width: 24px; height: 24px; padding: 3px; }

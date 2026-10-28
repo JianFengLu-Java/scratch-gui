@@ -163,23 +163,6 @@ class SpriteInfo extends React.Component {
                 <Box className={classNames(styles.spriteInfo, styles.mobileInfo)}>
                     <div className={styles.mobileName}>
                         <Label text={sprite}>{spriteNameInput}</Label>
-                        <ToggleButtons
-                            buttons={[
-                                {
-                                    handleClick: this.props.onClickVisible,
-                                    icon: showIcon,
-                                    isSelected: this.props.visible && !this.props.disabled,
-                                    title: this.props.intl.formatMessage(messages.showSpriteAction)
-                                },
-                                {
-                                    handleClick: this.props.onClickNotVisible,
-                                    icon: hideIcon,
-                                    isSelected: !this.props.visible && !this.props.disabled,
-                                    title: this.props.intl.formatMessage(messages.hideSpriteAction)
-                                }
-                            ]}
-                            disabled={this.props.disabled}
-                        />
                     </div>
                     <div className={styles.mobileFields}>
                         {xPosition}
@@ -210,6 +193,26 @@ class SpriteInfo extends React.Component {
                                 onChangeRotationStyle={this.props.onChangeRotationStyle}
                             />
                         </div>
+                    </div>
+                    <div className={styles.mobileVisibility}>
+                        <span>{showLabel}</span>
+                        <ToggleButtons
+                            buttons={[
+                                {
+                                    handleClick: this.props.onClickVisible,
+                                    icon: showIcon,
+                                    isSelected: this.props.visible && !this.props.disabled,
+                                    title: this.props.intl.formatMessage(messages.showSpriteAction)
+                                },
+                                {
+                                    handleClick: this.props.onClickNotVisible,
+                                    icon: hideIcon,
+                                    isSelected: !this.props.visible && !this.props.disabled,
+                                    title: this.props.intl.formatMessage(messages.hideSpriteAction)
+                                }
+                            ]}
+                            disabled={this.props.disabled}
+                        />
                     </div>
                 </Box>
             );

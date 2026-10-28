@@ -134,6 +134,7 @@ $fade-out-distance: 100px;
     }
 
     .add-menu :global([class*="action-menu_more-buttons-outer_"]) {
+        display: none;
         top: calc(100% + .375rem);
         bottom: auto;
         inset-inline-end: 0;
@@ -145,6 +146,10 @@ $fade-out-distance: 100px;
         background: var(--tw-dialog-background);
         color: var(--tw-dialog-foreground);
         z-index: 3;
+    }
+
+    .add-menu:global([class*="action-menu_expanded_"]) :global([class*="action-menu_more-buttons-outer_"]) {
+        display: block;
     }
 
     .add-menu :global([class*="action-menu_more-button_"]) {
@@ -166,4 +171,38 @@ $fade-out-distance: 100px;
     .add-menu :global([class*="action-menu_more-button_"]):active { background: var(--tw-dialog-accent); }
 
     .add-menu :global([class*="action-menu_tooltip_"]) { display: none; }
+}
+
+/* A side rail frees vertical canvas space on short, landscape phones. */
+@media (max-width: 1023px) and (max-height: 500px) and (orientation: landscape) {
+    .wrapper {
+        flex-direction: column;
+        width: 84px;
+        height: 100%;
+        border-bottom: 0;
+        border-inline-end: 1px solid var(--tw-dialog-border);
+    }
+    .list-area {
+        flex-direction: column;
+        align-items: center;
+        min-height: 0;
+        height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        touch-action: pan-y;
+    }
+    .new-buttons {
+        flex-direction: row;
+        width: 100%;
+        border-inline-start: 0;
+        border-top: 1px solid var(--tw-dialog-border);
+    }
+    .add-menu :global([class*="action-menu_more-buttons-outer_"]) {
+        position: fixed;
+        top: auto;
+        bottom: calc(var(--tw-mobile-dock-height, 64px) + env(safe-area-inset-bottom) + 8px);
+        inset-inline-start: 92px;
+        inset-inline-end: auto;
+        max-height: calc(100dvh - var(--tw-mobile-dock-height, 64px) - 60px);
+    }
 }

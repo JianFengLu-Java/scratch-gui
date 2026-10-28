@@ -157,3 +157,8 @@ stage doesn't "spill" out from under its rounded corners. instead, shift these o
     0% { opacity: 1; }
     100% { opacity: 0; }
 }
+
+:global([data-mobile-blocks="true"][data-palette-panel="scene"]) .stage {
+    border-color: transparent;
+    border-radius: 0;
+}

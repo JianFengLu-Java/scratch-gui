@@ -204,6 +204,7 @@ const PlanetCollaborationInvite = ({projectId}) => {
             className={styles.panel}
             dragLabel="拖动邀请协作窗口"
             icon={UserPlusIcon}
+            mobileFullScreen
             onClose={() => setOpen(false)}
             panelId="invite"
             title="邀请协作"

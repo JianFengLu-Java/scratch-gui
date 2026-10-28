@@ -1,0 +1,17 @@
+.button:focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: -2px; }
+.button:active { background: var(--tw-dialog-accent); }
+.button:disabled { opacity: .5; cursor: wait; }
+.message {
+    position: fixed;
+    z-index: 100100;
+    inset-inline: 12px;
+    bottom: calc(var(--tw-mobile-dock-height, 64px) + env(safe-area-inset-bottom) + 12px);
+    padding: 10px 12px;
+    border: 1px solid var(--tw-dialog-border);
+    border-radius: 8px;
+    background: var(--tw-dialog-background);
+    box-shadow: 0 2px 12px #0002;
+    color: var(--tw-dialog-foreground);
+    font-size: 12px;
+    line-height: 1.5;
+}

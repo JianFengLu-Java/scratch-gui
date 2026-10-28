@@ -485,9 +485,25 @@
 }
 
 @media (max-width: 1023px) {
+    .menu-bar {
+        --brand-symbol-size: 24px;
+        padding: 0 4px;
+        gap: 4px;
+    }
+
+    .planet-brand {
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        gap: 0;
+        border-radius: 6px;
+    }
+
+    .planet-brand-text { display: none; }
+
     .main-menu {
-        max-width: calc(100vw - 1rem);
-        gap: .25rem;
+        max-width: none;
+        gap: 4px;
     }
 
     .main-menu > .divider {
@@ -496,12 +512,17 @@
 
     .file-group {
         gap: 0;
-        padding: .125rem;
+        height: 30px;
+        padding: 1px;
+        border: 1px solid var(--tw-topbar-border);
+        border-radius: 7px;
+        background: var(--tw-topbar-muted);
     }
 
     .file-group .menu-bar-item {
         justify-content: center;
-        width: 2rem;
+        width: 24px;
+        height: 26px;
         padding: 0;
     }
 
@@ -522,6 +543,19 @@
     .title-item > div {
         width: 100%;
     }
+
+    .title-item input {
+        height: 30px;
+        padding: 0 6px;
+        border: 1px solid var(--tw-topbar-border);
+        border-radius: 6px;
+        background: var(--tw-topbar-input);
+        font-size: 12px;
+        box-shadow: none;
+        text-overflow: ellipsis;
+    }
+
+    .title-item input:focus { font-size: 16px; }
 }
 
 .account-profile, .local-save-control, .collaboration-control { display: contents; }

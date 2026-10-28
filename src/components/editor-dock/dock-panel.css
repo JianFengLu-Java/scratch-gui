@@ -226,6 +226,26 @@
     outline: none;
 }
 
+.panel.mobile-full-screen {
+    box-sizing: border-box;
+    left: 0;
+    right: 0;
+    height: var(--dock-panel-mobile-height, 100dvh);
+    max-height: var(--dock-panel-mobile-height, 100dvh);
+    bottom: var(--dock-panel-mobile-bottom, 0px);
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+        env(safe-area-inset-bottom) env(safe-area-inset-left);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.mobile-full-screen .header > .icon-button {
+    flex: none;
+    min-width: 44px;
+    margin-inline-end: .5rem;
+}
+
 .mobile-sheet .header {
     min-height: 56px;
     padding: .375rem .5rem .375rem .875rem;

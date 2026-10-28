@@ -15,7 +15,8 @@
 @media (max-width: 1023px) {
     .trigger {
         justify-content: center;
-        width: 2rem;
+        width: 24px;
+        height: 26px;
         padding: 0;
     }
 

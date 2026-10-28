@@ -1,6 +1,21 @@
 import {getMobilePanelBounds} from '../../../src/lib/dock-panel-viewport';
 
 describe('mobile dock panel viewport', () => {
+    test('uses the entire visible screen for full-screen panels, including the editor dock area', () => {
+        expect(getMobilePanelBounds({height: 844, dockTop: 724, fullScreen: true})).toEqual({
+            bottom: 0, availableHeight: 844
+        });
+        expect(getMobilePanelBounds({
+            height: 844, viewportHeight: 450, dockTop: 724, fullScreen: true
+        })).toEqual({bottom: 394, availableHeight: 450});
+        expect(getMobilePanelBounds({
+            height: 844, viewportHeight: 400, viewportTop: 90, fullScreen: true
+        })).toEqual({bottom: 354, availableHeight: 400});
+        expect(getMobilePanelBounds({height: 390, fullScreen: true})).toEqual({
+            bottom: 0, availableHeight: 390
+        });
+    });
+
     test('keeps the sheet above the two-row editor dock', () => {
         expect(getMobilePanelBounds({height: 844, dockTop: 724})).toEqual({
             bottom: 128, availableHeight: 704

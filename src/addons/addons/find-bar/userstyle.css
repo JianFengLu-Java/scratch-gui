@@ -17,6 +17,8 @@
   display: none !important;
 }
 
+.sa-find-toggle { display: none; }
+
 .sa-find-wrapper {
   overflow: visible;
   position: relative;
@@ -212,4 +214,80 @@
 
 .sa-find-carousel-control:hover {
   color: #ffff80;
+}
+
+@media (max-width: 1023px) {
+  .sa-find-bar {
+    flex: 0 0 28px;
+    width: 28px;
+    padding: 0;
+  }
+
+  .sa-find-toggle {
+    display: block;
+    position: relative;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--tw-dialog-muted-foreground);
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .sa-find-toggle:active,
+  .sa-find-toggle[aria-expanded="true"] {
+    color: var(--tw-dialog-foreground);
+    background: var(--tw-dialog-background);
+    border-color: var(--tw-dialog-border);
+  }
+
+  .sa-find-toggle:focus-visible {
+    outline: 2px solid var(--tw-dialog-ring);
+    outline-offset: -2px;
+  }
+
+  .sa-find-wrapper { display: none; }
+
+  .sa-find-shortcut { display: none; }
+  .sa-find-search-icon {
+    inset-inline-start: 7px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .sa-find-open .sa-find-wrapper {
+    display: block;
+    position: fixed;
+    top: 48px;
+    inset-inline: 4px;
+    width: calc(100% - 8px);
+    max-width: none;
+    height: 36px;
+  }
+
+  .sa-find-open .sa-find-dropdown-out {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    border-color: var(--tw-dialog-ring);
+    border-radius: 6px;
+    background: var(--tw-dialog-background);
+  }
+
+  .sa-find-open .sa-find-input {
+    padding-inline: 28px 8px;
+    color: var(--tw-dialog-foreground);
+    caret-color: auto;
+    font-size: 16px;
+  }
+
+  .sa-find-open .sa-find-input::placeholder {
+    color: var(--tw-dialog-muted-foreground);
+  }
+
+  .sa-find-dropdown { max-height: min(60dvh, 20rem); }
 }

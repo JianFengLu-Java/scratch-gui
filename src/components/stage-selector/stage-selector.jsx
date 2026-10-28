@@ -55,7 +55,9 @@ const StageSelector = props => {
     }, [onBackdropFileUploadClick, onEmptyBackdropClick, onNewBackdropClick, onSurpriseBackdropClick, readOnly]);
     return (
         <Box
-            aria-label={intl.formatMessage(messages.addBackdropFromLibrary)}
+            aria-label={standalone ? `选择舞台，${backdropCount} 个背景` :
+                intl.formatMessage(messages.addBackdropFromLibrary)}
+            title={standalone ? backdropName : null}
             className={classNames(styles.stageSelector, {
                 [styles.isSelected]: selected,
                 [styles.standalone]: standalone,
@@ -86,6 +88,7 @@ const StageSelector = props => {
                     />
                 </div>
             </div>
+            {standalone ? <span className={styles.mobileCount}>{backdropCount}</span> : null}
             {url ? (
                 <img
                     className={styles.costumeCanvas}
