@@ -1,6 +1,9 @@
 // A scene starts at its useful content height, independently of the block library split.
 export const getMobileSceneDefaultHeight = (stage, viewportWidth) => {
-    const canvasWidth = Math.max(1, Math.min(stage.width, 480, ((viewportWidth - 20) * 0.6) - 2));
+    // Match the scene grid's bounded inspector column instead of assigning a
+    // fixed percentage of the screen to properties on wider phones/tablets.
+    const propertiesWidth = Math.max(110, Math.min(160, viewportWidth * 0.32));
+    const canvasWidth = Math.max(1, Math.min(stage.width, 480, viewportWidth - 22 - propertiesWidth));
     return Math.ceil(92 + Math.max(140, canvasWidth * stage.height / stage.width));
 };
 

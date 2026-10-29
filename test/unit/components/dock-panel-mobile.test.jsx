@@ -41,6 +41,7 @@ describe('mobile dock panel interactions', () => {
             ...focusable(),
             getAttribute: key => attributes.get(key),
             setAttribute: (key, value) => attributes.set(key, value),
+            removeAttribute: key => attributes.delete(key),
             contains: element => element === first || element === last,
             querySelectorAll: () => [first, last],
             style: {
@@ -147,6 +148,44 @@ describe('mobile dock panel interactions', () => {
         expect(panel.style.getPropertyValue('--dock-panel-mobile-height')).toBeUndefined();
         expect(document.body.style.overflow).toBe('auto');
         expect(renderer.root.findByProps({'aria-label': '关闭项目聊天'})).toBeTruthy();
+    });
+
+    test('anchors chat to the layout viewport when innerHeight has already shrunk behind the keyboard', () => {
+        document.documentElement = {clientHeight: 844};
+        act(() => renderer.update(
+            <DockPanel mobileFullScreen panelId="chat" title="项目聊天" dragLabel="移动聊天" onClose={close}>
+                <input aria-label="聊天消息" />
+            </DockPanel>
+        ));
+        window.innerHeight = 300;
+        viewport.height = 300;
+        viewportListeners.get('resize')();
+        expect(panel.style.getPropertyValue('--dock-panel-mobile-bottom')).toBe('544px');
+        expect(panel.style.getPropertyValue('--dock-panel-mobile-height')).toBe('300px');
+        expect(panel.getAttribute('data-dock-panel-compact')).toBe('true');
+        viewport.height = 280;
+        viewport.offsetTop = 70;
+        viewportListeners.get('scroll')();
+        expect(panel.style.getPropertyValue('--dock-panel-mobile-bottom')).toBe('494px');
+        expect(panel.style.getPropertyValue('--dock-panel-mobile-height')).toBe('280px');
+        window.innerHeight = 844;
+        viewport.height = 844;
+        viewport.offsetTop = 0;
+        viewportListeners.get('resize')();
+        expect(panel.style.getPropertyValue('--dock-panel-mobile-bottom')).toBe('0px');
+        expect(panel.getAttribute('data-dock-panel-compact')).toBe('false');
+    });
+
+    test('does not subtract a keyboard twice when Chrome resizes the layout viewport too', () => {
+        document.documentElement = {clientHeight: 300};
+        window.innerHeight = viewport.height = 300;
+        act(() => renderer.update(
+            <DockPanel mobileFullScreen panelId="chat" title="项目聊天" dragLabel="移动聊天" onClose={close}>
+                <input aria-label="聊天消息" />
+            </DockPanel>
+        ));
+        expect(panel.style.getPropertyValue('--dock-panel-mobile-bottom')).toBe('0px');
+        expect(panel.style.getPropertyValue('--dock-panel-mobile-height')).toBe('300px');
     });
 
     test('leaves nested modal keyboard interactions alone', () => {

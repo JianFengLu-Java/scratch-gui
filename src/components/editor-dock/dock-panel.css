@@ -246,6 +246,28 @@
     margin-inline-end: .5rem;
 }
 
+/* Reserve the input row; only the message history gives up space to a keyboard. */
+.mobile-full-screen[data-dock-panel="chat"] .column {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    overflow: hidden;
+}
+
+.mobile-full-screen[data-dock-panel="chat"][data-dock-panel-compact="true"] .header {
+    min-height: 44px;
+    padding-block: 0;
+}
+
+.mobile-full-screen[data-dock-panel="chat"][data-dock-panel-compact="true"] .header-copy h2 {
+    font-size: 13px;
+}
+
+.mobile-full-screen[data-dock-panel="chat"][data-dock-panel-compact="true"] .header-copy p {
+    font-size: 10px;
+    line-height: 12px;
+    margin-top: 0;
+}
+
 .mobile-sheet .header {
     min-height: 56px;
     padding: .375rem .5rem .375rem .875rem;

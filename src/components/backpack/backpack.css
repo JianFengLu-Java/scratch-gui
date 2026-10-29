@@ -6,25 +6,20 @@
 }
 
 .backpack-list {
-    align-items: center;
     background: var(--tw-dialog-background, #fff);
-    display: flex;
-    flex-direction: row;
-    min-height: 6.25rem;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     position: relative;
 }
 
-/* Absolute position the inner list to allow scrolling inside flex sized container */
 .backpack-list-inner {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    overflow-x: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    align-content: start;
+    gap: 8px;
+    padding: 10px;
 }
 
 .drag-over:after {
@@ -36,7 +31,7 @@
     height: 100%;
     opacity: 0.75;
     background-color: $drop-highlight;
-    transition: all 0.25s ease;
+    pointer-events: none;
 }
 
 .status-message {
@@ -44,6 +39,7 @@
     font-size: .8rem;
     text-align: center;
     width: 100%;
+    padding: 2rem .5rem;
 }
 
 .error-message {
@@ -51,13 +47,84 @@
 }
 
 .backpack-item {
-    width: 4rem;
-    height: 4.5rem;
-    margin: 0 0.25rem;
-    flex-shrink: 0;
+    width: 100%;
+    height: 5.5rem;
+    margin: 0;
 
     /* Need to hide overflow because of background setting below */
     overflow: hidden;
+}
+
+.destination {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--tw-dialog-border);
+    font-size: 11px;
+}
+.destination label { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+.destination label > span { flex: none; color: var(--tw-dialog-muted-foreground); }
+.destination > span { color: var(--tw-dialog-muted-foreground); font-size: 10px; }
+.destination select {
+    flex: 1;
+    min-width: 0;
+    height: 32px;
+    padding: 0 6px;
+    border: 1px solid var(--tw-dialog-border);
+    border-radius: 5px;
+    background: var(--tw-dialog-background);
+    color: inherit;
+    font: inherit;
+}
+.destination select:disabled { opacity: .5; }
+.import-bar {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding: 8px 10px;
+    border-top: 1px solid var(--tw-dialog-border);
+}
+.import-copy { display: flex; flex: 1; flex-direction: column; gap: 3px; min-width: 0; }
+.import-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.import-copy span { font-size: 11px; line-height: 15px; overflow-wrap: anywhere; color: var(--tw-dialog-muted-foreground); }
+.import-copy .import-error { color: var(--tw-error-foreground, #b91c1c); }
+.import-button {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 36px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 6px;
+    background: var(--tw-dialog-foreground);
+    color: var(--tw-dialog-background);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+.import-button svg { width: 14px; height: 14px; }
+.import-button:active:not(:disabled) { opacity: .8; }
+.import-button:disabled { opacity: .4; cursor: default; }
+.import-button:focus-visible,
+.destination select:focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: 2px; }
+
+@media (max-width: 1023px) {
+    .backpack-panel[data-dock-panel="backpack"] {
+        height: auto;
+        max-height: min(28rem, var(--dock-panel-mobile-height));
+    }
+    .destination { flex-direction: column; align-items: stretch; }
+    .destination label { flex: none; }
+    .destination label > select { min-height: 36px; font-size: 16px; }
 }
 
 .backpack-item > div {

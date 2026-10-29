@@ -20,6 +20,8 @@ import DropAreaHOC from '../lib/drop-area-hoc.jsx';
 import {connect} from 'react-redux';
 import storage from '../lib/storage';
 import VM from 'scratch-vm';
+import importBackpackItem from '../lib/backpack/import-item';
+import {activateTab, BLOCKS_TAB_INDEX, COSTUMES_TAB_INDEX, SOUNDS_TAB_INDEX} from '../reducers/editor-tab';
 import {
     PLANET_BACKPACK_STATE_EVENT,
     PLANET_BACKPACK_TOGGLE_EVENT
@@ -52,6 +54,9 @@ class Backpack extends React.Component {
             'handleBlockDragUpdate',
             'handleMore',
             'handleDockToggle',
+            'handleSelectItem',
+            'handleSelectTarget',
+            'handleImport',
             'publishDockState'
         ]);
         this.state = {
@@ -65,7 +70,12 @@ class Backpack extends React.Component {
             moreToLoad: false,
             loading: false,
             expanded: false,
-            contents: []
+            contents: [],
+            selectedItemId: null,
+            targetId: '',
+            importing: false,
+            importMessage: '',
+            importFailed: false
         };
 
         // If a host is given, add it as a web source to the storage module
@@ -97,7 +107,14 @@ class Backpack extends React.Component {
     }
     handleToggle () {
         const newState = !this.state.expanded;
-        this.setState({expanded: newState, contents: []}, () => {
+        this.setState({
+            expanded: newState,
+            contents: [],
+            selectedItemId: null,
+            targetId: '',
+            importMessage: '',
+            importFailed: false
+        }, () => {
             // Emit resize on window to get blocks to resize
             window.dispatchEvent(new Event('resize'));
         });
@@ -197,6 +214,46 @@ class Backpack extends React.Component {
     findItemById (id) {
         return this.state.contents.find(i => i.id === id);
     }
+    handleSelectItem (id) {
+        if (!this.state.importing) this.setState({selectedItemId: id, importMessage: '', importFailed: false});
+    }
+    handleSelectTarget (event) {
+        this.setState({targetId: event.target.value, importMessage: '', importFailed: false});
+    }
+    handleImport () {
+        if (this.importPromise) return this.importPromise;
+        const item = this.findItemById(this.state.selectedItemId);
+        if (!item) return Promise.resolve();
+        const targetId = this.state.targetId || this.props.editingTarget;
+        const target = this.props.targets.find(candidate => candidate.id === targetId);
+        const targetName = target ? target.name : '所选角色';
+        const metrics = this.props.workspaceMetrics.targets[targetId];
+        this.setState({importing: true, importMessage: '', importFailed: false});
+        this.importPromise = importBackpackItem({
+            item, vm: this.props.vm, targetId, workspaceMetrics: metrics, isRtl: this.props.isRtl
+        })
+            .then(() => {
+                if (item.type !== 'sprite') this.props.vm.setEditingTarget(targetId);
+                const tab = item.type === 'costume' ? COSTUMES_TAB_INDEX :
+                    (item.type === 'sound' ? SOUNDS_TAB_INDEX : BLOCKS_TAB_INDEX);
+                this.props.onActivateTab(tab);
+                this.setState({
+                    importMessage: item.type === 'sprite' ? `已添加新角色「${item.name}」` :
+                        `已将「${item.name}」添加到「${targetName}」`
+                });
+            })
+            .catch(error => {
+                this.setState({
+                    importFailed: true,
+                    importMessage: `添加失败：${error && error.message ? error.message : '请重试'}`
+                });
+            })
+            .finally(() => {
+                this.importPromise = null;
+                this.setState({importing: false});
+            });
+        return this.importPromise;
+    }
     async handleRename (id) {
         const item = this.findItemById(id);
         // prompt() returns Promise in desktop app
@@ -288,11 +345,20 @@ class Backpack extends React.Component {
                 error={this.state.error}
                 expanded={this.state.expanded}
                 loading={this.state.loading}
+                importing={this.state.importing}
+                importMessage={this.state.importMessage}
+                importFailed={this.state.importFailed}
+                selectedItemId={this.state.selectedItemId}
+                targetId={this.state.targetId || this.props.editingTarget}
+                targets={this.props.targets}
                 showMore={this.state.moreToLoad}
                 onClose={this.handleToggle}
                 onDelete={this.handleDelete}
                 onRename={this.handleRename}
                 onDrop={this.handleDrop}
+                onSelectItem={this.handleSelectItem}
+                onSelectTarget={this.handleSelectTarget}
+                onImport={this.handleImport}
                 onMore={this.handleMore}
                 onMouseEnter={this.handleMouseEnter}
                 onMouseLeave={this.handleMouseLeave}
@@ -302,6 +368,11 @@ class Backpack extends React.Component {
 }
 
 Backpack.propTypes = {
+    editingTarget: PropTypes.string,
+    isRtl: PropTypes.bool,
+    onActivateTab: PropTypes.func.isRequired,
+    targets: PropTypes.arrayOf(PropTypes.shape({id: PropTypes.string, name: PropTypes.string})),
+    workspaceMetrics: PropTypes.shape({targets: PropTypes.object}), // eslint-disable-line react/forbid-prop-types
     intl: intlShape,
     host: PropTypes.string,
     token: PropTypes.string,
@@ -331,11 +402,21 @@ const mapStateToProps = state => Object.assign(
     {
         dragInfo: state.scratchGui.assetDrag,
         vm: state.scratchGui.vm,
-        blockDrag: state.scratchGui.blockDrag
+        blockDrag: state.scratchGui.blockDrag,
+        editingTarget: state.scratchGui.targets.editingTarget,
+        targets: [state.scratchGui.targets.stage, ...Object.values(state.scratchGui.targets.sprites)]
+            .filter(target => target && target.id)
+            .map(target => ({
+                id: target.id,
+                name: target.id === state.scratchGui.targets.stage.id ? '舞台' : target.name
+            })),
+        workspaceMetrics: state.scratchGui.workspaceMetrics,
+        isRtl: state.locales.isRtl
     },
     getTokenAndUsername(state)
 );
 
-const mapDispatchToProps = () => ({});
+const mapDispatchToProps = dispatch => ({onActivateTab: index => dispatch(activateTab(index))});
 
+export {Backpack};
 export default injectIntl(connect(mapStateToProps, mapDispatchToProps)(Backpack));

@@ -35,14 +35,35 @@
     transform-origin: 50%;
 }
 
+.compact-icon { display: none; }
+
 @media (max-width: 1023px) {
+    :global([data-mobile-panel="scene"]) .delete-button {
+        width: 24px;
+        height: 24px;
+        touch-action: manipulation;
+    }
     :global([data-mobile-panel="scene"]) .delete-button-visible {
-        width: 20px;
-        height: 20px;
-        border-radius: 2px;
+        box-sizing: border-box;
+        width: 24px;
+        height: 24px;
+        border: 1px solid var(--tw-dialog-border);
+        border-radius: 4px;
         background: var(--tw-dialog-background);
-        color: var(--tw-dialog-muted-foreground);
+        color: var(--tw-dialog-destructive);
         box-shadow: none;
     }
-    :global([data-mobile-panel="scene"]) .delete-icon { margin: 3px; }
+    /* Compact-mode addons replace the old image with a pseudo icon. Use one
+       currentColor icon here so light/dark themes and addons agree. */
+    :global([data-mobile-panel="scene"]) .delete-button-visible::after { display: none; content: none; }
+    :global([data-mobile-panel="scene"]) .delete-icon { display: none; }
+    :global([data-mobile-panel="scene"]) .compact-icon { display: block; width: 14px; height: 14px; }
+    :global([data-mobile-panel="scene"]) .delete-button:active .delete-button-visible {
+        background: var(--tw-dialog-accent);
+    }
+    :global([data-mobile-panel="scene"]) .delete-button:focus-visible {
+        outline: 2px solid var(--tw-dialog-ring);
+        outline-offset: -2px;
+        border-radius: 4px;
+    }
 }

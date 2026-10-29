@@ -6,8 +6,8 @@ import Box from '../box/box.jsx';
 import styles from './blocks.css';
 
 const panels = {
-    blocks: {icon: Code2Icon, label: '积木库', panelId: 'mobile-blocks-library'},
-    scene: {icon: MonitorIcon, label: '舞台与角色', panelId: 'mobile-blocks-scene'}
+    blocks: {icon: Code2Icon, label: '积木', panelId: 'mobile-blocks-library'},
+    scene: {icon: MonitorIcon, label: '场景', panelId: 'mobile-blocks-scene'}
 };
 const panelIds = Object.keys(panels);
 
@@ -79,7 +79,8 @@ const BlocksComponent = props => {
                                         id={`mobile-blocks-tab-${id}`}
                                         role="tab"
                                         tabIndex={mobilePanel === id ? 0 : -1}
-                                        title={id === 'blocks' ? '积木库：上下滑动，按住拖出积木' : panel.label}
+                                        title={id === 'blocks' ? '积木：拖动积木，滑动空白处浏览' :
+                                            '场景：预览作品，管理角色与背景'}
                                         type="button"
                                         onClick={() => onSelectPalette(id)}
                                     >

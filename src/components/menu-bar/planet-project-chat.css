@@ -693,6 +693,28 @@
         align-items: flex-end;
     }
 
+    .panel[data-dock-panel-compact="true"] .room-tabs {
+        margin: 4px 8px 0;
+        padding: 2px;
+        border-radius: 6px;
+    }
+
+    .panel.panel[data-dock-panel-compact="true"] .room-tabs button {
+        min-height: 32px;
+        padding-block: 2px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+
+    .panel[data-dock-panel-compact="true"] .composer {
+        padding: 6px 8px;
+    }
+
+    .panel[data-dock-panel-compact="true"] .error {
+        max-height: 2.8em;
+        overflow-y: auto;
+    }
+
     .mode-button {
         min-width: 44px;
         flex: 0 0 auto;

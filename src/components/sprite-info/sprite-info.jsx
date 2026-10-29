@@ -1,6 +1,7 @@
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import React from 'react';
+import {EyeIcon, EyeOffIcon} from 'lucide-react';
 
 import Box from '../box/box.jsx';
 import Label from '../forms/label.jsx';
@@ -160,9 +161,24 @@ class SpriteInfo extends React.Component {
 
         if (stageSize === STAGE_DISPLAY_SIZES.mobile) {
             return (
-                <Box className={classNames(styles.spriteInfo, styles.mobileInfo)}>
+                <Box
+                    aria-label="角色属性"
+                    className={classNames(styles.spriteInfo, styles.mobileInfo)}
+                >
                     <div className={styles.mobileName}>
                         <Label text={sprite}>{spriteNameInput}</Label>
+                        <button
+                            aria-label={this.props.intl.formatMessage(messages.showSpriteAction)}
+                            aria-pressed={this.props.visible && !this.props.disabled}
+                            className={styles.mobileVisibilityButton}
+                            disabled={this.props.disabled}
+                            title={this.props.intl.formatMessage(this.props.visible ?
+                                messages.hideSpriteAction : messages.showSpriteAction)}
+                            type="button"
+                            onClick={this.props.visible ? this.props.onClickNotVisible : this.props.onClickVisible}
+                        >
+                            {this.props.visible ? <EyeIcon aria-hidden="true" /> : <EyeOffIcon aria-hidden="true" />}
+                        </button>
                     </div>
                     <div className={styles.mobileFields}>
                         {xPosition}
@@ -193,26 +209,6 @@ class SpriteInfo extends React.Component {
                                 onChangeRotationStyle={this.props.onChangeRotationStyle}
                             />
                         </div>
-                    </div>
-                    <div className={styles.mobileVisibility}>
-                        <span>{showLabel}</span>
-                        <ToggleButtons
-                            buttons={[
-                                {
-                                    handleClick: this.props.onClickVisible,
-                                    icon: showIcon,
-                                    isSelected: this.props.visible && !this.props.disabled,
-                                    title: this.props.intl.formatMessage(messages.showSpriteAction)
-                                },
-                                {
-                                    handleClick: this.props.onClickNotVisible,
-                                    icon: hideIcon,
-                                    isSelected: !this.props.visible && !this.props.disabled,
-                                    title: this.props.intl.formatMessage(messages.hideSpriteAction)
-                                }
-                            ]}
-                            disabled={this.props.disabled}
-                        />
                     </div>
                 </Box>
             );

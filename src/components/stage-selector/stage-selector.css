@@ -168,12 +168,13 @@ $header-height: calc($stage-menu-height - 2px);
 
 @media (max-width: 1023px) {
     :global([data-mobile-panel="scene"]) .stage-selector.standalone {
+        box-sizing: border-box;
         grid-column: 1;
         grid-row: 3;
         width: 72px;
-        height: 48px;
+        height: var(--tw-mobile-target-strip-height);
         border: 0;
-        border-top: 1px solid var(--tw-dialog-border);
+        border-inline-end: 1px solid var(--tw-dialog-border);
         border-radius: 0;
         background: transparent;
         box-shadow: none;

@@ -5,7 +5,6 @@ import {getMobileSceneDefaultHeight} from './mobile-stage-layout';
 const HEADER_HEIGHT = 32;
 const SPLITTER_HEIGHT = 16;
 const CATEGORY_WIDTH = 64;
-const TOUCH_DRAG_HOLD_MS = 220;
 const SPLIT_STORAGE_KEY = 'tw:mobile-palette-ratio';
 const SCENE_SPLIT_STORAGE_KEY = 'tw:mobile-scene-ratio';
 
@@ -23,6 +22,7 @@ const configureMobileBlocksLayout = (workspace, expanded, onExpand, Blockly, get
     const setVisible = flyout.setVisible;
     const hide = flyout.hide;
     const getClientRect = flyout.getClientRect;
+    const isDragTowardWorkspace = flyout.isDragTowardWorkspace;
     const setSelectedItem = toolbox.setSelectedItem;
     const selectCategoryById = toolbox.selectCategoryById;
     let width = 0;
@@ -37,8 +37,6 @@ const configureMobileBlocksLayout = (workspace, expanded, onExpand, Blockly, get
     let drag = null;
     let cachedBounds = null;
     let pendingScroll = null;
-    let touchStart = 0;
-    let touchGesture = false;
     let populating = false;
     let deferredContents = null;
     const hasLayout = () => !host || (host.clientWidth > 0 && host.clientHeight > 0);
@@ -228,20 +226,10 @@ const configureMobileBlocksLayout = (workspace, expanded, onExpand, Blockly, get
         return result;
     };
 
-    // Quick vertical touches pan the library; holding before moving drags a
-    // block into the lower canvas. Mouse users can drag immediately.
-    const handleTouchStart = event => {
-        if (event.touches.length !== 1) return;
-        touchGesture = true;
-        touchStart = Date.now();
-        Promise.resolve().then(() => {
-            if (typeof Blockly.longStop_ === 'function') Blockly.longStop_();
-        });
-    };
-    const handleMouseDown = () => { touchGesture = false; };
-    flyout.svgGroup_.addEventListener('touchstart', handleTouchStart, {capture: true, passive: true});
-    flyout.svgGroup_.addEventListener('mousedown', handleMouseDown, true);
-    flyout.isDragTowardWorkspace = () => !touchGesture || Date.now() - touchStart >= TOUCH_DRAG_HOLD_MS;
+    // Blockly records the initial hit target and locks the gesture once it
+    // moves beyond its tap tolerance. Blocks drag in any direction; starting
+    // on the background has no target block and uses the native flyout scroll.
+    flyout.isDragTowardWorkspace = () => true;
 
     // Native category selection listens to touchend. A category-menu swipe
     // should finish scrolling without selecting the item under the finger.
@@ -362,8 +350,7 @@ const configureMobileBlocksLayout = (workspace, expanded, onExpand, Blockly, get
             splitter.removeEventListener('lostpointercapture', handleSplitEnd);
             splitter.removeEventListener('keydown', handleSplitKey);
         }
-        flyout.svgGroup_.removeEventListener('touchstart', handleTouchStart, true);
-        flyout.svgGroup_.removeEventListener('mousedown', handleMouseDown, true);
+        flyout.isDragTowardWorkspace = isDragTowardWorkspace;
         flyoutWorkspace.removeChangeListener(invalidateBounds);
         toolbox.HtmlDiv.removeEventListener('touchstart', handleCategoryStart, true);
         toolbox.HtmlDiv.removeEventListener('touchmove', handleCategoryMove, true);

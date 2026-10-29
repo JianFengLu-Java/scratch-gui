@@ -172,15 +172,22 @@
 
 .mobile-name > label {
     flex: 1;
+    min-width: 0;
 }
 
-.mobile-visibility {
-    display: flex;
+.mobile-name .mobile-visibility-button {
+    display: inline-flex;
+    flex: none;
     align-items: center;
-    justify-content: space-between;
-    font-size: 10px;
+    justify-content: center;
+    padding: 0;
     color: var(--tw-dialog-muted-foreground);
+    cursor: pointer;
+    touch-action: manipulation;
 }
+.mobile-visibility-button svg { width: 14px; height: 14px; }
+.mobile-visibility-button:active:not(:disabled) { opacity: .7; }
+.mobile-visibility-button:focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: -2px; }
 
 .sprite-info.mobile-info input,
 .sprite-info.mobile-info button {
@@ -225,17 +232,17 @@
 
 @media (max-width: 1023px) {
     :global([data-mobile-panel="scene"]) .sprite-info.mobile-info {
+        box-sizing: border-box;
         grid-column: 2;
         grid-row: 2;
-        gap: 5px;
+        gap: 8px;
         height: 100%;
         min-height: 0;
-        padding: 4px 0 0 8px;
+        padding: 8px 6px 8px 9px;
         border: 0;
-        border-inline-start: 1px solid var(--tw-dialog-border);
         border-radius: 0;
         background: transparent;
-        overflow-y: auto;
+        overflow: hidden auto;
         overscroll-behavior-y: contain;
     }
     :global([data-mobile-panel="scene"]) .sprite-info.mobile-info > * { flex: none; }
@@ -247,13 +254,14 @@
         clip-path: inset(50%);
         white-space: nowrap;
     }
-    :global([data-mobile-panel="scene"]) .mobile-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
+    :global([data-mobile-panel="scene"]) .mobile-name { gap: 4px; }
+    :global([data-mobile-panel="scene"]) .mobile-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
     :global([data-mobile-panel="scene"]) .mobile-fields label { flex-direction: column; align-items: stretch; gap: 1px; }
     :global([data-mobile-panel="scene"]) .sprite-info.mobile-info label > span { font-size: 10px; line-height: 12px; }
     :global([data-mobile-panel="scene"]) .sprite-info.mobile-info input,
     :global([data-mobile-panel="scene"]) .sprite-info.mobile-info button {
-        height: 24px;
-        min-height: 24px;
+        height: 28px;
+        min-height: 28px;
         border-radius: 4px;
         font-size: 13px;
         padding-inline: 4px;
@@ -275,7 +283,7 @@
         font-size: 16px;
     }
     :global([data-mobile-panel="scene"]) .sprite-info.mobile-info button {
-        width: 24px;
+        width: 28px;
         padding-inline: 3px;
         border-color: transparent;
         background: transparent;

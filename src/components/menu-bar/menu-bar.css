@@ -576,13 +576,13 @@
     .local-save-control, .collaboration-control { display: contents; }
     :global([data-editor-secondary-account-slot]) .local-save-control > button {
         width: 100%;
-        min-height: 48px;
-        height: auto;
+        min-height: 40px;
+        height: 40px;
         flex-direction: row;
         justify-content: flex-start;
-        gap: 12px;
-        padding: 12px;
-        font-size: 13px;
+        gap: 8px;
+        padding: 6px 8px;
+        font-size: 12px;
     }
 
     .account-info-group .status-group {

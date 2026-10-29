@@ -98,6 +98,7 @@ const SpriteSelectorComponent = function (props) {
 
             <SpriteList
                 editingTarget={editingTarget}
+                horizontalScroll={mobileStandalone}
                 hoveredTarget={hoveredTarget}
                 items={Object.keys(sprites).map(id => sprites[id])}
                 raised={raised}

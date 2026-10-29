@@ -3,8 +3,8 @@ import fitMobileStage, {getMobileSceneDefaultHeight} from '../../../src/lib/mobi
 describe('mobile stage fitting', () => {
     test('starts the scene at its content height across phone widths without enlarging small projects', () => {
         const stage = {width: 480, height: 360};
-        expect(getMobileSceneDefaultHeight(stage, 320)).toBe(232);
-        expect(getMobileSceneDefaultHeight(stage, 390)).toBe(257);
+        expect(getMobileSceneDefaultHeight(stage, 320)).toBe(233);
+        expect(getMobileSceneDefaultHeight(stage, 390)).toBe(275);
         expect(getMobileSceneDefaultHeight({width: 240, height: 180}, 1000)).toBe(272);
     });
 

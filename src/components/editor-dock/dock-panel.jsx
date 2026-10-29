@@ -88,15 +88,20 @@ const DockPanel = ({
         const viewport = window.visualViewport;
         const updateBounds = () => {
             const dock = document.querySelector('[data-editor-dock]');
+            // Fixed positioning uses the layout viewport. On iOS innerHeight
+            // can already be the keyboard-reduced visual height instead.
+            const layoutHeight = (document.documentElement && document.documentElement.clientHeight) ||
+                window.innerHeight;
             const bounds = getMobilePanelBounds({
-                height: window.innerHeight,
+                height: layoutHeight,
                 viewportHeight: viewport ? viewport.height : window.innerHeight,
                 viewportTop: viewport ? viewport.offsetTop : 0,
-                dockTop: dock ? dock.getBoundingClientRect().top : window.innerHeight,
+                dockTop: dock ? dock.getBoundingClientRect().top : layoutHeight,
                 fullScreen: mobileFullScreen
             });
             panel.style.setProperty('--dock-panel-mobile-bottom', `${bounds.bottom}px`);
             panel.style.setProperty('--dock-panel-mobile-height', `${bounds.availableHeight}px`);
+            panel.setAttribute('data-dock-panel-compact', String(bounds.availableHeight < 420));
         };
         const containFocus = event => {
             if (event.defaultPrevented || event.key !== 'Tab' ||
@@ -148,6 +153,7 @@ const DockPanel = ({
             if (observer) observer.disconnect();
             panel.style.removeProperty('--dock-panel-mobile-bottom');
             panel.style.removeProperty('--dock-panel-mobile-height');
+            panel.removeAttribute('data-dock-panel-compact');
             if (--mobilePanelCount === 0) document.body.style.overflow = previousBodyOverflow;
             // Switching sheets must leave focus on the newly opened sheet.
             const otherSheet = [...document.querySelectorAll('[data-dock-panel][aria-modal="true"]')]

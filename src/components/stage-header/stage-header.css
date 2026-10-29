@@ -104,7 +104,7 @@
     }
 }
 
-:global([data-scene-controls="true"]) .stage-menu-wrapper { height: 32px; padding-block: 2px; gap: 4px; }
+:global([data-scene-controls="true"]) .stage-menu-wrapper { height: 32px; padding: 2px 6px; gap: 4px; }
 :global([data-scene-controls="true"]) .stage-button {
     width: 24px;
     height: 24px;

@@ -7,10 +7,10 @@
     <meta name="description" content="<%= htmlWebpackPlugin.options.APP_NAME %> is a Scratch mod with a compiler to run projects faster, dark mode for your eyes, a bunch of addons to improve the editor, and more." />
     <title><%= htmlWebpackPlugin.options.title %></title>
     <link rel="icon" type="image/svg+xml" href="<%= htmlWebpackPlugin.options.root %>brand-favicon.svg">
-    <link rel="apple-touch-icon" href="<%= htmlWebpackPlugin.options.root %>images/apple-touch-icon.png">
-    <% if (htmlWebpackPlugin.options.root === "/" || htmlWebpackPlugin.options.root === "") { %>
-      <link rel="manifest" href="<%= htmlWebpackPlugin.options.root %>manifest.webmanifest">
-    <% } %>
+    <link rel="icon" type="image/png" sizes="32x32" href="<%= htmlWebpackPlugin.options.root %>favicon-32.png">
+    <link rel="shortcut icon" href="<%= htmlWebpackPlugin.options.root %>favicon.ico?v=2">
+    <link rel="apple-touch-icon" sizes="180x180" href="<%= htmlWebpackPlugin.options.root %>images/apple-touch-icon.png?v=2">
+    <link rel="manifest" href="<%= htmlWebpackPlugin.options.root %>manifest.webmanifest?v=2">
     <style>
       .editor-boot-splash {
         --boot-background: #ffffff;

@@ -20,6 +20,7 @@ const SpriteList = function (props) {
         editingTarget,
         draggingIndex,
         draggingType,
+        horizontalScroll,
         hoveredTarget,
         onDeleteSprite,
         onDuplicateSprite,
@@ -34,14 +35,35 @@ const SpriteList = function (props) {
         items
     } = props;
 
+    const listRef = React.useRef(null);
+    const setContainerRef = React.useCallback(node => {
+        listRef.current = node;
+        containerRef(node);
+    }, [containerRef]);
+    React.useLayoutEffect(() => {
+        const list = listRef.current;
+        if (!horizontalScroll || !list || !list.clientWidth ||
+            !window.matchMedia('(max-width: 1023px)').matches) return;
+        const selected = list.querySelector('[data-sprite-selected="true"]');
+        if (!selected) return;
+        const viewport = list.getBoundingClientRect();
+        const tile = selected.getBoundingClientRect();
+        // Scroll only this rail, keeping the stage and editor viewport stationary.
+        if (tile.left < viewport.left + 8) list.scrollLeft += tile.left - viewport.left - 8;
+        else if (tile.right > viewport.right - 8) list.scrollLeft += tile.right - viewport.right + 8;
+    }, [horizontalScroll, selectedId, items.length]);
+
     const isSpriteDrag = draggingType === DragConstants.SPRITE;
 
     return (
         <Box
+            aria-label={horizontalScroll ? '角色列表，左右滑动查看更多角色' : null}
             className={classNames(styles.scrollWrapper, {
                 [styles.scrollWrapperDragging]: draggingType === DragConstants.BACKPACK_SPRITE
             })}
-            componentRef={containerRef}
+            componentRef={setContainerRef}
+            role={horizontalScroll ? 'region' : null}
+            tabIndex={horizontalScroll ? 0 : null}
         >
             <Box
                 className={styles.itemsWrapper}
@@ -86,6 +108,7 @@ const SpriteList = function (props) {
                                 })}
                                 dragPayload={sprite.id}
                                 dragType={DragConstants.SPRITE}
+                                horizontalScroll={horizontalScroll}
                                 id={sprite.id}
                                 index={index}
                                 key={sprite.id}
@@ -110,6 +133,7 @@ SpriteList.propTypes = {
     draggingIndex: PropTypes.number,
     draggingType: PropTypes.oneOf(Object.keys(DragConstants)),
     editingTarget: PropTypes.string,
+    horizontalScroll: PropTypes.bool,
     hoveredTarget: PropTypes.shape({
         hoveredSprite: PropTypes.string,
         receivedBlocks: PropTypes.bool,

@@ -168,25 +168,30 @@
 @media (max-width: 1023px) {
     :global([data-mobile-panel="scene"]) .sprite-selector.standalone { display: contents; }
     :global([data-mobile-panel="scene"]) .scroll-wrapper {
+        box-sizing: border-box;
         grid-column: 1 / -1;
         grid-row: 3;
-        height: 48px;
-        margin-inline-start: 78px;
+        height: var(--tw-mobile-target-strip-height);
+        margin-inline-start: 72px;
         border: 0;
-        border-top: 1px solid var(--tw-dialog-border);
         border-radius: 0;
         background: transparent;
         overflow-x: auto;
         overflow-y: hidden;
         overscroll-behavior-x: contain;
         scrollbar-width: thin;
+        touch-action: pan-x;
     }
     :global([data-mobile-panel="scene"]) .items-wrapper {
+        box-sizing: border-box;
         display: flex;
         flex-wrap: nowrap;
-        height: 100%;
-        padding: 3px 2px 0;
+        width: max-content;
+        min-width: 100%;
+        height: 48px;
+        padding: 3px 8px 1px;
         gap: 6px;
+        overflow: visible;
     }
     :global([data-mobile-panel="scene"]) .sprite-wrapper { flex: 0 0 48px; min-height: 44px; height: 44px; }
 }

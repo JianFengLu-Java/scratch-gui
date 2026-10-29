@@ -200,6 +200,7 @@
 .palette-header button:focus-visible { outline: 2px solid var(--tw-dialog-ring); outline-offset: -3px; }
 
 .palette-scene {
+    --tw-mobile-target-strip-height: 56px;
     box-sizing: border-box;
     position: absolute;
     /* Object menus must remain above the resize grip (72). */
@@ -209,15 +210,31 @@
     right: 0;
     display: none;
     height: var(--tw-mobile-palette-height, 0px);
-    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-    grid-template-rows: 32px minmax(0, 1fr) 48px;
-    column-gap: 8px;
-    row-gap: 4px;
-    padding: 0 6px 4px;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
+    grid-template-columns: minmax(0, 1fr) clamp(110px, 32vw, 160px);
+    grid-template-rows: 32px minmax(0, 1fr) var(--tw-mobile-target-strip-height);
+    padding: 0;
+    overflow: hidden;
     background: var(--tw-dialog-background);
+}
+
+/* Keep scene dividers outside the independently scrolling inspector and rail. */
+.palette-scene::before,
+.palette-scene::after {
+    content: '';
+    min-width: 0;
+    min-height: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+.palette-scene::before {
+    grid-column: 2;
+    grid-row: 2;
+    border-inline-start: 1px solid var(--tw-dialog-border);
+}
+.palette-scene::after {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    border-top: 1px solid var(--tw-dialog-border);
 }
 
 .mobile[data-palette-expanded="true"][data-palette-panel="scene"] .palette-scene {

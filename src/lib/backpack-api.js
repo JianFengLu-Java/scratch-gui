@@ -114,8 +114,8 @@ const updateBackpackObject = ({
 // code, as json and sprite3 as arraybuffer zips.
 const fetchAs = (responseType, uri) => new Promise((resolve, reject) => {
     xhr({uri, responseType}, (error, response) => {
-        if (error || response.statusCode !== 200) {
-            return reject(new Error(response.status));
+        if (error || !response || response.statusCode !== 200) {
+            return reject(error || new Error(`书包素材加载失败（${response ? response.statusCode : '网络异常'}）`));
         }
         return resolve(response.body);
     });

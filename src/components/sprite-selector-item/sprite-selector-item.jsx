@@ -14,14 +14,27 @@ let contextMenuId = 0;
 const SpriteSelectorItem = props => (
     <ContextMenuTrigger
         attributes={{
-            className: classNames(props.className, styles.spriteSelectorItem, {
+            'data-sprite-selected': props.selected ? 'true' : null,
+            ...(props.activationLabel ? {
+                'aria-label': props.activationLabel,
+                'aria-pressed': props.selected,
+                'role': 'button',
+                'tabIndex': 0,
+                'onKeyDown': event => {
+                    if (event.target === event.currentTarget && (event.key === 'Enter' || event.key === ' ')) {
+                        event.preventDefault();
+                        props.onClick(event);
+                    }
+                }
+            } : {}),
+            'className': classNames(props.className, styles.spriteSelectorItem, {
                 [styles.isSelected]: props.selected
             }),
-            onClick: props.onClick,
-            onMouseEnter: props.onMouseEnter,
-            onMouseLeave: props.onMouseLeave,
-            onMouseDown: props.onMouseDown,
-            onTouchStart: props.onMouseDown
+            'onClick': props.onClick,
+            'onMouseEnter': props.onMouseEnter,
+            'onMouseLeave': props.onMouseLeave,
+            'onMouseDown': props.onMouseDown,
+            'onTouchStart': props.onMouseDown
         }}
         disable={props.preventContextMenu}
         id={`${props.name}-${contextMenuId}`}
@@ -98,6 +111,7 @@ const SpriteSelectorItem = props => (
 );
 
 SpriteSelectorItem.propTypes = {
+    activationLabel: PropTypes.string,
     className: PropTypes.string,
     componentRef: PropTypes.func,
     costumeURL: PropTypes.string,
