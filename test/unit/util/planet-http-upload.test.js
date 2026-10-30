@@ -82,6 +82,36 @@ describe('save and publish uploads on a LAN HTTP origin', () => {
             expect.objectContaining({headers: expect.objectContaining({'X-Editor-Session-Token': 'write-session'})}));
     });
 
+    test.each(['presign', 'complete', 'autosave'])('refreshes a 401 at %s and completes autosave without reuploading files', async step => {
+        const original = global.fetch;
+        let rejected = false;
+        let refreshes = 0;
+        global.fetch = jest.fn(async (url, options = {}) => {
+            if (url === '/backend-api/auth/user-session/refresh') {
+                refreshes++;
+                return ok({accessToken: `token-${refreshes}`, tokenType: 'Bearer', expiresIn: 300});
+            }
+            if (!rejected && url.endsWith(`/${step}`)) {
+                rejected = true;
+                return {ok: false, status: 401, json: async () => ({code: 'AUTH_REQUIRED'})};
+            }
+            if (rejected && options.headers && options.headers.Authorization) {
+                expect(options.headers.Authorization).toBe('Bearer token-2');
+            }
+            return original(url, options);
+        });
+        const file = new File(['project'], 'project.sb3', {type: 'application/zip'});
+        await expect(savePlanetCloudAutosave({projectId: '10', file,
+            contentSha256: await sha256PlanetBlob(file), editorSessionToken: 'write-session',
+            stageCoverFile: new File(['cover'], 'cover.png', {type: 'image/png'})}))
+            .resolves.toMatchObject({revision: 1});
+        expect(rejected).toBe(true);
+        expect(refreshes).toBe(2);
+        expect(uploads.size).toBe(2);
+        expect(global.fetch.mock.calls.filter(([, options]) => options && options.method === 'PUT' &&
+            !options.headers.Authorization)).toHaveLength(2);
+    });
+
     test('cleans up a failed upload and never submits incomplete files', async () => {
         failUpload = true;
         await expect(publishCurrentProject({projectId: '10', form,

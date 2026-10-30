@@ -46,12 +46,16 @@ export const refreshPlanetSession = () => {
     if (hasUsableSession()) return Promise.resolve(cachedSession);
     if (refreshPromise) return refreshPromise;
 
-    const request = fetch(REFRESH_ENDPOINT, {
+    const refresh = () => fetch(REFRESH_ENDPOINT, {
         method: 'POST',
         credentials: 'include',
         headers: {Accept: 'application/json'}
     }).then(readPlanetEnvelope)
         .then(rememberSession);
+
+    // Share the cookie rotation lock with the website and every editor tab.
+    const locks = typeof navigator === 'undefined' ? null : navigator.locks;
+    const request = locks ? locks.request('pp:user-session-refresh', refresh) : refresh();
 
     refreshPromise = request.then(session => {
         refreshPromise = null;
@@ -61,6 +65,37 @@ export const refreshPlanetSession = () => {
         throw error;
     });
     return refreshPromise;
+};
+
+// API calls can outlive the cached access token while a large project uploads.
+// Retry only the rejected API request; storage PUTs use separate presigned credentials.
+export const fetchWithPlanetSession = async (session, url, options = {}) => {
+    const sameOwner = candidate => {
+        if (session.user && candidate.user && session.user.id !== candidate.user.id) {
+            const error = new Error('登录账户已变化，请重新打开项目后保存');
+            error.status = 409;
+            throw error;
+        }
+        return candidate;
+    };
+    const send = candidate => fetch(url, {
+        ...options,
+        credentials: 'include',
+        headers: {
+            ...options.headers,
+            Authorization: `${candidate.tokenType || 'Bearer'} ${candidate.accessToken}`
+        }
+    });
+    const active = sameOwner(cachedSession || session);
+    const response = await send(active);
+    if (response.status !== 401 || (options.signal && options.signal.aborted)) return response;
+    // Do not discard a token another request refreshed while this 401 was in flight,
+    // and do not clear the shared promise when several autosave calls fail together.
+    if (cachedSession && cachedSession.accessToken === active.accessToken) {
+        cachedSession = null;
+        cachedSessionExpiresAt = 0;
+    }
+    return send(sameOwner(await refreshPlanetSession()));
 };
 
 export const clearPlanetSession = () => {

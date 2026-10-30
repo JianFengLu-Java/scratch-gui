@@ -1,4 +1,4 @@
-import {readPlanetEnvelope, refreshPlanetSession} from './planet-session';
+import {fetchWithPlanetSession, readPlanetEnvelope, refreshPlanetSession} from './planet-session';
 import sha256PlanetBlob from './sha256-blob';
 
 export {sha256PlanetBlob};
@@ -9,12 +9,11 @@ const cloudStates = new Map();
 export const PLANET_AUTOSAVE_STATUS_EVENT = 'planet-autosave-status';
 export const PLANET_AUTOSAVE_REQUEST_EVENT = 'planet-autosave-request';
 
-const authorizedRequest = (session, path, options = {}) => fetch(`${API_ROOT}${path}`, {
+const authorizedRequest = (session, path, options = {}) => fetchWithPlanetSession(session, `${API_ROOT}${path}`, {
     ...options,
     credentials: 'include',
     headers: {
         Accept: 'application/json',
-        Authorization: `${session.tokenType || 'Bearer'} ${session.accessToken}`,
         ...(options.body ? {'Content-Type': 'application/json'} : {}),
         ...options.headers
     }
