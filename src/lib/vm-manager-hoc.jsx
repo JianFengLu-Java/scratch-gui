@@ -14,6 +14,7 @@ import {
     projectError
 } from '../reducers/project-state';
 import log from './log';
+import {reportProjectLoad} from './planet-project-download';
 
 /**
  * List of fonts that could be used by security prompts.
@@ -71,8 +72,10 @@ const vmManagerHOC = function (WrappedComponent) {
         loadProject () {
             // tw: stop when loading new project
             this.props.vm.quit();
+            reportProjectLoad('parsing');
             return this.props.vm.loadProject(this.props.projectData)
                 .then(() => {
+                    reportProjectLoad('ready');
                     this.props.onLoadedProject(this.props.loadingState, this.props.canSave);
                     // Wrap in a setTimeout because skin loading in
                     // the renderer can be async.
@@ -90,6 +93,7 @@ const vmManagerHOC = function (WrappedComponent) {
                     }
                 })
                 .catch(e => {
+                    reportProjectLoad('parse-error');
                     this.props.onError(e);
                 });
         }

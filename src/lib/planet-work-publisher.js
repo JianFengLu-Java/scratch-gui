@@ -164,6 +164,31 @@ const validateRemixAuthorization = form => {
     }
 };
 
+export const validateRepostSource = form => {
+    if (form.originType !== 'REPOST') return;
+    const source = form.repostSource;
+    if (!source || ['originalAuthor', 'sourcePlatform', 'sourceUrl', 'repostStatement']
+        .some(key => typeof source[key] !== 'string' || !source[key].trim())) {
+        throw new Error('转载作品须填写原作者、来源平台、原作链接和转载说明。');
+    }
+    if (source.originalAuthor.trim().length > 100 || source.sourcePlatform.trim().length > 100 ||
+        source.sourceUrl.trim().length > 1000 || source.repostStatement.trim().length > 1000) {
+        throw new Error('转载来源信息超过长度限制。');
+    }
+    let url;
+    try {
+        url = new URL(source.sourceUrl.trim());
+    } catch (error) {
+        throw new Error('请填写完整、有效的原作链接。');
+    }
+    if (!['http:', 'https:'].includes(url.protocol) || !url.hostname || url.username || url.password) {
+        throw new Error('原作链接须为 HTTP 或 HTTPS 地址，且不能包含账号密码。');
+    }
+    if (form.remixPolicy !== 'FORBIDDEN' || form.sourceAccess !== 'NO_REMIX') {
+        throw new Error('转载作品暂不支持开放源码或再改编。');
+    }
+};
+
 export const workPayload = (projectId, version, form, revision) => ({
     projectId,
     versionId: version.versionId,
@@ -173,8 +198,9 @@ export const workPayload = (projectId, version, form, revision) => ({
     coverObjectId: version.coverObjectId,
     summary: form.summary.trim(),
     instruction: form.instructions.trim() || null,
-    originType: 'ORIGINAL',
-    originWorkId: null,
+    originType: form.originType || 'ORIGINAL',
+    originWorkId: form.originWorkId || null,
+    repostSource: form.originType === 'REPOST' ? form.repostSource : null,
     remixPermission: form.sourceAccess,
     remixPolicy: form.remixPolicy,
     remixAuthorizationConfirmed: form.remixAuthorizationConfirmed === true,
@@ -191,7 +217,8 @@ export const workPayload = (projectId, version, form, revision) => ({
 const saveWorkDraft = (session, existingWork, projectId, version, form) => {
     const payload = workPayload(projectId, version, form, existingWork ? existingWork.revision : null);
     if (!existingWork) {
-        return authorizedRequest(session, '/works', {method: 'POST', body: JSON.stringify(payload)});
+        return authorizedRequest(session, payload.originType === 'REPOST' ? '/works/reposts' : '/works',
+            {method: 'POST', body: JSON.stringify(payload)});
     }
     return authorizedRequest(session, `/works/${existingWork.id}`, {
         method: 'PATCH',
@@ -259,6 +286,7 @@ export const saveCurrentProjectDraft = async ({
     serializeProject,
     session
 }) => {
+    validateRepostSource(form);
     validateRemixAuthorization(form);
     onProgress('正在检查项目状态', 8);
     let projectId = currentProjectId(candidateProjectId);

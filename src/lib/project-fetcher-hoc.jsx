@@ -28,6 +28,7 @@ import VM from 'scratch-vm';
 import mirrorAssetHost from './asset-host';
 import {fetchProjectMeta} from './tw-project-meta-fetcher-hoc.jsx';
 import {isPlanetProjectRoute, loadPlanetProject} from './planet-project-loader';
+import {downloadProject, reportProjectLoad} from './planet-project-download';
 
 // TW: Temporary hack for project tokens
 const fetchProjectToken = async projectId => {
@@ -101,7 +102,13 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 this.props.onActivateTab(BLOCKS_TAB_INDEX);
             }
         }
+        componentWillUnmount () {
+            if (this.projectDownloadController) this.projectDownloadController.abort();
+        }
         fetchProject (projectId, loadingState) {
+            if (this.projectDownloadController) this.projectDownloadController.abort();
+            const controller = new AbortController();
+            this.projectDownloadController = controller;
             // tw: clear and stop the VM before fetching
             // these will also happen later after the project is fetched, but fetching may take a while and
             // the project shouldn't be running while fetching the new project
@@ -121,13 +128,10 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 ) {
                     projectUrl = `https://${projectUrl}`;
                 }
-                assetPromise = fetch(projectUrl)
-                    .then(r => {
-                        if (!r.ok) {
-                            throw new Error(`Request returned status ${r.status}`);
-                        }
-                        return r.arrayBuffer();
-                    })
+                assetPromise = downloadProject(projectUrl, {
+                    signal: controller.signal,
+                    onProgress: (loaded, total, attempt) => reportProjectLoad('downloading', loaded, total, attempt)
+                })
                     .then(buffer => ({data: buffer}));
             } else if (isPlanetProjectRoute()) {
                 assetPromise = loadPlanetProject(projectId)
@@ -147,7 +151,9 @@ const ProjectFetcherHOC = function (WrappedComponent) {
 
             return assetPromise
                 .then(projectAsset => {
+                    if (controller.signal.aborted) return;
                     if (projectAsset) {
+                        if (projectUrl) reportProjectLoad('parsing');
                         this.props.onFetchedProjectData(projectAsset.data, loadingState);
                     } else if (projectUrl) {
                         // Treat failure to load as an error
@@ -161,6 +167,8 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                     }
                 })
                 .catch(err => {
+                    if (controller.signal.aborted) return;
+                    if (projectUrl) reportProjectLoad('download-error');
                     this.props.onError(err);
                     log.error(err);
                 });

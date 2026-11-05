@@ -13,14 +13,14 @@ import {
 
 import Box from '../box/box.jsx';
 import Modal from '../../containers/modal.jsx';
-import {loadWorkPublishOptions, publishCurrentProject} from '../../lib/planet-work-publisher.js';
+import {loadWorkPublishOptions, publishCurrentProject, validateRepostSource} from '../../lib/planet-work-publisher.js';
 
 import styles from './work-publish-modal.css';
 
 const MAX_COVER_SIZE = 10 * 1024 * 1024;
 const DRAFT_FIELDS = [
     'categoryId', 'tagIds', 'summary', 'instructions', 'visibility',
-    'remixPolicy', 'versionType', 'changeLog', 'notifyFollowers'
+    'remixPolicy', 'versionType', 'changeLog', 'notifyFollowers', 'originType', 'repostSource'
 ];
 
 const VISIBILITY_OPTIONS = [
@@ -68,6 +68,11 @@ class WorkPublishModal extends React.Component {
         const draft = readDraft(props.projectId);
         this.state = {
             name: props.projectTitle,
+            originType: draft && draft.originType === 'REPOST' ? 'REPOST' : 'ORIGINAL',
+            originWorkId: null,
+            repostSource: draft && draft.repostSource ? draft.repostSource : {
+                originalAuthor: '', sourcePlatform: '', sourceUrl: '', repostStatement: ''
+            },
             cover: null,
             coverPreview: '',
             coverSource: '',
@@ -144,6 +149,11 @@ class WorkPublishModal extends React.Component {
                     state.categoryId || (context.categories[0] && context.categories[0].id) || '',
                 tagIds: state.hasRecoveredDraft ? state.tagIds :
                     ((context.existingWork && context.existingWork.tags) || []).map(tag => tag.id),
+                originType: context.existingWork ? context.existingWork.originType : state.originType,
+                originWorkId: context.existingWork && context.existingWork.originWork ?
+                    context.existingWork.originWork.id : null,
+                repostSource: context.existingWork && context.existingWork.repostSource ?
+                    context.existingWork.repostSource : state.repostSource,
                 name: context.existingWork ? context.existingWork.title : state.name,
                 summary: state.hasRecoveredDraft ? state.summary :
                     (context.existingWork && context.existingWork.summary) || state.summary,
@@ -257,6 +267,11 @@ class WorkPublishModal extends React.Component {
             !this.state.remixAuthorizationConfirmed) {
             return '开放改编前，请完整阅读并确认改编授权。';
         }
+        try {
+            validateRepostSource(this.formValue());
+        } catch (error) {
+            return error.message;
+        }
         if (!this.state.copyrightAccepted) return '请确认版权承诺后再发布。';
         if (!this.state.session) return '发布会话尚未就绪，请稍后重试。';
         return '';
@@ -264,13 +279,16 @@ class WorkPublishModal extends React.Component {
     formValue () {
         return {
             name: this.state.name,
+            originType: this.state.originType,
+            originWorkId: this.state.originWorkId,
+            repostSource: this.state.originType === 'REPOST' ? this.state.repostSource : null,
             categoryId: this.state.categoryId,
             tagIds: this.state.tagIds,
             summary: this.state.summary,
             instructions: this.state.instructions,
             visibility: this.state.visibility,
-            remixPolicy: this.state.remixPolicy,
-            sourceAccess: sourceAccessForPolicy(this.state.remixPolicy),
+            remixPolicy: this.state.originType === 'REPOST' ? 'FORBIDDEN' : this.state.remixPolicy,
+            sourceAccess: this.state.originType === 'REPOST' ? 'NO_REMIX' : sourceAccessForPolicy(this.state.remixPolicy),
             remixAuthorizationConfirmed: this.state.publicationMode === 'UPDATE' ||
                 this.state.remixPolicy === 'FORBIDDEN' || this.state.remixAuthorizationConfirmed,
             versionType: this.state.versionType,
@@ -474,6 +492,51 @@ class WorkPublishModal extends React.Component {
                             </section>
 
                             <section className={styles.formSection}>
+                                <div className={styles.sectionHeader}><span>作品来源</span><small>转载作品须注明原作者与出处</small></div>
+                                <div className={styles.fieldList}>
+                                    <label className={styles.fieldRow}>
+                                        <span className={styles.fieldCopy}><b>来源类型</b><small>导入他人作品请选择转载</small></span>
+                                        <span className={styles.fieldControl}>
+                                            <select
+                                                value={this.state.originType} disabled={metadataLocked || Boolean(this.state.existingWorkId)}
+                                                onChange={event => this.setState({originType: event.target.value, remixPolicy: 'FORBIDDEN', remixAuthorizationConfirmed: false})}
+                                            >
+                                                <option value="ORIGINAL">原创</option>
+                                                <option value="REPOST">转载</option>
+                                                {this.state.originType === 'REMIX' && <option value="REMIX">改编</option>}
+                                            </select>
+                                        </span>
+                                    </label>
+                                    {this.state.originType === 'REPOST' && [
+                                        ['originalAuthor', '原作者', 100], ['sourcePlatform', '来源平台', 100],
+                                        ['sourceUrl', '原作链接', 1000], ['repostStatement', '转载说明', 1000]
+                                    ].map(([key, label, maxLength]) => (<label key={key} className={styles.fieldRow}>
+                                        <span className={styles.fieldCopy}><b>{label} *</b><small>{key === 'repostStatement' ? '说明授权或许可依据、转载目的及修改情况' : '公开展示来源，保留原作者署名'}</small></span>
+                                        <span className={styles.fieldControl}>
+                                            {key === 'repostStatement' ? (
+                                                <textarea
+                                                    required
+                                                    disabled={metadataLocked}
+                                                    maxLength={maxLength}
+                                                    value={this.state.repostSource[key]}
+                                                    onChange={event => this.setState({repostSource: {...this.state.repostSource, [key]: event.target.value}})}
+                                                />
+                                            ) : (
+                                                <input
+                                                    required
+                                                    disabled={metadataLocked}
+                                                    type={key === 'sourceUrl' ? 'url' : 'text'}
+                                                    maxLength={maxLength}
+                                                    value={this.state.repostSource[key]}
+                                                    onChange={event => this.setState({repostSource: {...this.state.repostSource, [key]: event.target.value}})}
+                                                />
+                                            )}
+                                        </span>
+                                    </label>))}
+                                </div>
+                            </section>
+
+                            <section className={styles.formSection}>
                                 <div className={styles.sectionHeader}>
                                     <span>作品说明</span>
                                     <small>简洁说明玩法和操作方式</small>
@@ -523,9 +586,10 @@ class WorkPublishModal extends React.Component {
                                         <legend className={styles.fieldCopy}><b>改编策略</b><small>{updating ?
                                             '更新发布不改变当前授权；如需收回请在作品管理中调整' :
                                             '控制其他用户直接改编、申请改编或禁止改编'}</small></legend>
-                                        {this.renderOptionGroup('remixPolicy', this.state.remixPolicy, REMIX_OPTIONS, updating)}
+                                        {this.state.originType === 'REPOST' ? <p>转载作品暂不开放源码下载或再改编。</p> :
+                                            this.renderOptionGroup('remixPolicy', this.state.remixPolicy, REMIX_OPTIONS, updating)}
                                     </fieldset>
-                                    {!updating && this.state.remixPolicy !== 'FORBIDDEN' && (
+                                    {!updating && this.state.originType !== 'REPOST' && this.state.remixPolicy !== 'FORBIDDEN' && (
                                         <label className={styles.checkRow}>
                                             <input type="checkbox" disabled={busy} checked={this.state.remixAuthorizationConfirmed} onChange={event => this.setState({remixAuthorizationConfirmed: event.target.checked})} />
                                             <span><b>我已完整理解并确认开启改编授权</b><small>{this.state.remixPolicy === 'OPEN' ?

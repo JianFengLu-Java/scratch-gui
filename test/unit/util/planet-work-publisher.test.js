@@ -31,3 +31,21 @@ describe('planet work publishing contract', () => {
             expect(onProgress).not.toHaveBeenCalled();
         });
 });
+
+describe('repost publication', () => {
+    const repostSource = {originalAuthor: '作者', sourcePlatform: 'Scratch',
+        sourceUrl: 'https://scratch.mit.edu/projects/123/', repostStatement: '经许可转载，用于学习'};
+    const form = {name: '转载作品', summary: '这是转载作品的完整简介', instructions: '',
+        originType: 'REPOST', repostSource, remixPolicy: 'FORBIDDEN', sourceAccess: 'NO_REMIX'};
+    test('keeps external attribution in the draft payload', () => {
+        expect(workPayload('1', {versionId: '2', coverObjectId: '3'}, form, null))
+            .toMatchObject({originType: 'REPOST', repostSource, originWorkId: null});
+    });
+    test.each([null, {...repostSource, sourceUrl: 'javascript:alert(1)'}, {...repostSource, originalAuthor: ''}])(
+        'rejects invalid attribution before uploading', async source => {
+            const serializeProject = jest.fn();
+            await expect(saveCurrentProjectDraft({form: {...form, repostSource: source}, serializeProject,
+                onProgress: jest.fn()})).rejects.toThrow();
+            expect(serializeProject).not.toHaveBeenCalled();
+        });
+});
