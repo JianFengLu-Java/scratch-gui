@@ -29,6 +29,7 @@ import mirrorAssetHost from './asset-host';
 import {fetchProjectMeta} from './tw-project-meta-fetcher-hoc.jsx';
 import {isPlanetProjectRoute, loadPlanetProject} from './planet-project-loader';
 import {downloadProject, reportProjectLoad} from './planet-project-download';
+import {receivePreviewProject} from './planet-preview-transfer';
 
 // TW: Temporary hack for project tokens
 const fetchProjectToken = async projectId => {
@@ -120,7 +121,16 @@ const ProjectFetcherHOC = function (WrappedComponent) {
             let projectUrl = typeof URLSearchParams === 'undefined' ?
                 null :
                 new URLSearchParams(location.search).get('project_url');
-            if (projectUrl) {
+            const previewParams = typeof URLSearchParams === 'undefined' ? null :
+                new URLSearchParams(location.search);
+            const previewChannel = previewParams && previewParams.get('preview_channel');
+            if (previewChannel) {
+                assetPromise = receivePreviewProject({
+                    channel: previewChannel,
+                    parentOrigin: previewParams.get('preview_origin'),
+                    signal: controller.signal
+                }).then(buffer => ({data: buffer}));
+            } else if (projectUrl) {
                 if (
                     !projectUrl.startsWith('http:') &&
                     !projectUrl.startsWith('https:') &&
@@ -153,9 +163,9 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 .then(projectAsset => {
                     if (controller.signal.aborted) return;
                     if (projectAsset) {
-                        if (projectUrl) reportProjectLoad('parsing');
+                        if (projectUrl || previewChannel) reportProjectLoad('parsing');
                         this.props.onFetchedProjectData(projectAsset.data, loadingState);
-                    } else if (projectUrl) {
+                    } else if (projectUrl || previewChannel) {
                         // Treat failure to load as an error
                         // Throw to be caught by catch later on
                         throw new Error('Could not find project');
@@ -168,7 +178,10 @@ const ProjectFetcherHOC = function (WrappedComponent) {
                 })
                 .catch(err => {
                     if (controller.signal.aborted) return;
-                    if (projectUrl) reportProjectLoad('download-error');
+                    if (projectUrl || previewChannel) {
+                        const authRequired = err.status === 401 || err.status === 409;
+                        reportProjectLoad(authRequired ? 'auth-required' : 'download-error');
+                    }
                     this.props.onError(err);
                     log.error(err);
                 });

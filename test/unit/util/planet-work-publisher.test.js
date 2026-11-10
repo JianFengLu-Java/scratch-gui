@@ -1,4 +1,10 @@
-import {saveCurrentProjectDraft, workPayload} from '../../../src/lib/planet-work-publisher';
+import {loadWorkPublishOptions, saveCurrentProjectDraft, workPayload} from '../../../src/lib/planet-work-publisher';
+import {refreshPlanetSession} from '../../../src/lib/planet-session';
+
+jest.mock('../../../src/lib/planet-session', () => ({
+    refreshPlanetSession: jest.fn(),
+    readPlanetEnvelope: response => response.json().then(envelope => envelope.data)
+}));
 
 describe('planet work publishing contract', () => {
     const form = {
@@ -19,6 +25,28 @@ describe('planet work publishing contract', () => {
         expect(workPayload('100', {versionId: '200', coverObjectId: '300'},
             {...form, remixPolicy, remixAuthorizationConfirmed: true}, 2))
             .toMatchObject({remixPolicy, remixAuthorizationConfirmed: true, revision: 2});
+    });
+
+    test('an archived original work reference always publishes as remix', () => {
+        expect(workPayload('100', {versionId: '200', coverObjectId: '300'},
+            {...form, originType: 'ORIGINAL', originWorkId: '90'}, null))
+            .toMatchObject({originType: 'REMIX', originWorkId: '90', repostSource: null});
+    });
+
+    test('loads the project remix origin before the first work is created', async () => {
+        const previousFetch = global.fetch;
+        refreshPlanetSession.mockResolvedValue({accessToken: 'test', tokenType: 'Bearer'});
+        global.fetch = jest.fn(async url => ({json: async () => ({data:
+            url.includes('/publication-origin?') ? {projectId: '100', originType: 'REMIX', originWorkId: '90', locked: true} :
+                url.includes('/works/mine?') ? {items: []} : []})}));
+        try {
+            const options = await loadWorkPublishOptions('100');
+            expect(options.existingWork).toBe(null);
+            expect(options.publicationOrigin).toEqual({projectId: '100', originType: 'REMIX', originWorkId: '90', locked: true});
+            expect(options.publicationMode).toBe('FIRST');
+        } finally {
+            global.fetch = previousFetch;
+        }
     });
 
     test.each([undefined, 'UNKNOWN', 'OPEN', 'APPLICATION_REQUIRED'])(

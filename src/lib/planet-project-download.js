@@ -1,3 +1,8 @@
+import {
+    fetchWithPlanetSession,
+    refreshPlanetSession
+} from './planet-session';
+
 // The embedding page can attach after a small project has already loaded, so
 // retain the latest state as well as emitting updates.
 export const reportProjectLoad = (phase, loaded = 0, total = 0, attempt = 1) => {
@@ -9,6 +14,21 @@ export const reportProjectLoad = (phase, loaded = 0, total = 0, attempt = 1) => 
     data.twLoadAttempt = String(attempt);
     window.dispatchEvent(new CustomEvent('turbowarp-project-load-state'));
 };
+
+// Refreshes are shared with other consumers and cannot be cancelled outright.
+// Stop this player's wait immediately while leaving cookie rotation intact.
+const waitWhileActive = (promise, signal) => new Promise((resolve, reject) => {
+    const abort = () => reject(new DOMException('Aborted', 'AbortError'));
+    if (signal.aborted) abort();
+    else signal.addEventListener('abort', abort, {once: true});
+    promise.then(value => {
+        signal.removeEventListener('abort', abort);
+        resolve(value);
+    }, error => {
+        signal.removeEventListener('abort', abort);
+        reject(error);
+    });
+});
 
 /* Stream project archives with an idle deadline and bounded retries. Resume
  * only when the server advertises byte ranges and validates the returned offset.
@@ -22,12 +42,16 @@ export const downloadProject = async (url, {
     maxAttempts = 3
 } = {}) => {
     let originUrl = null;
+    let sessionClient = null;
+    let session = null;
     if (typeof window !== 'undefined') {
         const parsed = new URL(url, window.location.href);
-        if (parsed.origin === window.location.origin &&
-            /^\/(?:backend-api|api\/v1)\/works\/\d+(?:\/versions\/\d+)?\/run-file$/.test(parsed.pathname)) {
-            parsed.searchParams.set('origin', 'true');
-            originUrl = parsed.href;
+        if (parsed.origin === window.location.origin && !parsed.username && !parsed.password) {
+            if (/^\/(?:backend-api|api\/v1)\/works\/\d+(?:\/versions\/\d+)?\/run-file$/.test(parsed.pathname)) {
+                sessionClient = {refresh: refreshPlanetSession, fetch: fetchWithPlanetSession};
+                parsed.searchParams.set('origin', 'true');
+                originUrl = parsed.href;
+            }
         }
     }
     let chunks = [];
@@ -65,14 +89,27 @@ export const downloadProject = async (url, {
                 loaded = 0;
             }
             onProgress(loaded, total, attempt);
-            const response = await fetch(url, {
+            const options = {
                 signal: controller.signal,
+                // CDN redirects must not carry cookies or require credentialed CORS.
+                credentials: 'same-origin',
                 headers: offset ? {Range: `bytes=${offset}-`} : {}
-            });
+            };
+            if (sessionClient && !session) {
+                session = await waitWhileActive(sessionClient.refresh(), controller.signal);
+            }
+            // Cookie rotation can finish after the parent has removed this player.
+            // Do not start an archive request once its load has been cancelled.
+            if (controller.signal.aborted) throw new DOMException('Aborted', 'AbortError');
+            const response = sessionClient ?
+                await waitWhileActive(sessionClient.fetch(session, url, options), controller.signal) :
+                await fetch(url, options);
             resetIdleTimer();
             if (!response.ok) {
-                retryable = response.status === 408 || response.status === 429 || response.status >= 500;
-                throw new Error(`Project request returned status ${response.status}`);
+                retryable = response.status === 408 || response.status >= 500;
+                const error = new Error(`Project request returned status ${response.status}`);
+                error.status = response.status;
+                throw error;
             }
             const length = Number(response.headers.get('Content-Length')) || 0;
             if (response.status === 206) {
@@ -114,6 +151,9 @@ export const downloadProject = async (url, {
             return result.buffer;
         } catch (error) {
             if (signal && signal.aborted) throw new DOMException('Aborted', 'AbortError');
+            // Authorization and rate-limit rejections must never trigger another
+            // archive transfer or the CDN-to-origin fallback.
+            if ([401, 403, 409, 429].includes(error.status)) throw error;
             if (!retryable || attempt === maxAttempts) throw new Error('Project download failed');
         } finally {
             controller.abort();

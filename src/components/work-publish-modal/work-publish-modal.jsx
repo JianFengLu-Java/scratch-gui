@@ -70,6 +70,7 @@ class WorkPublishModal extends React.Component {
             name: props.projectTitle,
             originType: draft && draft.originType === 'REPOST' ? 'REPOST' : 'ORIGINAL',
             originWorkId: null,
+            originLocked: false,
             repostSource: draft && draft.repostSource ? draft.repostSource : {
                 originalAuthor: '', sourcePlatform: '', sourceUrl: '', repostStatement: ''
             },
@@ -149,9 +150,13 @@ class WorkPublishModal extends React.Component {
                     state.categoryId || (context.categories[0] && context.categories[0].id) || '',
                 tagIds: state.hasRecoveredDraft ? state.tagIds :
                     ((context.existingWork && context.existingWork.tags) || []).map(tag => tag.id),
-                originType: context.existingWork ? context.existingWork.originType : state.originType,
-                originWorkId: context.existingWork && context.existingWork.originWork ?
-                    context.existingWork.originWork.id : null,
+                originType: context.publicationOrigin && context.publicationOrigin.locked ? 'REMIX' :
+                    (context.existingWork ? context.existingWork.originType : state.originType),
+                originWorkId: context.publicationOrigin && context.publicationOrigin.locked ?
+                    context.publicationOrigin.originWorkId :
+                    (context.existingWork && context.existingWork.originWork ? context.existingWork.originWork.id : null),
+                originLocked: Boolean(context.publicationOrigin && context.publicationOrigin.locked) ||
+                    Boolean(context.existingWork && context.existingWork.originType === 'REMIX'),
                 repostSource: context.existingWork && context.existingWork.repostSource ?
                     context.existingWork.repostSource : state.repostSource,
                 name: context.existingWork ? context.existingWork.title : state.name,
@@ -495,11 +500,15 @@ class WorkPublishModal extends React.Component {
                                 <div className={styles.sectionHeader}><span>作品来源</span><small>转载作品须注明原作者与出处</small></div>
                                 <div className={styles.fieldList}>
                                     <label className={styles.fieldRow}>
-                                        <span className={styles.fieldCopy}><b>来源类型</b><small>导入他人作品请选择转载</small></span>
+                                        <span className={styles.fieldCopy}><b>来源类型</b><small>{this.state.originLocked ?
+                                            '由站内改编项目自动确定，不能更改' : '导入他人作品请选择转载'}</small></span>
                                         <span className={styles.fieldControl}>
                                             <select
-                                                value={this.state.originType} disabled={metadataLocked || Boolean(this.state.existingWorkId)}
-                                                onChange={event => this.setState({originType: event.target.value, remixPolicy: 'FORBIDDEN', remixAuthorizationConfirmed: false})}
+                                                value={this.state.originType} disabled={metadataLocked || this.state.loadingOptions || this.state.originLocked || Boolean(this.state.existingWorkId)}
+                                                onChange={event => {
+                                                    if (this.state.originLocked || this.state.loadingOptions || this.state.existingWorkId) return;
+                                                    this.setState({originType: event.target.value, remixPolicy: 'FORBIDDEN', remixAuthorizationConfirmed: false});
+                                                }}
                                             >
                                                 <option value="ORIGINAL">原创</option>
                                                 <option value="REPOST">转载</option>

@@ -198,9 +198,9 @@ export const workPayload = (projectId, version, form, revision) => ({
     coverObjectId: version.coverObjectId,
     summary: form.summary.trim(),
     instruction: form.instructions.trim() || null,
-    originType: form.originType || 'ORIGINAL',
+    originType: form.originWorkId ? 'REMIX' : (form.originType || 'ORIGINAL'),
     originWorkId: form.originWorkId || null,
-    repostSource: form.originType === 'REPOST' ? form.repostSource : null,
+    repostSource: !form.originWorkId && form.originType === 'REPOST' ? form.repostSource : null,
     remixPermission: form.sourceAccess,
     remixPolicy: form.remixPolicy,
     remixAuthorizationConfirmed: form.remixAuthorizationConfirmed === true,
@@ -259,9 +259,11 @@ export const loadWorkPublishOptions = async candidateProjectId => {
         publicRequest('/tags?scene=WORK')
     ]);
     const projectId = currentProjectId(candidateProjectId);
-    const [profile, existingWork] = await Promise.all([
+    const [profile, existingWork, publicationOrigin] = await Promise.all([
         authorizedRequest(session, '/users/me'),
-        projectId ? findProjectWork(session, projectId) : Promise.resolve(null)
+        projectId ? findProjectWork(session, projectId) : Promise.resolve(null),
+        projectId ? authorizedRequest(session, `/works/publication-origin?projectId=${encodeURIComponent(projectId)}`) :
+            Promise.resolve(null)
     ]);
     const releases = existingWork && ['PUBLISHED', 'OFFLINE'].includes(existingWork.status) ?
         await loadWorkReleases(session, existingWork.id) : [];
@@ -270,6 +272,7 @@ export const loadWorkPublishOptions = async candidateProjectId => {
         existingWork,
         latestReleaseNo: releases.reduce((latest, release) => Math.max(latest, release.releaseNo || 0), 0),
         profile,
+        publicationOrigin,
         publicationMode: releases.length > 0 ? 'UPDATE' : 'FIRST',
         releases,
         session,

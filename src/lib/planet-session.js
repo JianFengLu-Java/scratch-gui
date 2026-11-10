@@ -80,7 +80,7 @@ export const fetchWithPlanetSession = async (session, url, options = {}) => {
     };
     const send = candidate => fetch(url, {
         ...options,
-        credentials: 'include',
+        credentials: options.credentials || 'include',
         headers: {
             ...options.headers,
             Authorization: `${candidate.tokenType || 'Bearer'} ${candidate.accessToken}`
